@@ -44,8 +44,10 @@ HRESULT WINAPI Reset(IDirect3DDevice9* d,D3DPRESENT_PARAMETERS* p) {
     if (initialized && SUCCEEDED(hr)) ImGui_ImplDX9_CreateDeviceObjects(); return hr;
 }
 bool DeviceMethods(void** outPresent, void** outReset) {
-    WNDCLASSEX wc{sizeof(wc),CS_CLASSDC,DefWindowProc,nullptr,nullptr,GetModuleHandle(nullptr),nullptr,nullptr,nullptr,nullptr,L"MirickProbe",nullptr};
-    RegisterClassEx(&wc); HWND w=CreateWindow(wc.lpszClassName,L"",WS_OVERLAPPEDWINDOW,0,0,100,100,nullptr,nullptr,wc.hInstance,nullptr);
+    WNDCLASSEXA wc{};
+    wc.cbSize = sizeof(wc); wc.style = CS_CLASSDC; wc.lpfnWndProc = DefWindowProcA;
+    wc.hInstance = GetModuleHandleA(nullptr); wc.lpszClassName = "MirickProbe";
+    RegisterClassExA(&wc); HWND w=CreateWindowA(wc.lpszClassName,"",WS_OVERLAPPEDWINDOW,0,0,100,100,nullptr,nullptr,wc.hInstance,nullptr);
     auto d3d=Direct3DCreate9(D3D_SDK_VERSION); if(!d3d){DestroyWindow(w);UnregisterClass(wc.lpszClassName,wc.hInstance);return false;}
     D3DPRESENT_PARAMETERS pp{}; pp.Windowed=TRUE;pp.SwapEffect=D3DSWAPEFFECT_DISCARD;pp.hDeviceWindow=w;
     IDirect3DDevice9* dev{}; HRESULT hr=d3d->CreateDevice(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,w,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&pp,&dev);
