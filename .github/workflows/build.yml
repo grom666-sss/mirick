@@ -3,11 +3,11 @@ name: Build Windows DLL
 on:
   push:
     branches:
-      - arena/01a0fe3d-mirick
+      - arena/01a0fe5b-mirick
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -20,7 +20,20 @@ jobs:
         run: cmake -S . -B build -A Win32
 
       - name: Build DLL
-        run: cmake --build build --config Release
+        shell: pwsh
+        run: |
+          cmake --build build --config Release 2>&1 | Tee-Object -FilePath build.log
+          $code = $LASTEXITCODE
+          $found = Select-String -Path build.log -Pattern 'error' -SimpleMatch | Select-Object -First 40
+          if ($found) {
+            "## Build errors" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            foreach ($e in $found) {
+              $line = $e.Line.Trim()
+              ('    ' + $line) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+              Write-Host ('::error::' + $line)
+            }
+          }
+          exit $code
 
       - name: Upload DLL
         uses: actions/upload-artifact@v4
@@ -28,3 +41,14 @@ jobs:
           name: MirickMenu-Win32
           path: build/Release/MirickMenu.dll
           if-no-files-found: error
+
+      - name: Publish DLL as release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete mirick-menu-latest --yes --cleanup-tag 2>$null
+          gh release create mirick-menu-latest build/Release/MirickMenu.dll `
+            --target $env:GITHUB_SHA `
+            --title "MirickMenu — последняя сборка" `
+            --notes "Автоматическая сборка меню (Win32, DirectX 9) из ветки arena/01a0fe5b-mirick."

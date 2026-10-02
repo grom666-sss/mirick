@@ -7,15 +7,16 @@
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx9.h>
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
+
 namespace {
 using PresentFn = HRESULT (WINAPI*)(IDirect3DDevice9*, const RECT*, const RECT*, HWND, const RGNDATA*);
 using ResetFn = HRESULT (WINAPI*)(IDirect3DDevice9*, D3DPRESENT_PARAMETERS*);
 PresentFn originalPresent{}; ResetFn originalReset{};
 WNDPROC originalWndProc{}; HWND gameWindow{}; bool initialized{};
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
-    if (msg == WM_KEYUP && wp == VK_INSERT) { Menu::Toggle(); return 0; }
+    if (msg == WM_KEYUP && (int)wp == Menu::ToggleKey()) { Menu::Toggle(); return 0; }
     if (Menu::IsOpen() && ImGui::GetCurrentContext()) {
         ImGui_ImplWin32_WndProcHandler(hwnd,msg,wp,lp);
         if ((msg>=WM_MOUSEFIRST && msg<=WM_MOUSELAST) || (msg>=WM_KEYFIRST && msg<=WM_KEYLAST)) return 1;
@@ -27,7 +28,15 @@ void Init(IDirect3DDevice9* device) {
     originalWndProc=(WNDPROC)SetWindowLongPtr(gameWindow,GWLP_WNDPROC,(LONG_PTR)WndProc);
     IMGUI_CHECKVERSION(); ImGui::CreateContext();
     auto& io=ImGui::GetIO(); io.IniFilename=nullptr; io.LogFilename=nullptr;
-    io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+    const ImWchar* ranges = io.Fonts->GetGlyphRangesCyrillic();
+    ImFont* fontRegular = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/segoeui.ttf", 16.0f, nullptr, ranges);
+    if (!fontRegular) fontRegular = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 16.0f, nullptr, ranges);
+    ImFont* fontBig = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/segoeuib.ttf", 24.0f, nullptr, ranges);
+    if (!fontBig) fontBig = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arialbd.ttf", 24.0f, nullptr, ranges);
+    ImFont* fontSmall = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/segoeui.ttf", 12.0f, nullptr, ranges);
+    if (!fontSmall) fontSmall = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 12.0f, nullptr, ranges);
+    if (fontRegular) io.FontDefault = fontRegular;
+    Menu::SetFonts(fontBig, fontRegular, fontSmall);
     ImGui::StyleColorsDark(); auto& st=ImGui::GetStyle(); st.FrameRounding=4; st.GrabRounding=4; st.ScrollbarRounding=5;
     ImGui_ImplWin32_Init(gameWindow); ImGui_ImplDX9_Init(device); initialized=true;
 }
@@ -44,13 +53,22 @@ HRESULT WINAPI Reset(IDirect3DDevice9* d,D3DPRESENT_PARAMETERS* p) {
     if (initialized && SUCCEEDED(hr)) ImGui_ImplDX9_CreateDeviceObjects(); return hr;
 }
 bool DeviceMethods(void** outPresent, void** outReset) {
-    WNDCLASSEX wc{sizeof(wc),CS_CLASSDC,DefWindowProc,nullptr,nullptr,GetModuleHandle(nullptr),nullptr,nullptr,nullptr,nullptr,L"MirickProbe",nullptr};
-    RegisterClassEx(&wc); HWND w=CreateWindow(wc.lpszClassName,L"",WS_OVERLAPPEDWINDOW,0,0,100,100,nullptr,nullptr,wc.hInstance,nullptr);
-    auto d3d=Direct3DCreate9(D3D_SDK_VERSION); if(!d3d){DestroyWindow(w);UnregisterClass(wc.lpszClassName,wc.hInstance);return false;}
-    D3DPRESENT_PARAMETERS pp{}; pp.Windowed=TRUE;pp.SwapEffect=D3DSWAPEFFECT_DISCARD;pp.hDeviceWindow=w;
-    IDirect3DDevice9* dev{}; HRESULT hr=d3d->CreateDevice(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,w,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&pp,&dev);
-    if(SUCCEEDED(hr)){void** vt=*reinterpret_cast<void***>(dev);*outReset=vt[16];*outPresent=vt[17];dev->Release();}
-    d3d->Release();DestroyWindow(w);UnregisterClass(wc.lpszClassName,wc.hInstance);return SUCCEEDED(hr);
+    WNDCLASSEXA wc{};
+    wc.cbSize = sizeof(wc);
+    wc.style = CS_CLASSDC;
+    wc.lpfnWndProc = DefWindowProcA;
+    wc.hInstance = GetModuleHandleA(nullptr);
+    wc.lpszClassName = "MirickProbe";
+    if (!RegisterClassExA(&wc)) return false;
+    HWND w = CreateWindowExA(0, wc.lpszClassName, "", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, nullptr, nullptr, wc.hInstance, nullptr);
+    if (!w) { UnregisterClassA(wc.lpszClassName, wc.hInstance); return false; }
+    IDirect3D9* d3d = Direct3DCreate9(D3D_SDK_VERSION);
+    if (!d3d) { DestroyWindow(w); UnregisterClassA(wc.lpszClassName, wc.hInstance); return false; }
+    D3DPRESENT_PARAMETERS pp{}; pp.Windowed = TRUE; pp.SwapEffect = D3DSWAPEFFECT_DISCARD; pp.hDeviceWindow = w;
+    IDirect3DDevice9* dev{};
+    HRESULT hr = d3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, w, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &pp, &dev);
+    if (SUCCEEDED(hr)) { void** vt = *reinterpret_cast<void***>(dev); *outReset = vt[16]; *outPresent = vt[17]; dev->Release(); }
+    d3d->Release(); DestroyWindow(w); UnregisterClassA(wc.lpszClassName, wc.hInstance); return SUCCEEDED(hr);
 }
 }
 bool Overlay::Install(){
