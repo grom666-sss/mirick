@@ -20,7 +20,20 @@ jobs:
         run: cmake -S . -B build -A Win32
 
       - name: Build DLL
-        run: cmake --build build --config Release
+        shell: pwsh
+        run: |
+          cmake --build build --config Release 2>&1 | Tee-Object -FilePath build.log
+          $code = $LASTEXITCODE
+          $found = Select-String -Path build.log -Pattern 'error' -SimpleMatch | Select-Object -First 40
+          if ($found) {
+            "## Build errors" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            foreach ($e in $found) {
+              $line = $e.Line.Trim()
+              ('    ' + $line) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+              Write-Host ('::error::' + $line)
+            }
+          }
+          exit $code
 
       - name: Upload DLL
         uses: actions/upload-artifact@v4
