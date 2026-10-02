@@ -1,6 +1,7 @@
-// Mirick Menu — визуальное меню в стиле ForkHack (https://github.com/gabrik1337/ForkHack).
-// Реализация полностью самостоятельная: используется только публичный API Dear ImGui,
-// никаких игровых функций, работы с памятью игры или читов здесь нет.
+// Mirick Menu — визуальное меню (Dear ImGui / DirectX 9).
+// Оформление: тёмные карточки, тумблеры-пилюли, тонкие слайдеры, сегментные
+// переключатели. Реализация самостоятельная, используется только публичный API ImGui.
+// В проекте нет игровых функций: все настройки влияют исключительно на сам интерфейс.
 
 #include "menu.hpp"
 
@@ -19,26 +20,24 @@
 namespace {
 
 // ---------------------------------------------------------------------------
-// Базовая геометрия окна (в «логических» пикселях, умножается на масштаб)
+// Геометрия (логические пиксели, умножаются на масштаб)
 // ---------------------------------------------------------------------------
-constexpr float kWidth = 720.0f;
-constexpr float kHeight = 520.0f;
-constexpr float kHeader = 47.0f;
-constexpr float kSidebar = 160.0f;
-constexpr float kShadow = 22.0f; // запас вокруг окна под тень
-constexpr float kItemWidth = 248.0f;
+constexpr float kWidth = 936.0f;
+constexpr float kHeight = 698.0f;
+constexpr float kSidebar = 210.0f;
+constexpr float kShadow = 26.0f;
+constexpr float kColLeftX = 230.0f;
+constexpr float kColRightX = 578.0f;
+constexpr float kColLeftW = 336.0f;
+constexpr float kColRightW = 334.0f;
+constexpr float kContentTop = 96.0f;
 
 // ---------------------------------------------------------------------------
-// Анимации
+// Анимация
 // ---------------------------------------------------------------------------
 struct ItemAnim {
     float hovered = 0.0f;
     float active = 0.0f;
-};
-
-struct TabAnim {
-    float hovered = 0.0f;
-    float selected = 0.0f;
 };
 
 void Animate(float& value, bool condition, float speed) {
@@ -49,76 +48,112 @@ void Animate(float& value, bool condition, float speed) {
 }
 
 // ---------------------------------------------------------------------------
-// Состояние меню и демонстрационные настройки (только интерфейс)
+// Состояние
 // ---------------------------------------------------------------------------
 struct State {
     bool open = false;
     float alpha = 0.0f;
-    float scale = 1.0f;
-    int tab = 0;
-    std::array<int, 5> subtab{};
-    std::array<TabAnim, 5> tabAnim{};
-    std::array<std::array<TabAnim, 4>, 5> subAnim{};
-    std::unordered_map<std::string, ItemAnim> items;
     float tabFade = 1.0f;
+    int tab = 0;
     int prevTab = 0;
-    int prevSub = 0;
+    float scale = 1.0f;
     bool centered = false;
     bool dragging = false;
     int toggleKey = VK_INSERT;
-    int capturingKey = 0; // 0 — нет, 1 — ждём отпускания, 2 — ловим клавишу
+    int capturingKey = 0;
+    int language = 0;
 
-    // Акцент интерфейса
-    float accent[4] = {0.54f, 0.33f, 1.00f, 1.00f};
+    std::unordered_map<std::string, ItemAnim> items;
+    std::array<ItemAnim, 6> tabs{};
 
-    // Демонстрационные (чисто визуальные) настройки
+    // Акцент (используется для цветных элементов интерфейса)
+    float accent[4] = {0.91f, 0.16f, 0.16f, 1.00f};
+
+    // Демонстрационные настройки интерфейса
     bool showClock = true;
     bool showFps = false;
     bool compactHud = false;
-    bool watermark = true;
-    int watermarkPos = 0;
     float hudOpacity = 85.0f;
-    int hudSpacing = 6;
 
-    bool blurBackground = true;
-    bool roundedCorners = true;
+    bool watermark = true;
+    int watermarkStyle = 1;
+    bool watermarkShadow = true;
+    bool watermarkIcon = false;
+    int watermarkPos = 1;
+    float watermarkScale = 1.1f;
+
     bool animations = true;
-    float animSpeed = 1.0f;
-    int font = 0;
+    float animSpeed = 1.1f;
+    bool shadow = true;
+    bool rounded = true;
+    int theme = 1;
+    bool glow = false;
+    bool separators = true;
+    float cardOpacity = 96.0f;
 
     bool notifications = true;
     bool notifySound = false;
     int notifyCorner = 1;
     float notifyTime = 4.0f;
     bool notifyConfig = true;
-    bool notifyHotkeys = true;
+    bool notifyKeys = true;
 
-    int language = 0;
     bool saveOnExit = true;
     bool showCursor = true;
-    char profileName[32] = "default";
+    bool fadeOnClose = true;
 };
 
 State g;
+ImFont* fontBig = nullptr;
+ImFont* fontReg = nullptr;
+ImFont* fontSmall = nullptr;
 
 // ---------------------------------------------------------------------------
-// Вспомогательные функции
+// Утилиты
 // ---------------------------------------------------------------------------
 float S() { return g.scale; }
-float A() { return g.alpha * g.tabFade; }
+float A() { return g.alpha; }
+float AF() { return g.alpha * g.tabFade; }
 
-ImU32 Col(int r, int gr, int b, float alpha255) {
-    return IM_COL32(r, gr, b, (int)std::clamp(alpha255 * A(), 0.0f, 255.0f));
+ImU32 Col(int r, int gr, int b, float a255, bool fade = true) {
+    const float mul = fade ? AF() : A();
+    return IM_COL32(r, gr, b, (int)std::clamp(a255 * mul, 0.0f, 255.0f));
 }
 
-ImU32 Accent(float alpha255 = 255.0f) {
+ImU32 Accent(float a255 = 255.0f) {
     return IM_COL32((int)(g.accent[0] * 255.0f), (int)(g.accent[1] * 255.0f), (int)(g.accent[2] * 255.0f),
-                    (int)std::clamp(alpha255 * g.accent[3] * A(), 0.0f, 255.0f));
+                    (int)std::clamp(a255 * g.accent[3] * AF(), 0.0f, 255.0f));
 }
 
 ItemAnim& Anim(const char* key) { return g.items[key]; }
 
 const char* Tr(const char* ru, const char* en) { return g.language == 1 ? en : ru; }
+
+ImFont* FontOr(ImFont* f) { return f ? f : ImGui::GetFont(); }
+
+float SzBig() { return 22.0f * S(); }
+float SzCard() { return 15.0f * S(); }
+float SzRow() { return 14.0f * S(); }
+float SzSmall() { return 11.5f * S(); }
+
+ImVec2 Measure(ImFont* font, float size, const char* text) {
+    return FontOr(font)->CalcTextSizeA(size, FLT_MAX, 0.0f, text);
+}
+
+void Text(ImDrawList* dl, ImFont* font, float size, ImVec2 pos, ImU32 color, const char* text) {
+    dl->AddText(FontOr(font), size, pos, color, text);
+}
+
+void TextRight(ImDrawList* dl, ImFont* font, float size, float rightX, float y, ImU32 color, const char* text) {
+    const ImVec2 sz = Measure(font, size, text);
+    dl->AddText(FontOr(font), size, ImVec2(rightX - sz.x, y), color, text);
+}
+
+void TextCenter(ImDrawList* dl, ImFont* font, float size, ImVec2 min, ImVec2 max, ImU32 color, const char* text) {
+    const ImVec2 sz = Measure(font, size, text);
+    dl->AddText(FontOr(font), size, ImVec2(min.x + (max.x - min.x - sz.x) * 0.5f, min.y + (max.y - min.y - sz.y) * 0.5f),
+                color, text);
+}
 
 const char* KeyName(int vk) {
     static char buffer[64];
@@ -130,7 +165,6 @@ const char* KeyName(int vk) {
         case VK_END: return "END";
         case VK_PRIOR: return "PAGE UP";
         case VK_NEXT: return "PAGE DOWN";
-        case VK_LBUTTON: return "MOUSE 1";
         case VK_RBUTTON: return "MOUSE 2";
         case VK_MBUTTON: return "MOUSE 3";
         default: break;
@@ -141,117 +175,114 @@ const char* KeyName(int vk) {
     return buffer;
 }
 
-void TextAt(ImDrawList* dl, ImVec2 pos, ImU32 color, const char* text) { dl->AddText(pos, color, text); }
+// ---------------------------------------------------------------------------
+// Колонка с карточками
+// ---------------------------------------------------------------------------
+struct Column {
+    ImDrawList* dl = nullptr;
+    float x = 0.0f;
+    float y = 0.0f;
+    float w = 0.0f;
+    float cardTop = 0.0f;
+    bool inCard = false;
+};
 
-void TextCentered(ImDrawList* dl, ImVec2 min, ImVec2 max, ImU32 color, const char* text) {
-    const ImVec2 size = ImGui::CalcTextSize(text);
-    dl->AddText(ImVec2(min.x + (max.x - min.x - size.x) * 0.5f, min.y + (max.y - min.y - size.y) * 0.5f), color, text);
-}
-
-// Простые векторные иконки вкладок (без внешних ресурсов)
-void DrawTabIcon(ImDrawList* dl, int index, ImVec2 c, ImU32 color) {
+void CardBegin(Column& c, const char* title) {
     const float s = S();
-    switch (index) {
-        case 0: // домик
-            dl->AddTriangleFilled(c + ImVec2(0, -7 * s), c + ImVec2(-8 * s, 0), c + ImVec2(8 * s, 0), color);
-            dl->AddRectFilled(c + ImVec2(-5 * s, 0), c + ImVec2(5 * s, 7 * s), color, 1.5f * s);
-            break;
-        case 1: // слои
-            dl->AddQuadFilled(c + ImVec2(0, -7 * s), c + ImVec2(8 * s, -2 * s), c + ImVec2(0, 3 * s), c + ImVec2(-8 * s, -2 * s), color);
-            dl->AddQuad(c + ImVec2(0, -1 * s), c + ImVec2(8 * s, 4 * s), c + ImVec2(0, 9 * s), c + ImVec2(-8 * s, 4 * s), color, 1.4f * s);
-            break;
-        case 2: // колокольчик
-            dl->AddCircleFilled(c + ImVec2(0, -1 * s), 6.0f * s, color, 16);
-            dl->AddRectFilled(c + ImVec2(-7 * s, 1 * s), c + ImVec2(7 * s, 4 * s), color, 1.5f * s);
-            dl->AddCircleFilled(c + ImVec2(0, 7 * s), 2.2f * s, color, 10);
-            break;
-        case 3: // шестерёнка
-            dl->AddCircleFilled(c, 7.0f * s, color, 8);
-            dl->AddCircleFilled(c, 3.0f * s, IM_COL32(24, 24, 29, (int)(255 * A())), 12);
-            break;
-        default: // профиль
-            dl->AddCircleFilled(c + ImVec2(0, -3.5f * s), 3.4f * s, color, 14);
-            dl->AddRectFilled(c + ImVec2(-6 * s, 1.5f * s), c + ImVec2(6 * s, 8 * s), color, 3.0f * s);
-            break;
-    }
+    c.dl->ChannelsSplit(2);
+    c.dl->ChannelsSetCurrent(1);
+    c.cardTop = c.y;
+    c.inCard = true;
+    Text(c.dl, fontBig, SzCard(), ImVec2(c.x + 18.0f * s, c.y + 15.0f * s), Col(255, 255, 255, 240), title);
+    c.y += 46.0f * s;
+}
+
+void CardEnd(Column& c) {
+    const float s = S();
+    const float bottom = c.y + 12.0f * s;
+    c.dl->ChannelsSetCurrent(0);
+    c.dl->AddRectFilled(ImVec2(c.x, c.cardTop), ImVec2(c.x + c.w, bottom), Col(21, 21, 23, 255 * (g.cardOpacity / 100.0f)),
+                        g.rounded ? 12.0f * s : 0.0f);
+    c.dl->AddRect(ImVec2(c.x, c.cardTop), ImVec2(c.x + c.w, bottom), Col(255, 255, 255, 10), g.rounded ? 12.0f * s : 0.0f);
+    c.dl->ChannelsMerge();
+    c.inCard = false;
+    c.y = bottom + 14.0f * s;
+}
+
+// Невидимая кнопка в абсолютных координатах
+bool Hit(const char* id, ImVec2 min, ImVec2 size, bool* hovered = nullptr) {
+    ImGui::SetCursorScreenPos(min);
+    ImGui::InvisibleButton(id, size);
+    if (hovered) *hovered = ImGui::IsItemHovered();
+    return ImGui::IsItemClicked();
 }
 
 // ---------------------------------------------------------------------------
-// Виджеты в стилистике исходного интерфейса
+// Виджеты
 // ---------------------------------------------------------------------------
-void GroupLabel(const char* label) {
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    TextAt(dl, p, Col(255, 255, 255, 235), label);
-    ImGui::Dummy(ImVec2(kItemWidth * S(), ImGui::GetTextLineHeight() + 6.0f * S()));
-}
-
-void Caption(const char* text) {
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    TextAt(dl, p, Col(255, 255, 255, 105), text);
-    ImGui::Dummy(ImVec2(kItemWidth * S(), ImGui::GetTextLineHeight() + 4.0f * S()));
-}
-
-// Фон строки виджета: лёгкая подсветка при наведении
-void RowBackground(ImDrawList* dl, ImVec2 min, ImVec2 max, float hovered) {
-    const float base = 20.0f + 30.0f * hovered;
-    const int tone = 217 + (int)(38 * hovered) > 255 ? 255 : 217 + (int)(38 * hovered);
-    dl->AddRectFilled(min, max, Col(tone, tone, tone, base), 4.0f * S());
-}
-
-bool Checkbox(const char* label, bool* value) {
+bool Toggle(Column& c, const char* label, bool* value, bool dim = false) {
     const float s = S();
     ImGui::PushID(label);
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    const ImVec2 size(kItemWidth * s, 32.0f * s);
+    const ImVec2 rowMin(c.x + 12.0f * s, c.y);
+    const ImVec2 rowSize(c.w - 24.0f * s, 32.0f * s);
 
-    ImGui::InvisibleButton("##row", size);
-    const bool hovered = ImGui::IsItemHovered();
-    const bool pressed = ImGui::IsItemClicked();
-    if (pressed) *value = !*value;
+    bool hovered = false;
+    const bool clicked = Hit("##row", rowMin, rowSize, &hovered);
+    if (clicked) *value = !*value;
 
     ItemAnim& anim = Anim(label);
     Animate(anim.hovered, hovered, 14.0f * g.animSpeed);
-    Animate(anim.active, *value, 12.0f * g.animSpeed);
+    Animate(anim.active, *value, 13.0f * g.animSpeed);
 
-    RowBackground(dl, p, p + size, anim.hovered);
+    if (anim.hovered > 0.01f) {
+        c.dl->AddRectFilled(rowMin, rowMin + rowSize, Col(255, 255, 255, 9 * anim.hovered), 8.0f * s);
+    }
 
-    const ImVec2 bodyMin = p + ImVec2(size.x - 40.0f * s, 9.0f * s);
-    const ImVec2 bodyMax = bodyMin + ImVec2(28.0f * s, 14.0f * s);
-    dl->AddRectFilled(bodyMin, bodyMax, Col(0, 0, 0, 80), 7.0f * s);
-    dl->AddRectFilled(bodyMin, bodyMax, Accent(190.0f * anim.active), 7.0f * s);
+    const float textAlpha = dim ? (95.0f + 40.0f * anim.hovered) : (170.0f + 85.0f * anim.active);
+    Text(c.dl, fontReg, SzRow(), ImVec2(rowMin.x + 8.0f * s, rowMin.y + 8.0f * s), Col(255, 255, 255, textAlpha), label);
 
-    const ImVec2 knob = ImVec2(bodyMin.x + 7.0f * s + 14.0f * s * anim.active, (bodyMin.y + bodyMax.y) * 0.5f);
-    dl->AddCircleFilled(knob, 5.0f * s, Col(255, 255, 255, 160 + 95 * anim.active), 18);
+    // Пилюля-тумблер
+    const ImVec2 trackMax(rowMin.x + rowSize.x - 6.0f * s, rowMin.y + rowSize.y * 0.5f + 11.0f * s);
+    const ImVec2 trackMin(trackMax.x - 42.0f * s, rowMin.y + rowSize.y * 0.5f - 11.0f * s);
+    const float h = trackMax.y - trackMin.y;
+    const ImU32 trackOff = Col(58, 58, 63, 255);
+    const ImU32 trackOn = Col(245, 245, 247, 255);
+    c.dl->AddRectFilled(trackMin, trackMax, trackOff, h * 0.5f);
+    if (anim.active > 0.01f) {
+        c.dl->AddRectFilled(trackMin, trackMax, Col(245, 245, 247, 255 * anim.active), h * 0.5f);
+    }
+    (void)trackOn;
 
-    TextAt(dl, p + ImVec2(12.0f * s, 8.0f * s), Col(255, 255, 255, 130 + 110 * anim.active), label);
+    const float knobR = h * 0.5f - 3.0f * s;
+    const ImVec2 knob(trackMin.x + h * 0.5f + (trackMax.x - trackMin.x - h) * anim.active, (trackMin.y + trackMax.y) * 0.5f);
+    c.dl->AddCircleFilled(knob, knobR, Col(255, 255, 255, 255), 20);
+    c.dl->AddCircle(knob, knobR, Col(0, 0, 0, 40 + 60 * anim.active), 20, 1.2f * s);
+
+    c.y += 34.0f * s;
     ImGui::PopID();
-    return pressed;
+    return clicked;
 }
 
-bool SliderBase(const char* label, float* value, float min, float max, const char* fmt, bool integer) {
+bool SliderBase(Column& c, const char* label, float* value, float min, float max, const char* fmt, bool integer) {
     const float s = S();
     ImGui::PushID(label);
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    const ImVec2 size(kItemWidth * s, 54.0f * s);
+    const ImVec2 rowMin(c.x + 12.0f * s, c.y);
+    const ImVec2 rowSize(c.w - 24.0f * s, 46.0f * s);
 
-    ImGui::InvisibleButton("##row", size);
-    const bool hovered = ImGui::IsItemHovered();
+    bool hovered = false;
+    Hit("##row", rowMin, rowSize, &hovered);
     const bool active = ImGui::IsItemActive();
 
     ItemAnim& anim = Anim(label);
     Animate(anim.hovered, hovered || active, 14.0f * g.animSpeed);
-    Animate(anim.active, active, 16.0f * g.animSpeed);
+    Animate(anim.active, active, 18.0f * g.animSpeed);
 
-    const ImVec2 trackMin = p + ImVec2(12.0f * s, 36.0f * s);
-    const ImVec2 trackMax = p + ImVec2(size.x - 12.0f * s, 42.0f * s);
+    const ImVec2 railMin(rowMin.x + 8.0f * s, rowMin.y + 30.0f * s);
+    const ImVec2 railMax(rowMin.x + rowSize.x - 8.0f * s, railMin.y + 3.0f * s);
 
     bool changed = false;
     if (active) {
-        const float t = std::clamp((ImGui::GetIO().MousePos.x - trackMin.x) / (trackMax.x - trackMin.x), 0.0f, 1.0f);
+        const float t = std::clamp((ImGui::GetIO().MousePos.x - railMin.x) / (railMax.x - railMin.x), 0.0f, 1.0f);
         float next = min + (max - min) * t;
         if (integer) next = std::round(next);
         if (next != *value) {
@@ -262,158 +293,118 @@ bool SliderBase(const char* label, float* value, float min, float max, const cha
 
     const float t = (max > min) ? std::clamp((*value - min) / (max - min), 0.0f, 1.0f) : 0.0f;
 
-    RowBackground(dl, p, p + size, anim.hovered);
-    dl->AddRectFilled(trackMin, trackMax, Col(0, 0, 0, 80), 3.0f * s);
-
-    const float fillX = trackMin.x + (trackMax.x - trackMin.x) * t;
-    if (fillX > trackMin.x) {
-        dl->AddRectFilledMultiColor(trackMin, ImVec2(fillX, trackMax.y), Accent(110.0f), Accent(255.0f), Accent(255.0f), Accent(110.0f));
-    }
-
-    const ImVec2 knob(fillX, (trackMin.y + trackMax.y) * 0.5f);
-    dl->AddCircleFilled(knob, (7.0f + anim.active) * s, Col(70, 70, 76, 255), 20);
-    dl->AddCircleFilled(knob, (4.0f + anim.active) * s, Col(255, 255, 255, 255), 20);
+    Text(c.dl, fontReg, SzRow(), ImVec2(rowMin.x + 8.0f * s, rowMin.y + 4.0f * s), Col(255, 255, 255, 150 + 60 * anim.hovered),
+         label);
 
     char buffer[64];
     std::snprintf(buffer, sizeof(buffer), fmt, integer ? (double)(int)*value : (double)*value);
-    const ImVec2 textSize = ImGui::CalcTextSize(buffer);
+    TextRight(c.dl, fontBig, SzRow(), rowMin.x + rowSize.x - 8.0f * s, rowMin.y + 4.0f * s, Col(255, 255, 255, 250), buffer);
 
-    TextAt(dl, p + ImVec2(12.0f * s, 8.0f * s), Col(255, 255, 255, 130 + 80 * anim.hovered), label);
-    TextAt(dl, ImVec2(p.x + size.x - 12.0f * s - textSize.x, p.y + 8.0f * s), Col(255, 255, 255, 215), buffer);
+    c.dl->AddRectFilled(railMin, railMax, Col(52, 52, 57, 255), 2.0f * s);
+    const float fillX = railMin.x + (railMax.x - railMin.x) * t;
+    if (fillX > railMin.x) c.dl->AddRectFilled(railMin, ImVec2(fillX, railMax.y), Col(255, 255, 255, 255), 2.0f * s);
 
+    const ImVec2 knob(fillX, (railMin.y + railMax.y) * 0.5f);
+    c.dl->AddCircleFilled(knob, (5.5f + 1.5f * anim.hovered) * s, Col(255, 255, 255, 255), 20);
+
+    c.y += 48.0f * s;
     ImGui::PopID();
     return changed;
 }
 
-bool SliderFloat(const char* label, float* value, float min, float max, const char* fmt = "%.2f") {
-    return SliderBase(label, value, min, max, fmt, false);
+bool SliderFloat(Column& c, const char* label, float* value, float min, float max, const char* fmt = "%.2f") {
+    return SliderBase(c, label, value, min, max, fmt, false);
 }
 
-bool SliderInt(const char* label, int* value, int min, int max, const char* fmt = "%.0f") {
+bool SliderInt(Column& c, const char* label, int* value, int min, int max, const char* fmt = "%.0f") {
     float temp = (float)*value;
-    const bool changed = SliderBase(label, &temp, (float)min, (float)max, fmt, true);
+    const bool changed = SliderBase(c, label, &temp, (float)min, (float)max, fmt, true);
     if (changed) *value = (int)temp;
     return changed;
 }
 
-bool Combo(const char* label, int* current, const char* const items[], int count) {
+bool Segmented(Column& c, const char* label, int* value, const char* const items[], int count) {
     const float s = S();
     ImGui::PushID(label);
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    const ImVec2 size(kItemWidth * s, 54.0f * s);
+    const float x = c.x + 20.0f * s;
+    const float w = c.w - 40.0f * s;
 
-    ImGui::InvisibleButton("##row", size);
-    const bool hovered = ImGui::IsItemHovered();
-    ItemAnim& anim = Anim(label);
-    Animate(anim.hovered, hovered, 14.0f * g.animSpeed);
-
-    if (ImGui::IsItemClicked()) ImGui::OpenPopup("##combo_popup");
-
-    RowBackground(dl, p, p + size, anim.hovered);
-    TextAt(dl, p + ImVec2(12.0f * s, 8.0f * s), Col(255, 255, 255, 130 + 80 * anim.hovered), label);
-
-    const ImVec2 boxMin = p + ImVec2(12.0f * s, 28.0f * s);
-    const ImVec2 boxMax = p + ImVec2(size.x - 12.0f * s, 46.0f * s);
-    dl->AddRectFilled(boxMin, boxMax, Col(0, 0, 0, 80), 3.0f * s);
-    TextAt(dl, boxMin + ImVec2(8.0f * s, 1.0f * s), Col(255, 255, 255, 220), items[*current]);
-
-    const ImVec2 arrow(boxMax.x - 12.0f * s, (boxMin.y + boxMax.y) * 0.5f);
-    dl->AddTriangleFilled(arrow + ImVec2(-4 * s, -2 * s), arrow + ImVec2(4 * s, -2 * s), arrow + ImVec2(0, 3 * s), Accent(230.0f));
-
-    bool changed = false;
-    ImGui::SetNextWindowPos(ImVec2(boxMin.x, boxMax.y + 4.0f * s));
-    ImGui::SetNextWindowSize(ImVec2(boxMax.x - boxMin.x, 0.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f * s, 4.0f * s));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.0f * s);
-    ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.08f, 0.08f, 0.10f, 0.98f));
-    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 1.0f, 0.08f));
-    if (ImGui::BeginPopup("##combo_popup")) {
-        for (int i = 0; i < count; ++i) {
-            const bool selected = (i == *current);
-            ImGui::PushStyleColor(ImGuiCol_Text, selected ? ImVec4(1, 1, 1, 1) : ImVec4(1, 1, 1, 0.55f));
-            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1, 1, 1, 0.08f));
-            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(g.accent[0], g.accent[1], g.accent[2], 0.30f));
-            if (ImGui::Selectable(items[i], selected, 0, ImVec2(0.0f, 22.0f * s))) {
-                *current = i;
-                changed = true;
-            }
-            ImGui::PopStyleColor(3);
-        }
-        ImGui::EndPopup();
+    if (label && *label) {
+        Text(c.dl, fontReg, SzRow(), ImVec2(x, c.y), Col(255, 255, 255, 170), label);
+        c.y += 24.0f * s;
     }
-    ImGui::PopStyleColor(2);
-    ImGui::PopStyleVar(2);
 
+    const ImVec2 barMin(x, c.y);
+    const ImVec2 barMax(x + w, c.y + 30.0f * s);
+    const float seg = w / (float)count;
+    bool changed = false;
+
+    for (int i = 0; i < count; ++i) {
+        const ImVec2 segMin(barMin.x + seg * i, barMin.y);
+        const ImVec2 segMax(segMin.x + seg, barMax.y);
+        ImGui::PushID(i);
+        bool hovered = false;
+        if (Hit("##seg", segMin, ImVec2(seg, segMax.y - segMin.y), &hovered)) {
+            *value = i;
+            changed = true;
+        }
+        ImGui::PopID();
+
+        const std::string key = std::string(label) + "##seg" + std::to_string(i);
+        ItemAnim& anim = g.items[key];
+        Animate(anim.hovered, hovered, 14.0f * g.animSpeed);
+        Animate(anim.active, *value == i, 14.0f * g.animSpeed);
+
+        if (anim.active > 0.01f) {
+            c.dl->AddRectFilled(segMin + ImVec2(2.0f * s, 0.0f), segMax - ImVec2(2.0f * s, 0.0f),
+                                Col(48, 48, 53, 255 * anim.active), 7.0f * s);
+        } else if (anim.hovered > 0.01f) {
+            c.dl->AddRectFilled(segMin + ImVec2(2.0f * s, 0.0f), segMax - ImVec2(2.0f * s, 0.0f),
+                                Col(255, 255, 255, 10 * anim.hovered), 7.0f * s);
+        }
+        TextCenter(c.dl, fontReg, SzRow(), segMin, segMax, Col(255, 255, 255, 110 + 145 * anim.active), items[i]);
+    }
+
+    c.y += 38.0f * s;
     ImGui::PopID();
     return changed;
 }
 
-bool Button(const char* label) {
+bool ColorRow(Column& c, const char* label, float color[4]) {
     const float s = S();
     ImGui::PushID(label);
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    const ImVec2 size(kItemWidth * s, 30.0f * s);
+    const ImVec2 rowMin(c.x + 12.0f * s, c.y);
+    const ImVec2 rowSize(c.w - 24.0f * s, 32.0f * s);
 
-    ImGui::InvisibleButton("##row", size);
-    const bool hovered = ImGui::IsItemHovered();
-    const bool held = ImGui::IsItemActive();
-    const bool pressed = ImGui::IsItemClicked();
+    Text(c.dl, fontReg, SzRow(), ImVec2(rowMin.x + 8.0f * s, rowMin.y + 8.0f * s), Col(255, 255, 255, 190), label);
 
-    ItemAnim& anim = Anim(label);
-    Animate(anim.hovered, hovered, 14.0f * g.animSpeed);
-    Animate(anim.active, held, 18.0f * g.animSpeed);
+    const ImVec2 swatchMax(rowMin.x + rowSize.x - 6.0f * s, rowMin.y + rowSize.y * 0.5f + 9.0f * s);
+    const ImVec2 swatchMin(swatchMax.x - 26.0f * s, rowMin.y + rowSize.y * 0.5f - 9.0f * s);
 
-    dl->AddRectFilled(p, p + size, Col(217, 217, 217, 18 + 22 * anim.hovered), 4.0f * s);
-    dl->AddRectFilled(p, p + size, Accent(45.0f + 70.0f * anim.hovered), 4.0f * s);
-    dl->AddRect(p, p + size, Accent(60.0f + 120.0f * anim.hovered), 4.0f * s);
-    TextCentered(dl, p, p + size, Col(255, 255, 255, 200 + 55 * anim.hovered), label);
-
-    ImGui::PopID();
-    return pressed;
-}
-
-bool ColorRow(const char* label, float color[4]) {
-    const float s = S();
-    ImGui::PushID(label);
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    const ImVec2 size(kItemWidth * s, 32.0f * s);
-
-    ImGui::SetCursorScreenPos(p);
-    ImGui::InvisibleButton("##row", size);
-    const bool hovered = ImGui::IsItemHovered();
-    ItemAnim& anim = Anim(label);
-    Animate(anim.hovered, hovered, 14.0f * g.animSpeed);
-    RowBackground(dl, p, p + size, anim.hovered);
-    TextAt(dl, p + ImVec2(12.0f * s, 8.0f * s), Col(255, 255, 255, 130 + 80 * anim.hovered), label);
-
-    ImGui::SetCursorScreenPos(ImVec2(p.x + size.x - 42.0f * s, p.y + 7.0f * s));
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f * s);
+    ImGui::SetCursorScreenPos(swatchMin);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f * s);
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 1, 0.12f));
     const bool changed = ImGui::ColorEdit4("##picker", color,
                                            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel |
-                                               ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
+                                               ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_AlphaBar);
+    ImGui::PopStyleColor();
     ImGui::PopStyleVar();
+    (void)swatchMax;
 
-    ImGui::SetCursorScreenPos(ImVec2(p.x, p.y + size.y + ImGui::GetStyle().ItemSpacing.y));
+    c.y += 34.0f * s;
     ImGui::PopID();
     return changed;
 }
 
-bool KeybindRow(const char* label, int* key) {
+bool KeyRow(Column& c, const char* label, int* key) {
     const float s = S();
     ImGui::PushID(label);
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    const ImVec2 size(kItemWidth * s, 32.0f * s);
+    const ImVec2 rowMin(c.x + 12.0f * s, c.y);
+    const ImVec2 rowSize(c.w - 24.0f * s, 32.0f * s);
 
-    ImGui::InvisibleButton("##row", size);
-    const bool hovered = ImGui::IsItemHovered();
-    ItemAnim& anim = Anim(label);
-    Animate(anim.hovered, hovered, 14.0f * g.animSpeed);
-
-    if (ImGui::IsItemClicked() && g.capturingKey == 0) g.capturingKey = 1;
+    bool hovered = false;
+    const bool clicked = Hit("##row", rowMin, rowSize, &hovered);
+    if (clicked && g.capturingKey == 0) g.capturingKey = 1;
 
     bool changed = false;
     if (g.capturingKey == 1 && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
@@ -422,8 +413,8 @@ bool KeybindRow(const char* label, int* key) {
         if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
             g.capturingKey = 0;
         } else {
-            for (int vk = 0x01; vk <= 0xFE; ++vk) {
-                if (vk == VK_LBUTTON || vk == VK_ESCAPE) continue;
+            for (int vk = 0x02; vk <= 0xFE; ++vk) {
+                if (vk == VK_ESCAPE) continue;
                 if (GetAsyncKeyState(vk) & 0x8000) {
                     *key = vk;
                     g.capturingKey = 0;
@@ -434,291 +425,314 @@ bool KeybindRow(const char* label, int* key) {
         }
     }
 
-    RowBackground(dl, p, p + size, anim.hovered);
-    TextAt(dl, p + ImVec2(12.0f * s, 8.0f * s), Col(255, 255, 255, 130 + 80 * anim.hovered), label);
+    ItemAnim& anim = Anim(label);
+    Animate(anim.hovered, hovered, 14.0f * g.animSpeed);
+    if (anim.hovered > 0.01f) c.dl->AddRectFilled(rowMin, rowMin + rowSize, Col(255, 255, 255, 9 * anim.hovered), 8.0f * s);
 
-    const ImVec2 boxMin = p + ImVec2(size.x - 86.0f * s, 5.0f * s);
-    const ImVec2 boxMax = p + ImVec2(size.x - 8.0f * s, 27.0f * s);
-    dl->AddRectFilled(boxMin, boxMax, Col(0, 0, 0, 80), 3.0f * s);
-    TextCentered(dl, boxMin, boxMax, g.capturingKey ? Accent(255.0f) : Col(255, 255, 255, 215),
-                 g.capturingKey ? "..." : KeyName(*key));
+    Text(c.dl, fontReg, SzRow(), ImVec2(rowMin.x + 8.0f * s, rowMin.y + 8.0f * s), Col(255, 255, 255, 190), label);
 
+    const char* shown = g.capturingKey ? "..." : KeyName(*key);
+    const ImVec2 boxMax(rowMin.x + rowSize.x - 6.0f * s, rowMin.y + rowSize.y - 4.0f * s);
+    const ImVec2 boxMin(boxMax.x - std::max(72.0f * s, Measure(fontReg, SzRow(), shown).x + 22.0f * s), rowMin.y + 4.0f * s);
+    c.dl->AddRectFilled(boxMin, boxMax, Col(38, 38, 42, 255), 7.0f * s);
+    TextCenter(c.dl, fontReg, SzRow(), boxMin, boxMax, g.capturingKey ? Accent(255.0f) : Col(255, 255, 255, 230), shown);
+
+    c.y += 34.0f * s;
     ImGui::PopID();
     return changed;
 }
 
-void TextRow(const char* left, const char* right) {
+void InfoRow(Column& c, const char* label, const char* value) {
     const float s = S();
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    const ImVec2 size(kItemWidth * s, 28.0f * s);
-    const ImVec2 rightSize = ImGui::CalcTextSize(right);
-    dl->AddRectFilled(p, p + size, Col(217, 217, 217, 14), 4.0f * s);
-    TextAt(dl, p + ImVec2(12.0f * s, 6.0f * s), Col(255, 255, 255, 130), left);
-    TextAt(dl, ImVec2(p.x + size.x - 12.0f * s - rightSize.x, p.y + 6.0f * s), Col(255, 255, 255, 225), right);
-    ImGui::Dummy(size);
+    const ImVec2 rowMin(c.x + 12.0f * s, c.y);
+    const float rowW = c.w - 24.0f * s;
+    Text(c.dl, fontReg, SzRow(), ImVec2(rowMin.x + 8.0f * s, rowMin.y + 6.0f * s), Col(255, 255, 255, 120), label);
+    TextRight(c.dl, fontBig, SzRow(), rowMin.x + rowW - 8.0f * s, rowMin.y + 6.0f * s, Col(255, 255, 255, 235), value);
+    c.y += 30.0f * s;
+}
+
+void CaptionRow(Column& c, const char* text) {
+    const float s = S();
+    Text(c.dl, fontSmall, SzSmall(), ImVec2(c.x + 20.0f * s, c.y), Col(255, 255, 255, 95), text);
+    c.y += 24.0f * s;
+}
+
+bool ButtonRow(Column& c, const char* label) {
+    const float s = S();
+    ImGui::PushID(label);
+    const ImVec2 bMin(c.x + 18.0f * s, c.y);
+    const ImVec2 bSize(c.w - 36.0f * s, 34.0f * s);
+
+    bool hovered = false;
+    const bool clicked = Hit("##btn", bMin, bSize, &hovered);
+    ItemAnim& anim = Anim(label);
+    Animate(anim.hovered, hovered, 14.0f * g.animSpeed);
+
+    c.dl->AddRectFilled(bMin, bMin + bSize, Col(255, 255, 255, 16 + 20 * anim.hovered), 8.0f * s);
+    TextCenter(c.dl, fontReg, SzRow(), bMin, bMin + bSize, Col(255, 255, 255, 200 + 55 * anim.hovered), label);
+
+    c.y += 42.0f * s;
+    ImGui::PopID();
+    return clicked;
 }
 
 // ---------------------------------------------------------------------------
-// Шапка, вкладки, подвкладки
+// Шапка, боковая панель, переключатель языка
 // ---------------------------------------------------------------------------
-void DrawFrame(ImDrawList* dl, ImVec2 wp) {
+void DrawPill(ImDrawList* dl, ImVec2 pos, const char* text, bool icon, float& outWidth) {
     const float s = S();
-    const ImVec2 wmax = wp + ImVec2(kWidth * s, kHeight * s);
-    const float round = g.roundedCorners ? 6.0f * s : 0.0f;
+    const ImVec2 ts = Measure(fontReg, SzRow(), text);
+    const float w = ts.x + (icon ? 48.0f : 28.0f) * s;
+    const ImVec2 min = ImVec2(pos.x - w, pos.y);
+    const ImVec2 max = ImVec2(pos.x, pos.y + 30.0f * s);
+    dl->AddRectFilled(min, max, Col(26, 26, 29, 255, false), 9.0f * s);
+    dl->AddRect(min, max, Col(255, 255, 255, 12, false), 9.0f * s);
 
-    // Тень
-    for (int i = 6; i > 0; --i) {
-        const float o = (float)i * 2.5f * s;
-        dl->AddRect(wp - ImVec2(o, o), wmax + ImVec2(o, o), Col(0, 0, 0, 10), round + o, 0, 1.6f * s);
+    float textX = min.x + 14.0f * s;
+    if (icon) {
+        const ImVec2 c0(min.x + 18.0f * s, (min.y + max.y) * 0.5f);
+        dl->AddTriangleFilled(c0 + ImVec2(-6 * s, -5 * s), c0 + ImVec2(7 * s, 0), c0 + ImVec2(-6 * s, 5 * s),
+                              Col(255, 255, 255, 190, false));
+        textX = min.x + 32.0f * s;
     }
-
-    // Корпус
-    dl->AddRectFilled(wp, wmax, Col(16, 16, 19, g.blurBackground ? 242.0f : 255.0f), round);
-    // Шапка
-    dl->AddRectFilled(wp, ImVec2(wmax.x, wp.y + kHeader * s), Col(26, 26, 31, 255), round, ImDrawFlags_RoundCornersTop);
-    // Левая колонка
-    dl->AddRectFilled(ImVec2(wp.x, wp.y + kHeader * s), ImVec2(wp.x + kSidebar * s, wmax.y), Col(21, 21, 25, 255), round,
-                      ImDrawFlags_RoundCornersBottomLeft);
-
-    dl->AddLine(ImVec2(wp.x, wp.y + kHeader * s), ImVec2(wmax.x, wp.y + kHeader * s), Col(255, 255, 255, 14), 1.0f * s);
-    dl->AddLine(ImVec2(wp.x + kSidebar * s, wp.y + kHeader * s), ImVec2(wp.x + kSidebar * s, wmax.y), Col(255, 255, 255, 14), 1.0f * s);
-    dl->AddRect(wp, wmax, Col(120, 120, 130, 90), round, 0, 1.0f * s);
-
-    // Логотип и название по центру шапки
-    const char* title = "MIRICK";
-    const char* sub = Tr("меню", "menu");
-    const ImVec2 titleSize = ImGui::CalcTextSize(title);
-    const ImVec2 subSize = ImGui::CalcTextSize(sub);
-    const float block = 18.0f * s + titleSize.x + 6.0f * s + subSize.x;
-    const float startX = wp.x + (kWidth * s - block) * 0.5f;
-    const float cy = wp.y + kHeader * s * 0.5f;
-
-    dl->AddNgonFilled(ImVec2(startX + 6.0f * s, cy), 7.0f * s, Accent(255.0f), 4);
-    dl->AddNgon(ImVec2(startX + 6.0f * s, cy), 11.0f * s, Accent(110.0f), 4, 1.4f * s);
-    TextAt(dl, ImVec2(startX + 18.0f * s, cy - titleSize.y * 0.5f), Col(255, 255, 255, 235), title);
-    TextAt(dl, ImVec2(startX + 18.0f * s + titleSize.x + 6.0f * s, cy - subSize.y * 0.5f), Col(255, 255, 255, 95), sub);
-
-    // Подпись справа
-    const char* hint = Tr("INSERT — скрыть", "INSERT — hide");
-    const ImVec2 hintSize = ImGui::CalcTextSize(hint);
-    TextAt(dl, ImVec2(wmax.x - hintSize.x - 14.0f * s, cy - hintSize.y * 0.5f), Col(255, 255, 255, 70), hint);
+    dl->AddText(FontOr(fontReg), SzRow(), ImVec2(textX, (min.y + max.y) * 0.5f - ts.y * 0.5f), Col(230, 230, 235, 230, false),
+                text);
+    outWidth = w;
 }
 
-void DrawTabs(ImDrawList* dl, ImVec2 wp) {
+void DrawHeader(ImDrawList* dl, ImVec2 wp) {
     const float s = S();
-    const char* names[5] = {Tr("Главная", "Home"), Tr("Интерфейс", "Interface"), Tr("Уведомления", "Alerts"),
-                            Tr("Настройки", "Settings"), Tr("Профиль", "Profile")};
+    const char* titles[5] = {Tr("Основное", "General"), Tr("Визуал", "Visuals"), Tr("Уведомления", "Alerts"),
+                             Tr("Разное", "Misc"), Tr("Профиль", "Profile")};
+    const char* subs[5] = {Tr("Интерфейс и HUD", "Interface and HUD"), Tr("Оформление меню", "Menu appearance"),
+                           Tr("Информационные сообщения", "Information messages"), Tr("Управление и поведение", "Controls and behaviour"),
+                           Tr("Данные о сборке", "Build information")};
+
+    Text(dl, fontBig, SzBig(), wp + ImVec2(kColLeftX * s, 24.0f * s), Col(255, 255, 255, 250, false), titles[g.tab]);
+    Text(dl, fontSmall, SzSmall(), wp + ImVec2(kColLeftX * s + 2.0f * s, 58.0f * s), Col(255, 255, 255, 105, false), subs[g.tab]);
+
+    float width = 0.0f;
+    const float right = wp.x + (kWidth - 24.0f) * s;
+    DrawPill(dl, ImVec2(right, wp.y + 20.0f * s), "build v2.0", false, width);
+    DrawPill(dl, ImVec2(right - width - 10.0f * s, wp.y + 20.0f * s), "@mirick", true, width);
+}
+
+void DrawSidebar(ImDrawList* dl, ImVec2 wp) {
+    const float s = S();
+    const ImVec2 min = wp;
+    const ImVec2 max = wp + ImVec2(kSidebar * s, kHeight * s);
+    dl->AddRectFilled(min, max, Col(14, 14, 16, 255, false), g.rounded ? 16.0f * s : 0.0f,
+                      ImDrawFlags_RoundCornersLeft);
+    dl->AddLine(ImVec2(max.x, min.y + 14.0f * s), ImVec2(max.x, max.y - 14.0f * s), Col(255, 255, 255, 10, false), 1.0f * s);
+
+    // Логотип
+    dl->AddNgonFilled(wp + ImVec2(32.0f * s, 38.0f * s), 7.0f * s, Accent(255.0f), 4);
+    Text(dl, fontBig, SzCard(), wp + ImVec2(48.0f * s, 30.0f * s), Col(255, 255, 255, 240, false), "MIRICK");
+    Text(dl, fontSmall, SzSmall(), wp + ImVec2(48.0f * s, 48.0f * s), Col(255, 255, 255, 80, false), Tr("меню", "menu"));
+
+    const char* names[5] = {Tr("Основное", "General"), Tr("Визуал", "Visuals"), Tr("Уведомления", "Alerts"),
+                            Tr("Разное", "Misc"), Tr("Профиль", "Profile")};
 
     for (int i = 0; i < 5; ++i) {
-        TabAnim& anim = g.tabAnim[i];
-        ImGui::SetCursorScreenPos(wp + ImVec2(8.0f * s, (kHeader + 16.0f + 40.0f * i) * s));
-        ImGui::PushID(i);
-        ImGui::InvisibleButton("##tab", ImVec2(144.0f * s, 32.0f * s));
-        const bool hovered = ImGui::IsItemHovered();
-        if (ImGui::IsItemClicked()) g.tab = i;
+        const ImVec2 tMin = wp + ImVec2(14.0f * s, (108.0f + 46.0f * i) * s);
+        const ImVec2 tSize(182.0f * s, 40.0f * s);
+        ImGui::PushID(2000 + i);
+        bool hovered = false;
+        if (Hit("##tab", tMin, tSize, &hovered)) g.tab = i;
         ImGui::PopID();
 
+        ItemAnim& anim = g.tabs[i];
         Animate(anim.hovered, hovered, 14.0f * g.animSpeed);
-        Animate(anim.selected, g.tab == i, 12.0f * g.animSpeed);
+        Animate(anim.active, g.tab == i, 14.0f * g.animSpeed);
 
-        const ImVec2 tmin = wp + ImVec2(8.0f * s, (kHeader + 16.0f + 40.0f * i) * s);
-        const ImVec2 tmax = tmin + ImVec2(144.0f * s, 32.0f * s);
-
-        if (anim.selected > 0.01f || anim.hovered > 0.01f) {
-            dl->AddRectFilled(tmin, tmax, Col(255, 255, 255, 10 * anim.selected + 8 * anim.hovered), 4.0f * s);
+        if (anim.active > 0.01f || anim.hovered > 0.01f) {
+            dl->AddRectFilled(tMin, tMin + tSize, Col(255, 255, 255, (14 * anim.active + 8 * anim.hovered), false), 10.0f * s);
         }
-        if (anim.selected > 0.01f) {
-            dl->AddRectFilled(ImVec2(tmax.x - 2.0f * s, tmin.y + 4.0f * s), ImVec2(tmax.x + 2.0f * s, tmax.y - 4.0f * s),
-                              Accent(255.0f * anim.selected), 2.0f * s);
+        if (anim.active > 0.01f) {
+            dl->AddRectFilled(ImVec2(tMin.x, tMin.y + 11.0f * s), ImVec2(tMin.x + 3.0f * s, tMin.y + tSize.y - 11.0f * s),
+                              Accent(255.0f * anim.active), 2.0f * s);
         }
 
-        const float tone = 150.0f + 105.0f * std::max(anim.selected, anim.hovered);
-        const ImU32 color = Col(255, 255, 255, tone);
-        DrawTabIcon(dl, i, tmin + ImVec2(20.0f * s, 16.0f * s), color);
-        TextAt(dl, tmin + ImVec2(38.0f * s, 8.0f * s), color, names[i]);
+        // Иконка-точка
+        dl->AddCircleFilled(tMin + ImVec2(22.0f * s, tSize.y * 0.5f), 3.2f * s,
+                            Col(255, 255, 255, 70 + 185 * anim.active, false), 12);
+        dl->AddText(FontOr(fontReg), SzRow(), tMin + ImVec2(38.0f * s, tSize.y * 0.5f - SzRow() * 0.62f),
+                    Col(255, 255, 255, 110 + 145 * std::max(anim.active, anim.hovered * 0.6f), false), names[i]);
     }
 }
 
-void DrawSubTabs(ImDrawList* dl, ImVec2 wp, const std::vector<const char*>& tabs) {
+void DrawLanguageSwitch(ImDrawList* dl, ImVec2 wp) {
     const float s = S();
-    const ImVec2 barMin = wp + ImVec2((kSidebar + 18.0f) * s, (kHeader + 15.0f) * s);
-    const ImVec2 barMax = barMin + ImVec2(524.0f * s, 38.0f * s);
-    dl->AddRectFilled(barMin, barMax, Col(217, 217, 217, 16), 4.0f * s);
+    const ImVec2 min = wp + ImVec2(22.0f * s, (kHeight - 56.0f) * s);
+    const ImVec2 size(112.0f * s, 34.0f * s);
+    dl->AddRectFilled(min, min + size, Col(26, 26, 29, 255, false), 9.0f * s);
+    dl->AddRect(min, min + size, Col(255, 255, 255, 12, false), 9.0f * s);
 
-    const float width = 118.0f * s;
-    for (int i = 0; i < (int)tabs.size(); ++i) {
-        TabAnim& anim = g.subAnim[g.tab][i];
-        const ImVec2 tmin = barMin + ImVec2(width * i, 0.0f);
-        const ImVec2 tmax = ImVec2(tmin.x + width, barMax.y);
-
-        ImGui::SetCursorScreenPos(tmin);
-        ImGui::PushID(1000 + i);
-        ImGui::InvisibleButton("##sub", ImVec2(width, 38.0f * s));
-        const bool hovered = ImGui::IsItemHovered();
-        if (ImGui::IsItemClicked()) g.subtab[g.tab] = i;
+    const char* names[2] = {"RU", "EN"};
+    for (int i = 0; i < 2; ++i) {
+        const ImVec2 segMin(min.x + size.x * 0.5f * i, min.y);
+        const ImVec2 segMax(segMin.x + size.x * 0.5f, min.y + size.y);
+        ImGui::PushID(3000 + i);
+        bool hovered = false;
+        if (Hit("##lang", segMin, ImVec2(size.x * 0.5f, size.y), &hovered)) g.language = i;
         ImGui::PopID();
 
-        const bool selected = g.subtab[g.tab] == i;
+        const std::string key = std::string("lang") + names[i];
+        ItemAnim& anim = g.items[key];
+        Animate(anim.active, g.language == i, 14.0f * g.animSpeed);
         Animate(anim.hovered, hovered, 14.0f * g.animSpeed);
-        Animate(anim.selected, selected, 12.0f * g.animSpeed);
 
-        if (anim.selected > 0.01f) {
-            dl->AddRectFilled(tmin + ImVec2(3.0f * s, 3.0f * s), tmax - ImVec2(3.0f * s, 3.0f * s),
-                              Col(255, 255, 255, 16 * anim.selected), 4.0f * s);
-            dl->AddRectFilled(ImVec2(tmin.x + 16.0f * s, tmax.y - 2.0f * s), ImVec2(tmax.x - 16.0f * s, tmax.y),
-                              Accent(255.0f * anim.selected), 2.0f * s);
+        if (anim.active > 0.01f) {
+            dl->AddRectFilled(segMin + ImVec2(3.0f * s, 3.0f * s), segMax - ImVec2(3.0f * s, 3.0f * s),
+                              Col(48, 48, 53, 255 * anim.active, false), 7.0f * s);
         }
-
-        const float tone = 150.0f + 105.0f * std::max(anim.selected, anim.hovered);
-        TextCentered(dl, tmin, tmax, Col(255, 255, 255, tone), tabs[i]);
+        TextCenter(dl, fontReg, SzRow(), segMin, segMax, Col(255, 255, 255, 110 + 145 * anim.active, false), names[i]);
     }
 }
 
 // ---------------------------------------------------------------------------
 // Содержимое вкладок
 // ---------------------------------------------------------------------------
-void ContentHome(int sub) {
-    if (sub == 0) {
-        GroupLabel(Tr("HUD", "HUD"));
-        Checkbox(Tr("Показывать часы", "Show clock"), &g.showClock);
-        Checkbox(Tr("Показывать FPS", "Show FPS"), &g.showFps);
-        Checkbox(Tr("Компактный HUD", "Compact HUD"), &g.compactHud);
-        SliderFloat(Tr("Прозрачность HUD", "HUD opacity"), &g.hudOpacity, 10.0f, 100.0f, "%.0f%%");
-    } else {
-        GroupLabel(Tr("Водяной знак", "Watermark"));
-        Checkbox(Tr("Включить", "Enabled"), &g.watermark);
-        const char* corners[] = {Tr("Слева сверху", "Top left"), Tr("Справа сверху", "Top right"),
-                                 Tr("Слева снизу", "Bottom left"), Tr("Справа снизу", "Bottom right")};
-        Combo(Tr("Положение", "Position"), &g.watermarkPos, corners, 4);
-        SliderInt(Tr("Отступ элементов", "Element spacing"), &g.hudSpacing, 0, 24, "%.0f px");
-    }
+void TabGeneral(Column& l, Column& r) {
+    CardBegin(l, Tr("HUD", "HUD"));
+    Toggle(l, Tr("Часы", "Clock"), &g.showClock);
+    Toggle(l, Tr("Счётчик FPS", "FPS counter"), &g.showFps);
+    Toggle(l, Tr("Компактный режим", "Compact mode"), &g.compactHud);
+    SliderFloat(l, Tr("Прозрачность", "Opacity"), &g.hudOpacity, 10.0f, 100.0f, "%.0f %%");
+    CardEnd(l);
+
+    CardBegin(l, Tr("Анимации", "Animations"));
+    Toggle(l, Tr("Включить", "Enabled"), &g.animations);
+    SliderFloat(l, Tr("Скорость", "Speed"), &g.animSpeed, 0.4f, 2.0f, "%.1fx");
+    CardEnd(l);
+
+    CardBegin(l, Tr("Окно", "Window"));
+    Toggle(l, Tr("Тень", "Shadow"), &g.shadow);
+    Toggle(l, Tr("Скруглённые углы", "Rounded corners"), &g.rounded);
+    CardEnd(l);
+
+    CardBegin(r, Tr("Водяной знак", "Watermark"));
+    Toggle(r, Tr("Включить", "Enabled"), &g.watermark);
+    const char* styles[] = {Tr("Текст", "Text"), Tr("Плашка", "Badge"), "3D"};
+    Segmented(r, Tr("Стиль", "Style"), &g.watermarkStyle, styles, 3);
+    Toggle(r, Tr("Тень текста", "Text shadow"), &g.watermarkShadow);
+    ColorRow(r, Tr("Цвет акцента", "Accent color"), g.accent);
+    Toggle(r, Tr("Иконка", "Icon"), &g.watermarkIcon);
+    const char* corners[] = {Tr("Слева", "Left"), Tr("По центру", "Center"), Tr("Справа", "Right")};
+    Segmented(r, Tr("Положение", "Position"), &g.watermarkPos, corners, 3);
+    SliderFloat(r, Tr("Масштаб знака", "Watermark scale"), &g.watermarkScale, 0.6f, 2.0f, "%.1fx");
+    CardEnd(r);
 }
 
-void ContentInterface(int sub) {
-    if (sub == 0) {
-        GroupLabel(Tr("Окно", "Window"));
-        SliderFloat(Tr("Масштаб меню", "Menu scale"), &g.scale, 0.80f, 1.40f, "%.2fx");
-        Checkbox(Tr("Затемнение фона", "Background dim"), &g.blurBackground);
-        Checkbox(Tr("Скруглённые углы", "Rounded corners"), &g.roundedCorners);
-    } else {
-        GroupLabel(Tr("Оформление", "Appearance"));
-        ColorRow(Tr("Акцентный цвет", "Accent color"), g.accent);
-        Checkbox(Tr("Анимации", "Animations"), &g.animations);
-        SliderFloat(Tr("Скорость анимаций", "Animation speed"), &g.animSpeed, 0.3f, 2.0f, "%.1fx");
-        const char* fonts[] = {"Arial", "Verdana", "Tahoma"};
-        Combo(Tr("Шрифт", "Font"), &g.font, fonts, 3);
-    }
+void TabVisuals(Column& l, Column& r) {
+    CardBegin(l, Tr("Тема", "Theme"));
+    const char* themes[] = {Tr("Тёмная", "Dark"), Tr("Графит", "Graphite"), Tr("Контраст", "Contrast")};
+    Segmented(l, "", &g.theme, themes, 3);
+    ColorRow(l, Tr("Акцент", "Accent"), g.accent);
+    SliderFloat(l, Tr("Плотность карточек", "Card opacity"), &g.cardOpacity, 50.0f, 100.0f, "%.0f %%");
+    CardEnd(l);
+
+    CardBegin(l, Tr("Эффекты", "Effects"));
+    Toggle(l, Tr("Свечение акцента", "Accent glow"), &g.glow);
+    Toggle(l, Tr("Разделители", "Separators"), &g.separators);
+    CardEnd(l);
+
+    CardBegin(r, Tr("Размер интерфейса", "Interface size"));
+    SliderFloat(r, Tr("Масштаб меню", "Menu scale"), &g.scale, 0.75f, 1.35f, "%.2fx");
+    CaptionRow(r, Tr("Меню перестраивается под выбранный масштаб.", "The menu rescales instantly."));
+    CardEnd(r);
+
+    CardBegin(r, Tr("Предпросмотр", "Preview"));
+    InfoRow(r, Tr("Карточек на вкладке", "Cards on tab"), "4");
+    InfoRow(r, Tr("Анимации", "Animations"), g.animations ? Tr("вкл", "on") : Tr("выкл", "off"));
+    InfoRow(r, Tr("Тема", "Theme"), themes[g.theme]);
+    CardEnd(r);
 }
 
-void ContentAlerts(int sub) {
-    if (sub == 0) {
-        GroupLabel(Tr("Уведомления", "Notifications"));
-        Checkbox(Tr("Включить уведомления", "Enable notifications"), &g.notifications);
-        Checkbox(Tr("Звук уведомлений", "Notification sound"), &g.notifySound);
-        SliderFloat(Tr("Время показа", "Display time"), &g.notifyTime, 1.0f, 10.0f, "%.1f c");
-    } else {
-        GroupLabel(Tr("Фильтры", "Filters"));
-        const char* corners[] = {Tr("Слева сверху", "Top left"), Tr("Справа сверху", "Top right"),
-                                 Tr("Слева снизу", "Bottom left"), Tr("Справа снизу", "Bottom right")};
-        Combo(Tr("Угол экрана", "Screen corner"), &g.notifyCorner, corners, 4);
-        Checkbox(Tr("Изменение настроек", "Settings changes"), &g.notifyConfig);
-        Checkbox(Tr("Горячие клавиши", "Hotkeys"), &g.notifyHotkeys);
-    }
+void TabAlerts(Column& l, Column& r) {
+    CardBegin(l, Tr("Уведомления", "Notifications"));
+    Toggle(l, Tr("Включить", "Enabled"), &g.notifications);
+    Toggle(l, Tr("Звук", "Sound"), &g.notifySound);
+    SliderFloat(l, Tr("Время показа", "Display time"), &g.notifyTime, 1.0f, 10.0f, "%.1f c");
+    CardEnd(l);
+
+    CardBegin(l, Tr("События", "Events"));
+    Toggle(l, Tr("Изменение настроек", "Settings changed"), &g.notifyConfig);
+    Toggle(l, Tr("Горячие клавиши", "Hotkeys"), &g.notifyKeys);
+    CardEnd(l);
+
+    CardBegin(r, Tr("Расположение", "Placement"));
+    const char* corners[] = {Tr("Слева сверху", "Top left"), Tr("Справа сверху", "Top right"), Tr("Снизу", "Bottom")};
+    Segmented(r, Tr("Угол экрана", "Screen corner"), &g.notifyCorner, corners, 3);
+    ColorRow(r, Tr("Цвет полосы", "Bar color"), g.accent);
+    CaptionRow(r, Tr("Уведомления рисуются поверх HUD.", "Notifications are drawn above the HUD."));
+    CardEnd(r);
 }
 
-void ContentSettings(int sub) {
-    if (sub == 0) {
-        GroupLabel(Tr("Основные", "General"));
-        const char* langs[] = {"Русский", "English"};
-        Combo(Tr("Язык", "Language"), &g.language, langs, 2);
-        Checkbox(Tr("Сохранять при выходе", "Save on exit"), &g.saveOnExit);
-        Checkbox(Tr("Показывать курсор", "Show cursor"), &g.showCursor);
-    } else {
-        GroupLabel(Tr("Управление", "Controls"));
-        KeybindRow(Tr("Открыть меню", "Open menu"), &g.toggleKey);
-        Caption(Tr("Нажмите на поле и выберите клавишу. ESC — отмена.",
-                   "Click the field and press a key. ESC to cancel."));
-        if (Button(Tr("Сбросить клавишу", "Reset key"))) g.toggleKey = VK_INSERT;
+void TabMisc(Column& l, Column& r) {
+    CardBegin(l, Tr("Управление", "Controls"));
+    KeyRow(l, Tr("Открыть меню", "Open menu"), &g.toggleKey);
+    CaptionRow(l, Tr("Нажмите на поле и выберите клавишу. ESC — отмена.", "Click the field and press a key. ESC cancels."));
+    if (ButtonRow(l, Tr("Сбросить клавишу", "Reset key"))) g.toggleKey = VK_INSERT;
+    CardEnd(l);
+
+    CardBegin(l, Tr("Поведение", "Behaviour"));
+    Toggle(l, Tr("Сохранять при выходе", "Save on exit"), &g.saveOnExit);
+    Toggle(l, Tr("Показывать курсор", "Show cursor"), &g.showCursor);
+    Toggle(l, Tr("Плавное закрытие", "Fade on close"), &g.fadeOnClose);
+    CardEnd(l);
+
+    CardBegin(r, Tr("Сброс", "Reset"));
+    CaptionRow(r, Tr("Вернуть все параметры интерфейса к значениям по умолчанию.",
+                     "Restore all interface options to defaults."));
+    if (ButtonRow(r, Tr("Сбросить настройки", "Reset settings"))) {
+        const int key = g.toggleKey;
+        const int lang = g.language;
+        const float scale = g.scale;
+        g = State();
+        g.open = true;
+        g.alpha = 1.0f;
+        g.toggleKey = key;
+        g.language = lang;
+        g.scale = scale;
     }
+    CardEnd(r);
 }
 
-void ContentProfile(int sub) {
-    if (sub == 0) {
-        GroupLabel(Tr("Профиль", "Profile"));
-        TextRow(Tr("Активный профиль", "Active profile"), g.profileName);
-        TextRow(Tr("Вкладок", "Tabs"), "5");
-        if (Button(Tr("Сбросить настройки", "Reset settings"))) {
-            const int key = g.toggleKey;
-            const float scale = g.scale;
-            const int lang = g.language;
-            g = State();
-            g.open = true;
-            g.alpha = 1.0f;
-            g.toggleKey = key;
-            g.scale = scale;
-            g.language = lang;
-        }
-    } else {
-        GroupLabel(Tr("О программе", "About"));
-        TextRow(Tr("Название", "Name"), "Mirick Menu");
-        TextRow(Tr("Версия", "Version"), "2.0");
-        TextRow(Tr("Стиль", "Style"), "ForkHack-like");
-        Caption(Tr("Только интерфейс: игровых функций и чит-возможностей нет.",
-                   "Interface only: no gameplay or cheat features."));
-    }
+void TabProfile(Column& l, Column& r) {
+    CardBegin(l, Tr("Профиль", "Profile"));
+    InfoRow(l, Tr("Имя", "Name"), "default");
+    InfoRow(l, Tr("Язык", "Language"), g.language == 1 ? "English" : "Русский");
+    InfoRow(l, Tr("Клавиша меню", "Menu key"), KeyName(g.toggleKey));
+    CardEnd(l);
+
+    CardBegin(r, Tr("О программе", "About"));
+    InfoRow(r, Tr("Название", "Name"), "Mirick Menu");
+    InfoRow(r, Tr("Версия", "Version"), "2.0");
+    InfoRow(r, Tr("Платформа", "Platform"), "DirectX 9 / Win32");
+    CaptionRow(r, Tr("Только интерфейс: игровых и чит-функций нет.", "Interface only: no gameplay or cheat features."));
+    CardEnd(r);
 }
 
-void DrawContent(ImVec2 wp) {
+void DrawBody(ImDrawList* dl, ImVec2 wp) {
     const float s = S();
-    static const std::vector<std::vector<const char*>> subs = {
-        {"Обзор", "HUD"}, {"Окно", "Тема"}, {"Общие", "Фильтры"}, {"Основные", "Клавиши"}, {"Профиль", "О меню"}};
-    static const std::vector<std::vector<const char*>> subsEn = {
-        {"Overview", "HUD"}, {"Window", "Theme"}, {"General", "Filters"}, {"General", "Keys"}, {"Profile", "About"}};
 
-    const std::vector<const char*>& tabs = (g.language == 1) ? subsEn[g.tab] : subs[g.tab];
-    DrawSubTabs(ImGui::GetWindowDrawList(), wp, tabs);
-
-    // Плавная смена вкладки / подвкладки
-    const int key = g.tab * 16 + g.subtab[g.tab];
-    if (key != g.prevTab * 16 + g.prevSub) {
+    if (g.tab != g.prevTab) {
         g.tabFade = 0.0f;
         g.prevTab = g.tab;
-        g.prevSub = g.subtab[g.tab];
     }
-    Animate(g.tabFade, true, 9.0f * g.animSpeed);
+    Animate(g.tabFade, true, 10.0f * g.animSpeed);
 
-    ImGui::SetCursorScreenPos(wp + ImVec2((kSidebar + 18.0f) * s, (kHeader + 64.0f) * s));
-    ImGui::BeginChild("##content", ImVec2(524.0f * s, 432.0f * s), ImGuiChildFlags_None,
-                      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f * s, 6.0f * s));
+    Column left{dl, wp.x + kColLeftX * s, wp.y + kContentTop * s, kColLeftW * s, 0.0f, false};
+    Column right{dl, wp.x + kColRightX * s, wp.y + kContentTop * s, kColRightW * s, 0.0f, false};
 
-    ImGui::BeginChild("##left", ImVec2(kItemWidth * s, 426.0f * s), ImGuiChildFlags_None,
-                      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
     switch (g.tab) {
-        case 0: ContentHome(0); break;
-        case 1: ContentInterface(0); break;
-        case 2: ContentAlerts(0); break;
-        case 3: ContentSettings(0); break;
-        default: ContentProfile(0); break;
+        case 0: TabGeneral(left, right); break;
+        case 1: TabVisuals(left, right); break;
+        case 2: TabAlerts(left, right); break;
+        case 3: TabMisc(left, right); break;
+        default: TabProfile(left, right); break;
     }
-    ImGui::EndChild();
-
-    ImGui::SameLine(0.0f, 16.0f * s);
-
-    ImGui::BeginChild("##right", ImVec2(kItemWidth * s, 426.0f * s), ImGuiChildFlags_None,
-                      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
-    switch (g.tab) {
-        case 0: ContentHome(1); break;
-        case 1: ContentInterface(1); break;
-        case 2: ContentAlerts(1); break;
-        case 3: ContentSettings(1); break;
-        default: ContentProfile(1); break;
-    }
-    ImGui::EndChild();
-
-    ImGui::PopStyleVar();
-    ImGui::EndChild();
 }
 
 } // namespace
@@ -732,8 +746,14 @@ bool Menu::IsOpen() { return g.open || g.alpha > 0.01f; }
 
 int Menu::ToggleKey() { return g.toggleKey; }
 
+void Menu::SetFonts(ImFont* big, ImFont* regular, ImFont* small) {
+    fontBig = big;
+    fontReg = regular;
+    fontSmall = small;
+}
+
 void Menu::Draw() {
-    Animate(g.alpha, g.open, g.animations ? 10.0f : 1000.0f);
+    Animate(g.alpha, g.open, (g.animations && g.fadeOnClose) ? 11.0f : 1000.0f);
     if (!g.open && g.alpha < 0.01f) {
         g.capturingKey = 0;
         return;
@@ -750,7 +770,6 @@ void Menu::Draw() {
         g.centered = true;
     }
 
-    // Перетаскивание только за шапку окна
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
                              ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
                              ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground |
@@ -759,28 +778,35 @@ void Menu::Draw() {
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f * s, 6.0f * s));
     ImGui::SetNextWindowBgAlpha(0.0f);
     ImGui::Begin("##mirick_root", nullptr, flags);
 
     const ImVec2 wp = ImGui::GetWindowPos() + ImVec2(kShadow, kShadow);
+    const ImVec2 wmax = wp + ImVec2(kWidth * s, kHeight * s);
     ImDrawList* dl = ImGui::GetWindowDrawList();
+    const float round = g.rounded ? 16.0f * s : 0.0f;
 
-    const ImVec2 headerMin = wp;
-    const ImVec2 headerMax = wp + ImVec2(kWidth * s, kHeader * s);
-    const bool overHeader = io.MousePos.x >= headerMin.x && io.MousePos.x <= headerMax.x && io.MousePos.y >= headerMin.y &&
-                            io.MousePos.y <= headerMax.y;
+    // Перетаскивание за верхнюю полосу (шапку)
+    const bool overHeader = io.MousePos.x >= wp.x && io.MousePos.x <= wmax.x && io.MousePos.y >= wp.y &&
+                            io.MousePos.y <= wp.y + 90.0f * s && io.MousePos.x > wp.x + kSidebar * s;
     if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) g.dragging = false;
     else if (overHeader && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) g.dragging = true;
 
-    const float saved = g.tabFade;
-    g.tabFade = 1.0f;
-    DrawFrame(dl, wp);
-    DrawTabs(dl, wp);
-    g.tabFade = saved;
+    // Тень и корпус
+    if (g.shadow) {
+        for (int i = 8; i > 0; --i) {
+            const float o = (float)i * 3.0f * s;
+            dl->AddRect(wp - ImVec2(o, o), wmax + ImVec2(o, o), Col(0, 0, 0, 9, false), round + o, 0, 2.0f * s);
+        }
+    }
+    dl->AddRectFilled(wp, wmax, Col(11, 11, 12, 252, false), round);
+    dl->AddRect(wp, wmax, Col(255, 255, 255, 14, false), round);
 
-    DrawContent(wp);
+    DrawSidebar(dl, wp);
+    DrawHeader(dl, wp);
+    DrawBody(dl, wp);
+    DrawLanguageSwitch(dl, wp);
 
     ImGui::End();
-    ImGui::PopStyleVar(3);
+    ImGui::PopStyleVar(2);
 }

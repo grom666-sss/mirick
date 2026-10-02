@@ -28,7 +28,15 @@ void Init(IDirect3DDevice9* device) {
     originalWndProc=(WNDPROC)SetWindowLongPtr(gameWindow,GWLP_WNDPROC,(LONG_PTR)WndProc);
     IMGUI_CHECKVERSION(); ImGui::CreateContext();
     auto& io=ImGui::GetIO(); io.IniFilename=nullptr; io.LogFilename=nullptr;
-    io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+    const ImWchar* ranges = io.Fonts->GetGlyphRangesCyrillic();
+    ImFont* fontRegular = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/segoeui.ttf", 16.0f, nullptr, ranges);
+    if (!fontRegular) fontRegular = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 16.0f, nullptr, ranges);
+    ImFont* fontBig = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/segoeuib.ttf", 24.0f, nullptr, ranges);
+    if (!fontBig) fontBig = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arialbd.ttf", 24.0f, nullptr, ranges);
+    ImFont* fontSmall = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/segoeui.ttf", 12.0f, nullptr, ranges);
+    if (!fontSmall) fontSmall = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 12.0f, nullptr, ranges);
+    if (fontRegular) io.FontDefault = fontRegular;
+    Menu::SetFonts(fontBig, fontRegular, fontSmall);
     ImGui::StyleColorsDark(); auto& st=ImGui::GetStyle(); st.FrameRounding=4; st.GrabRounding=4; st.ScrollbarRounding=5;
     ImGui_ImplWin32_Init(gameWindow); ImGui_ImplDX9_Init(device); initialized=true;
 }
