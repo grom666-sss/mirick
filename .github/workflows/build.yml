@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -41,3 +41,14 @@ jobs:
           name: MirickMenu-Win32
           path: build/Release/MirickMenu.dll
           if-no-files-found: error
+
+      - name: Publish DLL as release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete mirick-menu-latest --yes --cleanup-tag 2>$null
+          gh release create mirick-menu-latest build/Release/MirickMenu.dll `
+            --target $env:GITHUB_SHA `
+            --title "MirickMenu — последняя сборка" `
+            --notes "Автоматическая сборка меню (Win32, DirectX 9) из ветки arena/01a0fe5b-mirick."
