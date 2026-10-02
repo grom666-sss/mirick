@@ -7,13 +7,14 @@
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx9.h>
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
+
 namespace {
 using PresentFn = HRESULT (WINAPI*)(IDirect3DDevice9*, const RECT*, const RECT*, HWND, const RGNDATA*);
 using ResetFn = HRESULT (WINAPI*)(IDirect3DDevice9*, D3DPRESENT_PARAMETERS*);
 PresentFn originalPresent{}; ResetFn originalReset{};
 WNDPROC originalWndProc{}; HWND gameWindow{}; bool initialized{};
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     if (msg == WM_KEYUP && wp == VK_INSERT) { Menu::Toggle(); return 0; }
     if (Menu::IsOpen() && ImGui::GetCurrentContext()) {
