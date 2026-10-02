@@ -20,9 +20,22 @@ jobs:
         run: cmake -S . -B build -A Win32
 
       - name: Build DLL
-        run: cmake --build build --config Release
+        id: compile
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          cmake --build build --config Release 2>&1 | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: Upload DLL
+        if: steps.compile.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: MirickMenu-Win32
