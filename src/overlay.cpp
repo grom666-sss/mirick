@@ -15,7 +15,7 @@ WNDPROC originalWndProc{}; HWND gameWindow{}; bool initialized{};
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
-    if (msg == WM_KEYUP && wp == VK_INSERT) { Menu::Toggle(); return 0; }
+    if (msg == WM_KEYUP && (int)wp == Menu::ToggleKey()) { Menu::Toggle(); return 0; }
     if (Menu::IsOpen() && ImGui::GetCurrentContext()) {
         ImGui_ImplWin32_WndProcHandler(hwnd,msg,wp,lp);
         if ((msg>=WM_MOUSEFIRST && msg<=WM_MOUSELAST) || (msg>=WM_KEYFIRST && msg<=WM_KEYLAST)) return 1;
