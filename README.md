@@ -27,6 +27,9 @@ cmake --build build --config Release
 
 Результат сборки — только `build/Release/MirickMenu.dll`.
 
+Сборка также выполняется автоматически в GitHub Actions (workflow «Build Windows DLL»): готовая 32-битная `MirickMenu.dll` публикуется в релизе
+[mirick-menu-latest](https://github.com/grom666-sss/mirick/releases/tag/mirick-menu-latest).
+
 ## Установка
 
 Загрузите `MirickMenu.dll` с помощью совместимого легального DLL-загрузчика модов, следуя его инструкции. После запуска игры нажмите **Insert**.
