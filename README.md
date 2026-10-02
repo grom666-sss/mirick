@@ -19,13 +19,18 @@ cmake -S . -B build -A Win32
 cmake --build build --config Release
 ```
 
-Результат: `build/Release/MirickMenu.asi`.
+Результат сборки:
+
+- `build/Release/MirickMenu.dll` — DLL меню;
+- `build/Release/MirickMenu.asi` — идентичная копия DLL с расширением для ASI Loader.
 
 ## Установка
 
 1. Установите совместимый ASI Loader для своей легальной копии GTA SA.
-2. Скопируйте `MirickMenu.asi` в каталог игры рядом с `gta_sa.exe`.
+2. Скопируйте `MirickMenu.asi` в каталог игры рядом с `gta_sa.exe`. Обычный ASI Loader загружает именно расширение `.asi`; технически это та же Windows DLL.
 3. Запустите игру и нажмите **Insert**.
+
+Если ваш легальный загрузчик модов принимает обычные DLL, используйте `MirickMenu.dll` согласно его инструкции.
 
 Проект рассчитан на классическую 32-битную DirectX 9 версию игры. Настройки в текущей версии демонстрационные и не изменяют игровой процесс.
 

@@ -20,4 +20,9 @@ target_include_directories(MirickMenu PRIVATE include ${imgui_SOURCE_DIR} ${imgu
 target_link_libraries(MirickMenu PRIVATE minhook d3d9)
 target_compile_features(MirickMenu PRIVATE cxx_std_20)
 target_compile_definitions(MirickMenu PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX IMGUI_DEFINE_MATH_OPERATORS)
-set_target_properties(MirickMenu PROPERTIES OUTPUT_NAME "MirickMenu" SUFFIX ".asi")
+set_target_properties(MirickMenu PROPERTIES OUTPUT_NAME "MirickMenu" SUFFIX ".dll")
+add_custom_command(TARGET MirickMenu POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "$<TARGET_FILE:MirickMenu>"
+          "$<TARGET_FILE_DIR:MirickMenu>/MirickMenu.asi"
+  COMMENT "Creating ASI Loader-compatible copy")
