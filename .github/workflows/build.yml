@@ -3,7 +3,7 @@ name: Build Windows DLL
 on:
   push:
     branches:
-      - arena/01a0fe3d-mirick
+      - arena/01a0fe5b-mirick
   workflow_dispatch:
 
 permissions:
