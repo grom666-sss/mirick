@@ -1,0 +1,30 @@
+name: Build Windows DLL
+
+on:
+  push:
+    branches:
+      - arena/01a0fe3d-mirick
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Win32 Release
+        run: cmake -S . -B build -A Win32
+
+      - name: Build DLL
+        run: cmake --build build --config Release
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: MirickMenu-Win32
+          path: build/Release/MirickMenu.dll
+          if-no-files-found: error
