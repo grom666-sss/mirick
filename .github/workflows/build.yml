@@ -31,10 +31,10 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          "## Compiler output" >> $env:GITHUB_STEP_SUMMARY
-          "```text" >> $env:GITHUB_STEP_SUMMARY
+          '## Compiler output' >> $env:GITHUB_STEP_SUMMARY
+          '```text' >> $env:GITHUB_STEP_SUMMARY
           Get-Content build.log | Select-Object -Last 120 >> $env:GITHUB_STEP_SUMMARY
-          "```" >> $env:GITHUB_STEP_SUMMARY
+          '```' >> $env:GITHUB_STEP_SUMMARY
 
       - name: Upload DLL
         if: steps.compile.outcome == 'success'
