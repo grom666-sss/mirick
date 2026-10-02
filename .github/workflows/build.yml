@@ -27,12 +27,14 @@ jobs:
           cmake --build build --config Release 2>&1 | Tee-Object -FilePath build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Upload build log
+      - name: Publish compiler output
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build.log
+        shell: pwsh
+        run: |
+          "## Compiler output" >> $env:GITHUB_STEP_SUMMARY
+          "```text" >> $env:GITHUB_STEP_SUMMARY
+          Get-Content build.log | Select-Object -Last 120 >> $env:GITHUB_STEP_SUMMARY
+          "```" >> $env:GITHUB_STEP_SUMMARY
 
       - name: Upload DLL
         if: steps.compile.outcome == 'success'
