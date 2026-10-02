@@ -35,6 +35,9 @@ jobs:
           '```text' >> $env:GITHUB_STEP_SUMMARY
           Get-Content build.log | Select-Object -Last 120 >> $env:GITHUB_STEP_SUMMARY
           '```' >> $env:GITHUB_STEP_SUMMARY
+          if ('${{ steps.compile.outcome }}' -ne 'success') {
+            Get-Content build.log | Where-Object { $_ -match 'error C[0-9]+|error LNK[0-9]+|fatal error' } | ForEach-Object { Write-Output "::error title=Compiler::$($_)" }
+          }
 
       - name: Upload DLL
         if: steps.compile.outcome == 'success'
