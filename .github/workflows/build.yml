@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -20,11 +20,42 @@ jobs:
         run: cmake -S . -B build -A Win32
 
       - name: Build DLL
-        run: cmake --build build --config Release
+        id: compile
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          cmake --build build --config Release 2>&1 | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Publish compiler output
+        if: always()
+        shell: pwsh
+        run: |
+          '## Compiler output' >> $env:GITHUB_STEP_SUMMARY
+          '```text' >> $env:GITHUB_STEP_SUMMARY
+          Get-Content build.log | Select-Object -Last 120 >> $env:GITHUB_STEP_SUMMARY
+          '```' >> $env:GITHUB_STEP_SUMMARY
+          if ('${{ steps.compile.outcome }}' -ne 'success') {
+            Get-Content build.log | Where-Object { $_ -match 'error C[0-9]+|error LNK[0-9]+|fatal error' } | ForEach-Object { Write-Output "::error title=Compiler::$($_)" }
+          }
 
       - name: Upload DLL
+        if: steps.compile.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: MirickMenu-Win32
           path: build/Release/MirickMenu.dll
           if-no-files-found: error
+
+      - name: Publish GitHub release
+        if: steps.compile.outcome == 'success'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view v1.0.0 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload v1.0.0 build/Release/MirickMenu.dll --clobber
+          } else {
+            gh release create v1.0.0 build/Release/MirickMenu.dll --target $env:GITHUB_SHA --title "Mirick Menu v1.0.0" --notes "Первый открытый релиз чистого Win32 DLL-меню для GTA San Andreas. Меню открывается клавишей Insert и не содержит чит-функций."
+          }
