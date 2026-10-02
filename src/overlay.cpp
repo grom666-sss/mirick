@@ -44,13 +44,22 @@ HRESULT WINAPI Reset(IDirect3DDevice9* d,D3DPRESENT_PARAMETERS* p) {
     if (initialized && SUCCEEDED(hr)) ImGui_ImplDX9_CreateDeviceObjects(); return hr;
 }
 bool DeviceMethods(void** outPresent, void** outReset) {
-    WNDCLASSEX wc{sizeof(wc),CS_CLASSDC,DefWindowProc,nullptr,nullptr,GetModuleHandle(nullptr),nullptr,nullptr,nullptr,nullptr,L"MirickProbe",nullptr};
-    RegisterClassEx(&wc); HWND w=CreateWindow(wc.lpszClassName,L"",WS_OVERLAPPEDWINDOW,0,0,100,100,nullptr,nullptr,wc.hInstance,nullptr);
-    auto d3d=Direct3DCreate9(D3D_SDK_VERSION); if(!d3d){DestroyWindow(w);UnregisterClass(wc.lpszClassName,wc.hInstance);return false;}
-    D3DPRESENT_PARAMETERS pp{}; pp.Windowed=TRUE;pp.SwapEffect=D3DSWAPEFFECT_DISCARD;pp.hDeviceWindow=w;
-    IDirect3DDevice9* dev{}; HRESULT hr=d3d->CreateDevice(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,w,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&pp,&dev);
-    if(SUCCEEDED(hr)){void** vt=*reinterpret_cast<void***>(dev);*outReset=vt[16];*outPresent=vt[17];dev->Release();}
-    d3d->Release();DestroyWindow(w);UnregisterClass(wc.lpszClassName,wc.hInstance);return SUCCEEDED(hr);
+    WNDCLASSEXA wc{};
+    wc.cbSize = sizeof(wc);
+    wc.style = CS_CLASSDC;
+    wc.lpfnWndProc = DefWindowProcA;
+    wc.hInstance = GetModuleHandleA(nullptr);
+    wc.lpszClassName = "MirickProbe";
+    if (!RegisterClassExA(&wc)) return false;
+    HWND w = CreateWindowExA(0, wc.lpszClassName, "", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, nullptr, nullptr, wc.hInstance, nullptr);
+    if (!w) { UnregisterClassA(wc.lpszClassName, wc.hInstance); return false; }
+    IDirect3D9* d3d = Direct3DCreate9(D3D_SDK_VERSION);
+    if (!d3d) { DestroyWindow(w); UnregisterClassA(wc.lpszClassName, wc.hInstance); return false; }
+    D3DPRESENT_PARAMETERS pp{}; pp.Windowed = TRUE; pp.SwapEffect = D3DSWAPEFFECT_DISCARD; pp.hDeviceWindow = w;
+    IDirect3DDevice9* dev{};
+    HRESULT hr = d3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, w, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &pp, &dev);
+    if (SUCCEEDED(hr)) { void** vt = *reinterpret_cast<void***>(dev); *outReset = vt[16]; *outPresent = vt[17]; dev->Release(); }
+    d3d->Release(); DestroyWindow(w); UnregisterClassA(wc.lpszClassName, wc.hInstance); return SUCCEEDED(hr);
 }
 }
 bool Overlay::Install(){
