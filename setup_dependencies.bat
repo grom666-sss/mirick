@@ -1,5 +1,7 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
+chcp 65001 >nul
+set "VSLANG=1033"
 
 set "ROOT=%~dp0"
 set "PLUGIN_SDK_DIR=%ROOT%thirdparty\plugin-sdk"
@@ -37,15 +39,18 @@ if not exist "%PREMAKE%" (
     exit /b 1
 )
 
-if not exist "%PLUGIN_SDK_DIR%\plugin_sa\Plugin_SA.vcxproj" (
-    echo [2/3] Generating Plugin-SDK projects for Visual Studio 2022...
-    "%PREMAKE%" vs2022 --file="%PREMAKE_FILE%"
+if not exist "%PLUGIN_SDK_DIR%\output\lib\plugin.lib" (
+    rem ForkHack uses the v145 toolset, so generate a matching VS 2026 project.
+    rem Always regenerate while plugin.lib is absent: a previous attempt may have
+    rem left behind a VS 2022/v143 project that cannot be built by VS 2026.
+    echo [2/3] Generating Plugin-SDK projects for Visual Studio 2026 ^(v145^)...
+    "%PREMAKE%" vs2026 --file="%PREMAKE_FILE%"
     if errorlevel 1 (
         echo [ERROR] Premake could not generate the Plugin-SDK project.
         exit /b 1
     )
 ) else (
-    echo [2/3] Plugin-SDK project is already generated.
+    echo [2/3] Plugin-SDK project and library are already available.
 )
 
 set "MSBUILD="

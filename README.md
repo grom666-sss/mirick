@@ -20,10 +20,10 @@ Made as a base for your own projects and easy to understand for beginners. Every
 
 Requirements:
 
-* [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) with **Desktop development with C++**;
+* Visual Studio 2026 with the **Desktop development with C++** workload and the **v145** toolset;
 * an internet connection during the first build.
 
-The first build runs `setup_dependencies.bat` automatically. The script downloads [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk) using Git, or a PowerShell ZIP fallback when Git is unavailable. It then generates the Visual Studio 2022 project and builds the required `plugin.lib`. ForkHack uses the repository-local path `thirdparty\plugin-sdk`; no user-specific absolute paths are required.
+The first build runs `setup_dependencies.bat` automatically. The script downloads [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk) using Git, or a PowerShell ZIP fallback when Git is unavailable. It then generates a Visual Studio 2026/v145 project and builds the required `plugin.lib`. ForkHack uses the repository-local path `thirdparty\plugin-sdk`; no user-specific absolute paths are required.
 
 Then open `ForkHack.slnx`, select **Release | Win32**, build the project and inject the DLL into `gta_sa.exe`.
 
