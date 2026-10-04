@@ -1,6 +1,28 @@
-/build/
-/.vs/
+# Visual Studio / MSBuild
+.vs/
 *.user
 *.suo
-*.dll
+*.VC.db
+*.VC.VC.opendb
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+ForkHack/Release/
+
+# Build artifacts
+*.obj
 *.pdb
+*.idb
+*.iobj
+*.ipdb
+*.ilk
+*.exp
+*.lib
+*.dll
+*.recipe
+*.tlog
+*.lastbuildstate
+*.log

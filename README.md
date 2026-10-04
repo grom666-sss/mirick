@@ -1,32 +1,35 @@
-# Mirick Menu
+# ForkHack
 
-Чистое визуальное меню для **GTA San Andreas (DirectX 9, 32-bit)** в стиле указанного пользователем интерфейса. В проекте нет читов, игровых модификаций, сетевого обхода или обращения к памяти GTA: меню рисует только собственный UI.
+ForkHack — internal cheat for MTA:SA FORKS like NEXTRP, MTA PROVINCE for offcial MTA you need update bypass.cpp/hpp.
 
-## Возможности
+Made as a base for your own projects and easy to understand for beginners. Everything is split into separate files, so features, hooks and menu are easy to find and edit.
 
-- открытие/закрытие клавишей **Insert**;
-- пять вкладок и анимированный тёмный интерфейс;
-- демонстрационные локальные настройки HUD и оформления;
-- перетаскивание окна за верхнюю панель средствами ImGui;
-- корректная обработка `Reset` Direct3D 9.
+## Features
 
-## Сборка
+* Rage
+* Legit
+* Visuals
+* Misc
+* Custom ImGui menu
+* Binds
+* Configs
 
-Требуются Windows, Visual Studio 2022 с компонентом **Desktop development with C++**, CMake и Git.
+## Build
 
-```bat
-cmake -S . -B build -A Win32
-cmake --build build --config Release
-```
+**Release | Win32**
 
-Результат сборки — только `build/Release/MirickMenu.dll`.
+* [Visual Studio](https://visualstudio.microsoft.com/downloads/)
+* [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk)
 
-## Установка
+Build the project in Release | Win32 and inject the DLL into `gta_sa.exe`.
 
-Загрузите `MirickMenu.dll` с помощью совместимого легального DLL-загрузчика модов, следуя его инструкции. После запуска игры нажмите **Insert**.
+## Author
 
-Проект рассчитан на классическую 32-битную DirectX 9 версию игры. Настройки в текущей версии демонстрационные и не изменяют игровой процесс.
+**Gabrik1337**
 
-## Зависимости
+## Special Thanks
 
-CMake автоматически загружает Dear ImGui 1.91.9b и MinHook 1.3.4. Их лицензии находятся в соответствующих исходных репозиториях.
+* **ShunK**
+* **Akira**
+* **DroidZero // NtKernelMC**
+* **Kirill Sorokin // gamesnus**
