@@ -240,9 +240,11 @@
     <ClInclude Include="..\thirdparty\MinHook\hde\table32.hpp" />
     <ClInclude Include="..\thirdparty\MinHook\hde\table64.hpp" />
   </ItemGroup>
-  <Target Name="CheckPluginSdk" BeforeTargets="PrepareForBuild">
-    <Error Condition="!Exists('$(PluginSdkDir)\shared\plugin.h')" Text="Plugin-SDK not found at $(PluginSdkDir). Run setup_dependencies.bat from the solution directory." />
-    <Error Condition="!Exists('$(PluginSdkDir)\output\lib\plugin.lib')" Text="Plugin-SDK library is not built. Run setup_dependencies.bat from the solution directory." />
+  <Target Name="EnsurePluginSdk" BeforeTargets="PrepareForBuild">
+    <Message Condition="!Exists('$(PluginSdkDir)\shared\plugin.h') Or !Exists('$(PluginSdkDir)\output\lib\plugin.lib')" Text="Plugin-SDK is missing; downloading and building it now..." Importance="high" />
+    <Exec Condition="!Exists('$(PluginSdkDir)\shared\plugin.h') Or !Exists('$(PluginSdkDir)\output\lib\plugin.lib')" Command="call &quot;$(SolutionDir)setup_dependencies.bat&quot;" WorkingDirectory="$(SolutionDir)" />
+    <Error Condition="!Exists('$(PluginSdkDir)\shared\plugin.h')" Text="Plugin-SDK setup failed: plugin.h was not created. Run setup_dependencies.bat manually to see the complete error." />
+    <Error Condition="!Exists('$(PluginSdkDir)\output\lib\plugin.lib')" Text="Plugin-SDK setup failed: plugin.lib was not created. Run setup_dependencies.bat manually to see the complete error." />
   </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
