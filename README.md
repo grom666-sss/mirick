@@ -27,6 +27,10 @@ The first build runs `setup_dependencies.bat` automatically. The script download
 
 Then open `ForkHack.slnx`, select **Release | Win32**, build the project and inject the DLL into `gta_sa.exe`.
 
+## Capture protection
+
+ESP, skeletons, snaplines, binds and the menu are rendered in a separate top-level overlay protected with `WDA_EXCLUDEFROMCAPTURE`. OBS Game Capture receives only the GTA render device, while Windows display/window capture excludes the protected overlay. Use **borderless/windowed mode**: Windows cannot place a separate overlay above an exclusive-fullscreen DirectX 9 surface. Capture exclusion requires Windows 10 version 2004 or newer. If protected overlay creation fails, visuals are disabled rather than rendered into the captured game frame.
+
 If Visual Studio was already open when the dependencies were installed, close and reopen the solution so IntelliSense refreshes its include paths.
 
 ## Author

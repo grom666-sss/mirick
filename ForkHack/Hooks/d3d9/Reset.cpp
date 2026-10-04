@@ -10,6 +10,7 @@
 #include "Gfx/Blur.hpp"
 
 #include "Reset.hpp"
+#include "ProtectedOverlay.hpp"
 
 using tReset = HRESULT(__stdcall*)(IDirect3DDevice9*, D3DPRESENT_PARAMETERS*);
 tReset oReset = nullptr;
@@ -18,6 +19,18 @@ static LPVOID sResetTarget = nullptr;
 
 HRESULT __stdcall hkReset(IDirect3DDevice9* self, D3DPRESENT_PARAMETERS* presentationParameters)
 {
+    if (ProtectedOverlay::IsInternalCall())
+    {
+        return oReset(self, presentationParameters);
+    }
+
+    // The ImGui resources belong to the separate overlay device and must not
+    // be invalidated when GTA resets its own device.
+    if (ProtectedOverlay::GetDevice())
+    {
+        return oReset(self, presentationParameters);
+    }
+
     Blur::OnReset();
     ImGui_ImplDX9_InvalidateDeviceObjects();
 

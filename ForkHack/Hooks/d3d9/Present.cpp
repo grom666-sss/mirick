@@ -18,6 +18,7 @@
 #include "Game/Features.h"
 
 #include "Present.hpp"
+#include "ProtectedOverlay.hpp"
 
 #include "../core/ForceCursorVisible.hpp"
 
@@ -28,6 +29,7 @@ static LPVOID sPresentTarget = nullptr;
 
 static WNDPROC oWndProc = nullptr;
 static bool imgui_initialized = false;
+static bool protectedOverlayActive = false;
 static HWND hGameWindow = nullptr;
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
@@ -39,7 +41,11 @@ LRESULT WINAPI WndProcHandler(HWND window, UINT message, WPARAM wParam, LPARAM l
 
     if (is_open && ImGui::GetCurrentContext())
     {
-        ImGui_ImplWin32_WndProcHandler(window, message, wParam, lParam);
+        ImGui_ImplWin32_WndProcHandler(
+            protectedOverlayActive ? ProtectedOverlay::GetWindow() : window,
+            message,
+            wParam,
+            lParam);
     }
 
     if (is_open)
@@ -79,18 +85,44 @@ static void InitImGui(IDirect3DDevice9* device)
     ImGui::GetStyle().AntiAliasedFill = false;
     g_fonts.Init();
 
-    ImGui_ImplWin32_Init(deviceParameters.hFocusWindow);
-    ImGui_ImplDX9_Init(device);
-    Blur::SetDevice(device);
+    // Draw ImGui on a separate capture-protected HWND. OBS Game Capture only
+    // receives the GTA device; display/window capture is blocked by the HWND's
+    // display affinity. If protection cannot be created, fail closed: initialize
+    // ImGui for feature updates, but never submit its draw data to the game.
+    protectedOverlayActive = ProtectedOverlay::Initialize(hGameWindow);
+    HWND renderWindow = protectedOverlayActive ? ProtectedOverlay::GetWindow() : hGameWindow;
+    IDirect3DDevice9* renderDevice = protectedOverlayActive ? ProtectedOverlay::GetDevice() : device;
+
+    if (!protectedOverlayActive)
+    {
+        MessageBoxW(
+            hGameWindow,
+            L"Capture-protected overlay could not be created. Visuals were disabled so they cannot leak into a recording. Use Windows 10 2004+ and borderless/windowed mode.",
+            L"ForkHack capture protection",
+            MB_OK | MB_ICONWARNING);
+    }
+
+    ImGui_ImplWin32_Init(renderWindow);
+    ImGui_ImplDX9_Init(renderDevice);
+    Blur::SetDevice(renderDevice);
 }
 
 HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, const RECT* destRect, HWND destWindowOverride, const RGNDATA* dirtyRegion)
 {
+    // Present is hooked at the D3D9 method level, so the protected overlay's
+    // own Present arrives here as well. Forward it without starting a new frame.
+    if (ProtectedOverlay::IsInternalCall())
+    {
+        return oPresent(self, sourceRect, destRect, destWindowOverride, dirtyRegion);
+    }
+
     if (!imgui_initialized)
     {
         InitImGui(self);
         imgui_initialized = true;
     }
+
+    const bool renderFrame = protectedOverlayActive && ProtectedOverlay::BeginFrame();
 
     ImGui_ImplDX9_NewFrame();
     ImGui_ImplWin32_NewFrame();
@@ -191,8 +223,17 @@ HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, cons
     }
 
     ImGui::EndFrame();
-    ImGui::Render();
-    ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+
+    if (renderFrame)
+    {
+        ImGui::Render();
+        ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+
+        if (protectedOverlayActive)
+        {
+            ProtectedOverlay::EndFrame();
+        }
+    }
 
     return oPresent(self, sourceRect, destRect, destWindowOverride, dirtyRegion);
 }
@@ -229,6 +270,23 @@ void Present::RemoveHook()
     if (sPresentTarget == nullptr)
     {
         return;
+    }
+
+    if (imgui_initialized)
+    {
+        ImGui_ImplDX9_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+        imgui_initialized = false;
+    }
+
+    ProtectedOverlay::Shutdown();
+    protectedOverlayActive = false;
+
+    if (hGameWindow && oWndProc)
+    {
+        SetWindowLongPtrW(hGameWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(oWndProc));
+        oWndProc = nullptr;
     }
 
     status = MH_DisableHook(sPresentTarget);

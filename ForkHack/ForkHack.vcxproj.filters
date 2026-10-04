@@ -100,6 +100,9 @@
     <ClCompile Include="Hooks\d3d9\Present.cpp">
       <Filter>Hooks\d3d9</Filter>
     </ClCompile>
+    <ClCompile Include="Hooks\d3d9\ProtectedOverlay.cpp">
+      <Filter>Hooks\d3d9</Filter>
+    </ClCompile>
     <ClCompile Include="Hooks\d3d9\Reset.cpp">
       <Filter>Hooks\d3d9</Filter>
     </ClCompile>
@@ -304,6 +307,9 @@
       <Filter>Hooks\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Hooks\d3d9\Present.hpp">
+      <Filter>Hooks\d3d9</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\d3d9\ProtectedOverlay.hpp">
       <Filter>Hooks\d3d9</Filter>
     </ClInclude>
     <ClInclude Include="Hooks\d3d9\Reset.hpp">

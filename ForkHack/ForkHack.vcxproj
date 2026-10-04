@@ -90,6 +90,7 @@
     <ClCompile Include="Hooks\Hooks.cpp" />
     <ClCompile Include="Hooks\Collision\Collision.cpp" />
     <ClCompile Include="Hooks\d3d9\Present.cpp" />
+    <ClCompile Include="Hooks\d3d9\ProtectedOverlay.cpp" />
     <ClCompile Include="Hooks\d3d9\Reset.cpp" />
     <ClCompile Include="Hooks\netc\Bypass.cpp" />
     <ClCompile Include="Hooks\LdrDll\LdrDll.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="Hooks\Hooks.hpp" />
     <ClInclude Include="Hooks\Collision\Collision.hpp" />
     <ClInclude Include="Hooks\d3d9\Present.hpp" />
+    <ClInclude Include="Hooks\d3d9\ProtectedOverlay.hpp" />
     <ClInclude Include="Hooks\d3d9\Reset.hpp" />
     <ClInclude Include="Hooks\netc\Bypass.hpp" />
     <ClInclude Include="Hooks\LdrDll\LdrDll.hpp" />
