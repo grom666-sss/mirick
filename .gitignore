@@ -26,3 +26,6 @@ ForkHack/Release/
 *.tlog
 *.lastbuildstate
 *.log
+
+# Downloaded by setup_dependencies.bat
+thirdparty/plugin-sdk/

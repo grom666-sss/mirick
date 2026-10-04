@@ -43,7 +43,9 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Beta|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <PluginSdkDir Condition="'$(PluginSdkDir)'==''">$(SolutionDir)thirdparty\plugin-sdk</PluginSdkDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -52,14 +54,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USE_BGRA_PACKED_COLOR;GTASA;RW;PLUGIN_SGV_10US;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Utils;$(ProjectDir)..\thirdparty\MinHook;$(ProjectDir)..\thirdparty\imgui;C:\Users\user\Desktop\plugin-sdk-master\shared;C:\Users\user\Desktop\plugin-sdk-master\shared\game;C:\Users\user\Desktop\plugin-sdk-master\plugin_sa\game_sa\rw;C:\Users\user\Desktop\plugin-sdk-master\plugin_sa;C:\Users\user\Desktop\plugin-sdk-master\plugin_sa\game_sa;C:\Users\user\Desktop\plugin-sdk-master\plugin_sa\game_sa\enums;C:\Users\user\Desktop\plugin-sdk-master\shared\extensions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Utils;$(ProjectDir)..\thirdparty\MinHook;$(ProjectDir)..\thirdparty\imgui;$(PluginSdkDir)\shared;$(PluginSdkDir)\shared\game;$(PluginSdkDir)\plugin_sa\game_sa\rw;$(PluginSdkDir)\plugin_sa;$(PluginSdkDir)\plugin_sa\game_sa;$(PluginSdkDir)\plugin_sa\game_sa\enums;$(PluginSdkDir)\shared\extensions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp23</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\user\Desktop\plugin-sdk-master\output\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(PluginSdkDir)\output\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>plugin.lib;d3d9.lib;windowscodecs.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -71,14 +73,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;BETA_BUILD;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USE_BGRA_PACKED_COLOR;GTASA;RW;PLUGIN_SGV_10US;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Utils;$(ProjectDir)..\thirdparty\MinHook;$(ProjectDir)..\thirdparty\imgui;C:\Users\user\Desktop\plugin-sdk-master\shared;C:\Users\user\Desktop\plugin-sdk-master\shared\game;C:\Users\user\Desktop\plugin-sdk-master\plugin_sa\game_sa\rw;C:\Users\user\Desktop\plugin-sdk-master\plugin_sa;C:\Users\user\Desktop\plugin-sdk-master\plugin_sa\game_sa;C:\Users\user\Desktop\plugin-sdk-master\plugin_sa\game_sa\enums;C:\Users\user\Desktop\plugin-sdk-master\shared\extensions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Utils;$(ProjectDir)..\thirdparty\MinHook;$(ProjectDir)..\thirdparty\imgui;$(PluginSdkDir)\shared;$(PluginSdkDir)\shared\game;$(PluginSdkDir)\plugin_sa\game_sa\rw;$(PluginSdkDir)\plugin_sa;$(PluginSdkDir)\plugin_sa\game_sa;$(PluginSdkDir)\plugin_sa\game_sa\enums;$(PluginSdkDir)\shared\extensions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp23</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\user\Desktop\plugin-sdk-master\output\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(PluginSdkDir)\output\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>plugin.lib;d3d9.lib;windowscodecs.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -238,6 +240,10 @@
     <ClInclude Include="..\thirdparty\MinHook\hde\table32.hpp" />
     <ClInclude Include="..\thirdparty\MinHook\hde\table64.hpp" />
   </ItemGroup>
+  <Target Name="CheckPluginSdk" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(PluginSdkDir)\shared\plugin.h')" Text="Plugin-SDK not found at $(PluginSdkDir). Run setup_dependencies.bat from the solution directory." />
+    <Error Condition="!Exists('$(PluginSdkDir)\output\lib\plugin.lib')" Text="Plugin-SDK library is not built. Run setup_dependencies.bat from the solution directory." />
+  </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

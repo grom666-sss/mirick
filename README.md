@@ -18,10 +18,16 @@ Made as a base for your own projects and easy to understand for beginners. Every
 
 **Release | Win32**
 
-* [Visual Studio](https://visualstudio.microsoft.com/downloads/)
-* [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk)
+Requirements:
 
-Build the project in Release | Win32 and inject the DLL into `gta_sa.exe`.
+* [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) with **Desktop development with C++**;
+* Git available in `PATH`.
+
+Run `setup_dependencies.bat` once before opening/building the solution. The script downloads [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk), generates its Visual Studio 2022 project and builds the required `plugin.lib`. ForkHack uses the repository-local path `thirdparty\plugin-sdk`; no user-specific absolute paths are required.
+
+Then open `ForkHack.slnx`, select **Release | Win32**, build the project and inject the DLL into `gta_sa.exe`.
+
+If Visual Studio was already open when the dependencies were installed, close and reopen the solution so IntelliSense refreshes its include paths.
 
 ## Author
 
