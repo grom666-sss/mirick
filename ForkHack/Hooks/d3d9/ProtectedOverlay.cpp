@@ -21,7 +21,11 @@ namespace
     int currentWidth = 0;
     int currentHeight = 0;
     bool classRegistered = false;
-    thread_local bool internalCall = false;
+    // Present/Reset calls made by the overlay are synchronous on GTA's render
+    // thread, so process-local state is sufficient. Avoid C++ thread_local here:
+    // it adds a PE TLS directory that many lightweight/manual-map DLL loaders
+    // do not initialize correctly.
+    bool internalCall = false;
 
     LRESULT CALLBACK OverlayWndProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
     {
