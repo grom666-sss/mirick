@@ -37,15 +37,24 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND window, UINT m
 
 LRESULT WINAPI WndProcHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    // GTA can stop presenting as soon as it loses focus. Hide synchronously
+    // here so the topmost overlay cannot remain over another application.
+    if (message == WM_KILLFOCUS
+        || (message == WM_ACTIVATEAPP && wParam == FALSE)
+        || (message == WM_SHOWWINDOW && wParam == FALSE)
+        || (message == WM_SIZE && wParam == SIZE_MINIMIZED))
+    {
+        ProtectedOverlay::SetVisible(false);
+    }
+
     const bool is_open = (menu && menu->GetState());
 
     if (is_open && ImGui::GetCurrentContext())
     {
-        ImGui_ImplWin32_WndProcHandler(
-            protectedOverlayActive ? ProtectedOverlay::GetWindow() : window,
-            message,
-            wParam,
-            lParam);
+        // Input is received by GTA because the overlay is click-through. Pass
+        // GTA's HWND so ImGui captures/releases the actual input window rather
+        // than the WS_EX_NOACTIVATE overlay.
+        ImGui_ImplWin32_WndProcHandler(window, message, wParam, lParam);
     }
 
     if (is_open)

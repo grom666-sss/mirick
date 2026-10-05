@@ -13,6 +13,7 @@ namespace ProtectedOverlay
     void Shutdown();
     HWND GetWindow();
     IDirect3DDevice9* GetDevice();
+    void SetVisible(bool visible);
     // True while the protected device calls a globally hooked D3D9 method.
     bool IsInternalCall();
 }

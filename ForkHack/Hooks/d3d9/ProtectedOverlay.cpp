@@ -120,7 +120,7 @@ bool ProtectedOverlay::Initialize(HWND targetGameWindow)
         origin.y,
         width,
         height,
-        nullptr,
+        gameWindow, // owner: follows GTA activation/minimization and z-order
         nullptr,
         windowClass.hInstance,
         nullptr);
@@ -294,6 +294,14 @@ HWND ProtectedOverlay::GetWindow()
 IDirect3DDevice9* ProtectedOverlay::GetDevice()
 {
     return device;
+}
+
+void ProtectedOverlay::SetVisible(bool visible)
+{
+    if (overlayWindow)
+    {
+        ShowWindow(overlayWindow, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
+    }
 }
 
 bool ProtectedOverlay::IsInternalCall()
