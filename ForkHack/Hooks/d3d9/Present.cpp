@@ -99,7 +99,10 @@ static void InitImGui(IDirect3DDevice9* device)
     // display affinity. If protection cannot be created, fail closed: initialize
     // ImGui for feature updates, but never submit its draw data to the game.
     protectedOverlayActive = ProtectedOverlay::Initialize(hGameWindow, device);
-    HWND renderWindow = protectedOverlayActive ? ProtectedOverlay::GetWindow() : hGameWindow;
+    // Keep the Win32 backend attached to GTA: the protected overlay is
+    // WS_EX_NOACTIVATE, so it is never the foreground window. Initializing the
+    // backend with the overlay HWND makes NewFrame reset MousePos to -FLT_MAX.
+    HWND inputWindow = hGameWindow;
     IDirect3DDevice9* renderDevice = protectedOverlayActive ? ProtectedOverlay::GetDevice() : device;
 
     if (!protectedOverlayActive)
@@ -111,7 +114,7 @@ static void InitImGui(IDirect3DDevice9* device)
             MB_OK | MB_ICONWARNING);
     }
 
-    ImGui_ImplWin32_Init(renderWindow);
+    ImGui_ImplWin32_Init(inputWindow);
     ImGui_ImplDX9_Init(renderDevice);
     Blur::SetDevice(renderDevice);
 }
