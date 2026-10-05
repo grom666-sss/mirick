@@ -10,6 +10,7 @@
 #include "CSprite.h"
 #include "ePedBones.h"
 
+#include <array>
 #include <cmath>
 #include <cstdio>
 
@@ -185,65 +186,128 @@ void Esp::Update()
 
         if (g_cfg.wh_flags & WH_SKELETON)
         {
-            // One torso trace is enough to classify the whole skeleton. Peds
-            // are excluded from the trace, so only world/vehicle/object cover
-            // changes the color.
-            RwV3d torso{};
-            ped->GetBonePosition(torso, static_cast<unsigned int>(BONE_UPPERTORSO), true);
-            const CCam& activeCam = TheCamera.m_aCams[TheCamera.m_nActiveCam];
-            const CVector traceStart = activeCam.m_vecSource;
-            const CVector traceEnd(torso.x, torso.y, torso.z);
-            CColPoint visibilityHit{};
-            CEntity* visibilityEntity = nullptr;
-            const bool occluded = CWorld::ProcessLineOfSight(
-                traceStart,
-                traceEnd,
-                visibilityHit,
-                visibilityEntity,
-                true,  // buildings
-                true,  // vehicles
-                false, // peds (including the target)
-                true,  // objects
-                true,  // dummies
-                false,
-                false,
-                false);
-            const ImU32 currentSkelCol = occluded ? skelOccludedCol : skelCol;
-
-            static const int segs[][2] = {
-                { BONE_PELVIS, BONE_SPINE1 }, { BONE_SPINE1, BONE_UPPERTORSO },
-                { BONE_UPPERTORSO, BONE_NECK }, { BONE_NECK, BONE_HEAD },
-                { BONE_UPPERTORSO, BONE_RIGHTSHOULDER }, { BONE_RIGHTSHOULDER, BONE_RIGHTELBOW },
-                { BONE_RIGHTELBOW, BONE_RIGHTWRIST },
-                { BONE_UPPERTORSO, BONE_LEFTSHOULDER }, { BONE_LEFTSHOULDER, BONE_LEFTELBOW },
-                { BONE_LEFTELBOW, BONE_LEFTWRIST },
-                { BONE_PELVIS, BONE_RIGHTHIP }, { BONE_RIGHTHIP, BONE_RIGHTKNEE },
-                { BONE_RIGHTKNEE, BONE_RIGHTANKLE },
-                { BONE_PELVIS, BONE_LEFTHIP }, { BONE_LEFTHIP, BONE_LEFTKNEE },
-                { BONE_LEFTKNEE, BONE_LEFTANKLE },
+            struct BoneRenderData
+            {
+                RwV3d world{};
+                RwV3d screen{};
+                bool projected = false;
+                bool occluded = false;
             };
 
-            for (int si = 0; si < 16; si++)
+            static constexpr int boneIds[] = {
+                BONE_PELVIS, BONE_SPINE1, BONE_UPPERTORSO, BONE_NECK, BONE_HEAD,
+                BONE_RIGHTSHOULDER, BONE_RIGHTELBOW, BONE_RIGHTWRIST,
+                BONE_LEFTSHOULDER, BONE_LEFTELBOW, BONE_LEFTWRIST,
+                BONE_RIGHTHIP, BONE_RIGHTKNEE, BONE_RIGHTANKLE,
+                BONE_LEFTHIP, BONE_LEFTKNEE, BONE_LEFTANKLE,
+            };
+            static constexpr int segments[][2] = {
+                { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 4 },
+                { 2, 5 }, { 5, 6 }, { 6, 7 },
+                { 2, 8 }, { 8, 9 }, { 9, 10 },
+                { 0, 11 }, { 11, 12 }, { 12, 13 },
+                { 0, 14 }, { 14, 15 }, { 15, 16 },
+            };
+
+            std::array<BoneRenderData, sizeof(boneIds) / sizeof(boneIds[0])> bones{};
+            const CCam& activeCam = TheCamera.m_aCams[TheCamera.m_nActiveCam];
+            const CVector traceStart = activeCam.m_vecSource;
+            const auto IsOccluded = [&](const RwV3d& point)
             {
-                RwV3d bw0{}, bw1{};
+                const CVector traceEnd(point.x, point.y, point.z);
+                CColPoint visibilityHit{};
+                CEntity* visibilityEntity = nullptr;
+                return CWorld::ProcessLineOfSight(
+                    traceStart,
+                    traceEnd,
+                    visibilityHit,
+                    visibilityEntity,
+                    true,  // buildings
+                    true,  // vehicles
+                    false, // peds (including the target)
+                    true,  // objects
+                    true,  // dummies
+                    false,
+                    false,
+                    false);
+            };
 
-                ped->GetBonePosition(bw0, (unsigned int)segs[si][0], true);
-                ped->GetBonePosition(bw1, (unsigned int)segs[si][1], true);
+            // Test every joint independently. This keeps an arm/head in the
+            // visible color when it sticks out while the torso remains covered.
+            for (size_t bi = 0; bi < bones.size(); ++bi)
+            {
+                BoneRenderData& bone = bones[bi];
+                ped->GetBonePosition(bone.world, static_cast<unsigned int>(boneIds[bi]), true);
 
-                RwV3d bs0{}, bs1{};
                 float sw = 0.0f, sh = 0.0f;
-
-                if (!CSprite::CalcScreenCoors(bw0, &bs0, &sw, &sh, false, true))
+                bone.projected = CSprite::CalcScreenCoors(bone.world, &bone.screen, &sw, &sh, false, true);
+                if (!bone.projected)
                 {
                     continue;
                 }
 
-                if (!CSprite::CalcScreenCoors(bw1, &bs1, &sw, &sh, false, true))
+                bone.occluded = IsOccluded(bone.world);
+            }
+
+            for (const auto& segment : segments)
+            {
+                const BoneRenderData& first = bones[segment[0]];
+                const BoneRenderData& second = bones[segment[1]];
+                if (!first.projected || !second.projected)
                 {
                     continue;
                 }
 
-                draw->AddLine(ImVec2(bs0.x, bs0.y), ImVec2(bs1.x, bs1.y), currentSkelCol, 1.0f);
+                const ImVec2 p0(first.screen.x, first.screen.y);
+                const ImVec2 p1(second.screen.x, second.screen.y);
+                const ImU32 col0 = first.occluded ? skelOccludedCol : skelCol;
+                const ImU32 col1 = second.occluded ? skelOccludedCol : skelCol;
+
+                if (first.occluded == second.occluded)
+                {
+                    draw->AddLine(p0, p1, col0, 1.0f);
+                }
+                else
+                {
+                    // Locate the cover edge along the limb instead of changing
+                    // the entire segment. Four visibility samples give a stable
+                    // boundary without doing excessive collision traces.
+                    RwV3d sameSide = first.world;
+                    RwV3d otherSide = second.world;
+                    for (int step = 0; step < 4; ++step)
+                    {
+                        const RwV3d middleWorld{
+                            (sameSide.x + otherSide.x) * 0.5f,
+                            (sameSide.y + otherSide.y) * 0.5f,
+                            (sameSide.z + otherSide.z) * 0.5f,
+                        };
+
+                        if (IsOccluded(middleWorld) == first.occluded)
+                        {
+                            sameSide = middleWorld;
+                        }
+                        else
+                        {
+                            otherSide = middleWorld;
+                        }
+                    }
+
+                    const RwV3d boundaryWorld{
+                        (sameSide.x + otherSide.x) * 0.5f,
+                        (sameSide.y + otherSide.y) * 0.5f,
+                        (sameSide.z + otherSide.z) * 0.5f,
+                    };
+                    RwV3d boundaryScreen{};
+                    float boundaryW = 0.0f, boundaryH = 0.0f;
+                    ImVec2 boundary((p0.x + p1.x) * 0.5f, (p0.y + p1.y) * 0.5f);
+                    if (CSprite::CalcScreenCoors(boundaryWorld, &boundaryScreen, &boundaryW, &boundaryH, false, true))
+                    {
+                        boundary = ImVec2(boundaryScreen.x, boundaryScreen.y);
+                    }
+
+                    draw->AddLine(p0, boundary, col0, 1.0f);
+                    draw->AddLine(boundary, p1, col1, 1.0f);
+                }
             }
         }
 
