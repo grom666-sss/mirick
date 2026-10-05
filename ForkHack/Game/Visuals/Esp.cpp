@@ -13,6 +13,7 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <vector>
 
 void Esp::Update()
 {
@@ -41,8 +42,28 @@ void Esp::Update()
 
     const int poolSize = CPools::ms_pPedPool->m_nSize;
 
-    for (int i = 0; i < poolSize; i++)
+    // Collision raycasts are much more expensive than projection/drawing. Keep
+    // a per-pool-slot cache and update it incrementally with a fixed frame
+    // budget, so turning toward a crowded area cannot cause a large FPS spike.
+    struct VisibilityCache
     {
+        CPed* owner = nullptr;
+        std::array<bool, 17> occluded{};
+        size_t nextBone = 0;
+    };
+    static std::vector<VisibilityCache> visibilityCache;
+    static int visibilityStart = 0;
+    visibilityCache.resize(poolSize);
+    if (visibilityStart >= poolSize)
+    {
+        visibilityStart = 0;
+    }
+    int traceBudget = 12;
+    int lastTracedSlot = -1;
+
+    for (int poolOffset = 0; poolOffset < poolSize; ++poolOffset)
+    {
+        const int i = (visibilityStart + poolOffset) % poolSize;
         CPed* ped = CPools::ms_pPedPool->GetAt(i);
 
         if (!ped || ped == pLocal || ped->m_fHealth <= 0.0f)
@@ -246,7 +267,41 @@ void Esp::Update()
                     continue;
                 }
 
-                bone.occluded = IsOccluded(bone.world);
+            }
+
+            VisibilityCache& cache = visibilityCache[i];
+            if (cache.owner != ped)
+            {
+                cache.owner = ped;
+                cache.occluded.fill(true);
+                cache.nextBone = 0;
+            }
+
+            // Update at most one joint of this ped in one frame. Cached values
+            // keep the skeleton stable between updates while spreading work
+            // across many players.
+            int updatedForPed = 0;
+            int attemptedBones = 0;
+            while (traceBudget > 0 && updatedForPed < 1 && attemptedBones < (int)bones.size())
+            {
+                const size_t bi = cache.nextBone;
+                cache.nextBone = (cache.nextBone + 1) % bones.size();
+                ++attemptedBones;
+
+                if (!bones[bi].projected)
+                {
+                    continue;
+                }
+
+                cache.occluded[bi] = IsOccluded(bones[bi].world);
+                --traceBudget;
+                ++updatedForPed;
+                lastTracedSlot = i;
+            }
+
+            for (size_t bi = 0; bi < bones.size(); ++bi)
+            {
+                bones[bi].occluded = cache.occluded[bi];
             }
 
             for (const auto& segment : segments)
@@ -269,47 +324,21 @@ void Esp::Update()
                 }
                 else
                 {
-                    // Locate the cover edge along the limb instead of changing
-                    // the entire segment. Four visibility samples give a stable
-                    // boundary without doing excessive collision traces.
-                    RwV3d sameSide = first.world;
-                    RwV3d otherSide = second.world;
-                    for (int step = 0; step < 4; ++step)
-                    {
-                        const RwV3d middleWorld{
-                            (sameSide.x + otherSide.x) * 0.5f,
-                            (sameSide.y + otherSide.y) * 0.5f,
-                            (sameSide.z + otherSide.z) * 0.5f,
-                        };
-
-                        if (IsOccluded(middleWorld) == first.occluded)
-                        {
-                            sameSide = middleWorld;
-                        }
-                        else
-                        {
-                            otherSide = middleWorld;
-                        }
-                    }
-
-                    const RwV3d boundaryWorld{
-                        (sameSide.x + otherSide.x) * 0.5f,
-                        (sameSide.y + otherSide.y) * 0.5f,
-                        (sameSide.z + otherSide.z) * 0.5f,
-                    };
-                    RwV3d boundaryScreen{};
-                    float boundaryW = 0.0f, boundaryH = 0.0f;
-                    ImVec2 boundary((p0.x + p1.x) * 0.5f, (p0.y + p1.y) * 0.5f);
-                    if (CSprite::CalcScreenCoors(boundaryWorld, &boundaryScreen, &boundaryW, &boundaryH, false, true))
-                    {
-                        boundary = ImVec2(boundaryScreen.x, boundaryScreen.y);
-                    }
-
+                    // Split mixed-visibility limbs without extra collision
+                    // queries; endpoint visibility comes from the cache.
+                    const ImVec2 boundary((p0.x + p1.x) * 0.5f, (p0.y + p1.y) * 0.5f);
                     draw->AddLine(p0, boundary, col0, 1.0f);
                     draw->AddLine(boundary, p1, col1, 1.0f);
                 }
             }
         }
 
+    }
+
+    if (poolSize > 0)
+    {
+        visibilityStart = lastTracedSlot >= 0
+            ? (lastTracedSlot + 1) % poolSize
+            : (visibilityStart + 1) % poolSize;
     }
 }
