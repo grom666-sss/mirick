@@ -8,8 +8,18 @@ void Menu::DrawLegit()
         ImGui::BeginChild("subtab_legit", ImVec2(), false);
         ImGui::Columns(2, NULL, false);
         ImGui::SetColumnOffset(1, 270.0f * GetScale());
+
         GroupBegin(tr("Триггербот", "Triggerbot"));
         BindableCheckbox("trigger", tr("Триггербот", "Triggerbot"), &g_cfg.trigger, &g_cfg.trigger_bind);
         GroupEnd();
+
+        ImGui::NextColumn();
+        GroupBegin(tr("Стрим", "Stream"));
+        if (Checkbox(tr("Анти OBS", "OBS protection"), &g_cfg.antiobs))
+        {
+            SaveGeneralConfig();
+        }
+        GroupEnd();
+
         ImGui::EndChild(false);
 }

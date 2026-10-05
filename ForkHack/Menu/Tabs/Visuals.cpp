@@ -76,7 +76,11 @@ void Menu::DrawVisuals()
                     }
                     if (g_cfg.wh_flags & 16)
                     {
-                        if (ColorPicker(tr("Скелет", "Skeleton"), g_cfg.skelcol))
+                        if (ColorPicker(tr("Скелет видимый", "Visible skeleton"), g_cfg.skelcol))
+                        {
+                            SaveGeneralConfig();
+                        }
+                        if (ColorPicker(tr("Скелет за стеной", "Occluded skeleton"), g_cfg.skeloccludedcol))
                         {
                             SaveGeneralConfig();
                         }

@@ -127,7 +127,14 @@ HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, cons
         imgui_initialized = true;
     }
 
-    const bool renderFrame = protectedOverlayActive && ProtectedOverlay::BeginFrame();
+    const bool renderProtectedFrame = g_cfg.antiobs && protectedOverlayActive;
+    const bool renderFrame = !g_cfg.antiobs || (renderProtectedFrame && ProtectedOverlay::BeginFrame());
+
+    if (!g_cfg.antiobs)
+    {
+        // Remove the last protected frame before drawing directly into GTA.
+        ProtectedOverlay::SetVisible(false);
+    }
 
     ImGui_ImplDX9_NewFrame();
     ImGui_ImplWin32_NewFrame();
@@ -234,7 +241,7 @@ HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, cons
         ImGui::Render();
         ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
-        if (protectedOverlayActive)
+        if (renderProtectedFrame)
         {
             ProtectedOverlay::EndFrame();
         }

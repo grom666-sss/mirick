@@ -35,6 +35,7 @@ void Esp::Update()
     const ImU32 armorCol = g_cfg.armorcol.to_color().as_imcolor();
     const ImU32 textCol = g_cfg.distcol.to_color().as_imcolor();
     const ImU32 skelCol = g_cfg.skelcol.to_color().as_imcolor();
+    const ImU32 skelOccludedCol = g_cfg.skeloccludedcol.to_color().as_imcolor();
     const ImU32 snapCol = g_cfg.snapcol.to_color().as_imcolor();
 
     const int poolSize = CPools::ms_pPedPool->m_nSize;
@@ -184,6 +185,31 @@ void Esp::Update()
 
         if (g_cfg.wh_flags & WH_SKELETON)
         {
+            // One torso trace is enough to classify the whole skeleton. Peds
+            // are excluded from the trace, so only world/vehicle/object cover
+            // changes the color.
+            RwV3d torso{};
+            ped->GetBonePosition(torso, static_cast<unsigned int>(BONE_UPPERTORSO), true);
+            const CCam& activeCam = TheCamera.m_aCams[TheCamera.m_nActiveCam];
+            const CVector traceStart = activeCam.m_vecSource;
+            const CVector traceEnd(torso.x, torso.y, torso.z);
+            CColPoint visibilityHit{};
+            CEntity* visibilityEntity = nullptr;
+            const bool occluded = CWorld::ProcessLineOfSight(
+                traceStart,
+                traceEnd,
+                visibilityHit,
+                visibilityEntity,
+                true,  // buildings
+                true,  // vehicles
+                false, // peds (including the target)
+                true,  // objects
+                true,  // dummies
+                false,
+                false,
+                false);
+            const ImU32 currentSkelCol = occluded ? skelOccludedCol : skelCol;
+
             static const int segs[][2] = {
                 { BONE_PELVIS, BONE_SPINE1 }, { BONE_SPINE1, BONE_UPPERTORSO },
                 { BONE_UPPERTORSO, BONE_NECK }, { BONE_NECK, BONE_HEAD },
@@ -217,7 +243,7 @@ void Esp::Update()
                     continue;
                 }
 
-                draw->AddLine(ImVec2(bs0.x, bs0.y), ImVec2(bs1.x, bs1.y), skelCol, 1.0f);
+                draw->AddLine(ImVec2(bs0.x, bs0.y), ImVec2(bs1.x, bs1.y), currentSkelCol, 1.0f);
             }
         }
 

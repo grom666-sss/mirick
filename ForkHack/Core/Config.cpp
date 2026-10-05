@@ -204,6 +204,7 @@ bool config_t::Save(const std::string& name)
     WriteInt(body, "ui_scale", ui_scale);
     WriteInt(body, "language", language);
     WriteBool(body, "showbinds", showbinds);
+    WriteBool(body, "antiobs", antiobs);
     WriteFloat(body, "binds_x", binds_x);
     WriteFloat(body, "binds_y", binds_y);
     WriteBool(body, "godmode", godmode);
@@ -284,6 +285,7 @@ bool config_t::Save(const std::string& name)
     WriteColor(body, "armorcol", armorcol);
     WriteColor(body, "distcol", distcol);
     WriteColor(body, "skelcol", skelcol);
+    WriteColor(body, "skeloccludedcol", skeloccludedcol);
     WriteColor(body, "snapcol", snapcol);
     WriteBool(body, "gamespeed", gamespeed);
     WriteInt(body, "gamespeed_key", gamespeed_bind.key);
@@ -505,6 +507,7 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "armorcol") { ReadColor(value, armorcol); }
     else if (key == "distcol") { ReadColor(value, distcol); }
     else if (key == "skelcol") { ReadColor(value, skelcol); }
+    else if (key == "skeloccludedcol") { ReadColor(value, skeloccludedcol); }
     else if (key == "snapcol") { ReadColor(value, snapcol); }
     else if (key == "gamespeed") { ReadBool(value, gamespeed); }
     else if (key == "gamespeed_key") { ReadInt(value, gamespeed_bind.key); }
@@ -568,6 +571,7 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "ui_scale") { ReadInt(value, ui_scale); }
     else if (key == "language") { ReadInt(value, language); }
     else if (key == "showbinds") { ReadBool(value, showbinds); }
+    else if (key == "antiobs") { ReadBool(value, antiobs); }
     else if (key == "binds_x") { ReadFloat(value, binds_x); }
     else if (key == "binds_y") { ReadFloat(value, binds_y); }
 }

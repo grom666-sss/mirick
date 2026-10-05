@@ -19,6 +19,7 @@ struct config_t
     int ui_scale = 100;
     int language = 0;
     bool showbinds = false;
+    bool antiobs = true;
     float binds_x = 10.0f;
     float binds_y = -1.0f;
     bool godmode = false;
@@ -79,6 +80,7 @@ struct config_t
     c_float_color armorcol = c_float_color(110, 150, 255);
     c_float_color distcol = c_float_color(255, 255, 255);
     c_float_color skelcol = c_float_color(255, 255, 255);
+    c_float_color skeloccludedcol = c_float_color(255, 80, 80);
     c_float_color snapcol = c_float_color(0, 255, 0);
     bool gamespeed = false;
     keybind_t gamespeed_bind{};
