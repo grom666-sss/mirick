@@ -94,7 +94,7 @@ bool ProtectedOverlay::Initialize(HWND targetGameWindow)
     windowClass.style = CS_HREDRAW | CS_VREDRAW;
     windowClass.lpfnWndProc = OverlayWndProc;
     windowClass.hInstance = GetModuleHandleW(nullptr);
-    windowClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+    windowClass.hCursor = LoadCursorW(nullptr, MAKEINTRESOURCEW(32512)); // IDC_ARROW
     windowClass.lpszClassName = kOverlayClass;
 
     classRegistered = RegisterClassExW(&windowClass) != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS;
