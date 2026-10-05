@@ -2,9 +2,6 @@
 
 #include <dwmapi.h>
 
-#include "imgui.h"
-#include "imgui_impl_dx9.h"
-
 #ifndef WDA_EXCLUDEFROMCAPTURE
 #define WDA_EXCLUDEFROMCAPTURE 0x00000011
 #endif
@@ -15,17 +12,15 @@ namespace
 
     HWND gameWindow = nullptr;
     HWND overlayWindow = nullptr;
-    IDirect3D9* d3d = nullptr;
     IDirect3DDevice9* device = nullptr;
+    IDirect3DSwapChain9* swapChain = nullptr;
+    IDirect3DSurface9* previousRenderTarget = nullptr;
+    IDirect3DSurface9* previousDepthStencil = nullptr;
     D3DPRESENT_PARAMETERS params{};
+    D3DFORMAT fallbackFormat = D3DFMT_X8R8G8B8;
     int currentWidth = 0;
     int currentHeight = 0;
     bool classRegistered = false;
-    // Present/Reset calls made by the overlay are synchronous on GTA's render
-    // thread, so process-local state is sufficient. Avoid C++ thread_local here:
-    // it adds a PE TLS directory that many lightweight/manual-map DLL loaders
-    // do not initialize correctly.
-    bool internalCall = false;
 
     LRESULT CALLBACK OverlayWndProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
     {
@@ -58,25 +53,63 @@ namespace
 
     bool ApplyCaptureProtection(HWND window)
     {
-        // Do not silently fall back to WDA_MONITOR: a full-screen transparent
-        // overlay can become an opaque rectangle in the recording on old
-        // Windows builds. If true exclusion is unavailable, fail closed.
         return SetWindowDisplayAffinity(window, WDA_EXCLUDEFROMCAPTURE) != FALSE;
     }
 
-    bool ResetDevice(int width, int height)
+    void ReleaseSavedSurfaces()
     {
-        if (!device)
+        if (previousRenderTarget)
+        {
+            previousRenderTarget->Release();
+            previousRenderTarget = nullptr;
+        }
+        if (previousDepthStencil)
+        {
+            previousDepthStencil->Release();
+            previousDepthStencil = nullptr;
+        }
+    }
+
+    void ReleaseSwapChain()
+    {
+        ReleaseSavedSurfaces();
+        if (swapChain)
+        {
+            swapChain->Release();
+            swapChain = nullptr;
+        }
+    }
+
+    bool CreateSwapChain(int width, int height)
+    {
+        if (!device || !overlayWindow || width <= 0 || height <= 0)
         {
             return false;
         }
 
-        ImGui_ImplDX9_InvalidateDeviceObjects();
+        ReleaseSwapChain();
+
         params.BackBufferWidth = width;
         params.BackBufferHeight = height;
-        internalCall = true;
-        const HRESULT result = device->Reset(&params);
-        internalCall = false;
+        params.hDeviceWindow = overlayWindow;
+        params.Windowed = TRUE;
+        params.SwapEffect = D3DSWAPEFFECT_DISCARD;
+        params.MultiSampleType = D3DMULTISAMPLE_NONE;
+        params.MultiSampleQuality = 0;
+        params.EnableAutoDepthStencil = FALSE;
+        params.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
+        params.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+        params.BackBufferFormat = D3DFMT_A8R8G8B8;
+
+        HRESULT result = device->CreateAdditionalSwapChain(&params, &swapChain);
+        if (FAILED(result))
+        {
+            // Some older D3D9 drivers reject A8R8G8B8 for an additional chain.
+            // The DWM glass surface remains transparent with the primary format.
+            params.BackBufferFormat = fallbackFormat;
+            result = device->CreateAdditionalSwapChain(&params, &swapChain);
+        }
+
         if (FAILED(result))
         {
             return false;
@@ -84,14 +117,19 @@ namespace
 
         currentWidth = width;
         currentHeight = height;
-        ImGui_ImplDX9_CreateDeviceObjects();
         return true;
     }
 }
 
-bool ProtectedOverlay::Initialize(HWND targetGameWindow)
+bool ProtectedOverlay::Initialize(HWND targetGameWindow, IDirect3DDevice9* gameDevice)
 {
     gameWindow = targetGameWindow;
+    device = gameDevice;
+    if (!gameWindow || !device)
+    {
+        return false;
+    }
+    device->AddRef();
 
     WNDCLASSEXW windowClass{};
     windowClass.cbSize = sizeof(windowClass);
@@ -104,6 +142,7 @@ bool ProtectedOverlay::Initialize(HWND targetGameWindow)
     classRegistered = RegisterClassExW(&windowClass) != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS;
     if (!classRegistered)
     {
+        Shutdown();
         return false;
     }
 
@@ -112,6 +151,7 @@ bool ProtectedOverlay::Initialize(HWND targetGameWindow)
     int height = 0;
     if (!GetGameClientBounds(origin, width, height))
     {
+        Shutdown();
         return false;
     }
 
@@ -124,13 +164,14 @@ bool ProtectedOverlay::Initialize(HWND targetGameWindow)
         origin.y,
         width,
         height,
-        gameWindow, // owner: follows GTA activation/minimization and z-order
+        gameWindow,
         nullptr,
         windowClass.hInstance,
         nullptr);
 
     if (!overlayWindow)
     {
+        Shutdown();
         return false;
     }
 
@@ -153,50 +194,23 @@ bool ProtectedOverlay::Initialize(HWND targetGameWindow)
         return false;
     }
 
-    d3d = Direct3DCreate9(D3D_SDK_VERSION);
-    if (!d3d)
+    // Reuse the primary chain's driver-compatible format and flags as fallback.
+    if (IDirect3DSwapChain9* primary = nullptr; SUCCEEDED(device->GetSwapChain(0, &primary)))
+    {
+        D3DPRESENT_PARAMETERS primaryParams{};
+        if (SUCCEEDED(primary->GetPresentParameters(&primaryParams)) && primaryParams.BackBufferFormat != D3DFMT_UNKNOWN)
+        {
+            fallbackFormat = primaryParams.BackBufferFormat;
+        }
+        primary->Release();
+    }
+
+    if (!CreateSwapChain(width, height))
     {
         Shutdown();
         return false;
     }
 
-    params = {};
-    params.Windowed = TRUE;
-    params.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    params.hDeviceWindow = overlayWindow;
-    params.BackBufferFormat = D3DFMT_A8R8G8B8;
-    params.BackBufferWidth = width;
-    params.BackBufferHeight = height;
-    params.EnableAutoDepthStencil = FALSE;
-    params.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-
-    HRESULT result = d3d->CreateDevice(
-        D3DADAPTER_DEFAULT,
-        D3DDEVTYPE_HAL,
-        overlayWindow,
-        D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED,
-        &params,
-        &device);
-
-    if (FAILED(result))
-    {
-        result = d3d->CreateDevice(
-            D3DADAPTER_DEFAULT,
-            D3DDEVTYPE_HAL,
-            overlayWindow,
-            D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED,
-            &params,
-            &device);
-    }
-
-    if (FAILED(result))
-    {
-        Shutdown();
-        return false;
-    }
-
-    currentWidth = width;
-    currentHeight = height;
     ShowWindow(overlayWindow, SW_SHOWNOACTIVATE);
     UpdateWindow(overlayWindow);
     return true;
@@ -234,49 +248,87 @@ bool ProtectedOverlay::BeginFrame()
         height,
         SWP_NOACTIVATE | SWP_SHOWWINDOW);
 
-    if ((width != currentWidth || height != currentHeight) && !ResetDevice(width, height))
+    if ((!swapChain || width != currentWidth || height != currentHeight) && !CreateSwapChain(width, height))
     {
         return false;
     }
 
-    const HRESULT cooperative = device->TestCooperativeLevel();
-    if (cooperative == D3DERR_DEVICELOST)
+    ReleaseSavedSurfaces();
+    if (FAILED(device->GetRenderTarget(0, &previousRenderTarget)))
     {
         return false;
     }
-    if (cooperative == D3DERR_DEVICENOTRESET && !ResetDevice(width, height))
+    // A device is allowed to have no depth-stencil surface.
+    device->GetDepthStencilSurface(&previousDepthStencil);
+
+    IDirect3DSurface9* overlayBackBuffer = nullptr;
+    if (FAILED(swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &overlayBackBuffer)))
     {
+        ReleaseSavedSurfaces();
+        return false;
+    }
+
+    device->SetDepthStencilSurface(nullptr);
+    const HRESULT targetResult = device->SetRenderTarget(0, overlayBackBuffer);
+    overlayBackBuffer->Release();
+    if (FAILED(targetResult))
+    {
+        if (previousDepthStencil)
+        {
+            device->SetDepthStencilSurface(previousDepthStencil);
+        }
+        ReleaseSavedSurfaces();
         return false;
     }
 
     device->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 1.0f, 0);
-    return SUCCEEDED(device->BeginScene());
+    return true;
 }
 
 void ProtectedOverlay::EndFrame()
 {
-    if (!device)
+    if (!device || !swapChain)
     {
+        ReleaseSavedSurfaces();
         return;
     }
 
-    device->EndScene();
-    internalCall = true;
-    device->Present(nullptr, nullptr, nullptr, nullptr);
-    internalCall = false;
+    if (previousRenderTarget)
+    {
+        device->SetRenderTarget(0, previousRenderTarget);
+    }
+    if (previousDepthStencil)
+    {
+        device->SetDepthStencilSurface(previousDepthStencil);
+    }
+    ReleaseSavedSurfaces();
+
+    swapChain->Present(nullptr, nullptr, overlayWindow, nullptr, 0);
+}
+
+void ProtectedOverlay::BeforeDeviceReset()
+{
+    ReleaseSwapChain();
+}
+
+void ProtectedOverlay::AfterDeviceReset()
+{
+    POINT origin{};
+    int width = 0;
+    int height = 0;
+    if (GetGameClientBounds(origin, width, height))
+    {
+        CreateSwapChain(width, height);
+    }
 }
 
 void ProtectedOverlay::Shutdown()
 {
+    ReleaseSwapChain();
     if (device)
     {
         device->Release();
         device = nullptr;
-    }
-    if (d3d)
-    {
-        d3d->Release();
-        d3d = nullptr;
     }
     if (overlayWindow)
     {
@@ -306,9 +358,4 @@ void ProtectedOverlay::SetVisible(bool visible)
     {
         ShowWindow(overlayWindow, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
     }
-}
-
-bool ProtectedOverlay::IsInternalCall()
-{
-    return internalCall;
 }

@@ -19,24 +19,17 @@ static LPVOID sResetTarget = nullptr;
 
 HRESULT __stdcall hkReset(IDirect3DDevice9* self, D3DPRESENT_PARAMETERS* presentationParameters)
 {
-    if (ProtectedOverlay::IsInternalCall())
-    {
-        return oReset(self, presentationParameters);
-    }
-
-    // The ImGui resources belong to the separate overlay device and must not
-    // be invalidated when GTA resets its own device.
-    if (ProtectedOverlay::GetDevice())
-    {
-        return oReset(self, presentationParameters);
-    }
-
     Blur::OnReset();
     ImGui_ImplDX9_InvalidateDeviceObjects();
+    ProtectedOverlay::BeforeDeviceReset();
 
     HRESULT result = oReset(self, presentationParameters);
 
-    ImGui_ImplDX9_CreateDeviceObjects();
+    if (SUCCEEDED(result))
+    {
+        ProtectedOverlay::AfterDeviceReset();
+        ImGui_ImplDX9_CreateDeviceObjects();
+    }
 
     return result;
 }

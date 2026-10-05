@@ -98,7 +98,7 @@ static void InitImGui(IDirect3DDevice9* device)
     // receives the GTA device; display/window capture is blocked by the HWND's
     // display affinity. If protection cannot be created, fail closed: initialize
     // ImGui for feature updates, but never submit its draw data to the game.
-    protectedOverlayActive = ProtectedOverlay::Initialize(hGameWindow);
+    protectedOverlayActive = ProtectedOverlay::Initialize(hGameWindow, device);
     HWND renderWindow = protectedOverlayActive ? ProtectedOverlay::GetWindow() : hGameWindow;
     IDirect3DDevice9* renderDevice = protectedOverlayActive ? ProtectedOverlay::GetDevice() : device;
 
@@ -118,13 +118,6 @@ static void InitImGui(IDirect3DDevice9* device)
 
 HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, const RECT* destRect, HWND destWindowOverride, const RGNDATA* dirtyRegion)
 {
-    // Present is hooked at the D3D9 method level, so the protected overlay's
-    // own Present arrives here as well. Forward it without starting a new frame.
-    if (ProtectedOverlay::IsInternalCall())
-    {
-        return oPresent(self, sourceRect, destRect, destWindowOverride, dirtyRegion);
-    }
-
     if (!imgui_initialized)
     {
         InitImGui(self);

@@ -5,15 +5,15 @@
 
 namespace ProtectedOverlay
 {
-    // Creates a separate top-level render target. OBS Game Capture only sees the
-    // game device, while Windows display/window capture excludes this HWND.
-    bool Initialize(HWND gameWindow);
+    // Uses an additional swap chain on GTA's existing D3D9 device. Creating a
+    // second IDirect3DDevice9 inside MTA trips core.dll's graphics singleton.
+    bool Initialize(HWND gameWindow, IDirect3DDevice9* gameDevice);
     bool BeginFrame();
     void EndFrame();
+    void BeforeDeviceReset();
+    void AfterDeviceReset();
     void Shutdown();
     HWND GetWindow();
     IDirect3DDevice9* GetDevice();
     void SetVisible(bool visible);
-    // True while the protected device calls a globally hooked D3D9 method.
-    bool IsInternalCall();
 }
