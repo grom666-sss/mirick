@@ -74,7 +74,7 @@ struct config_t
     keybind_t rapidfire_bind{};
     bool infammo = false;
     keybind_t infammo_bind{};
-    unsigned int wh_flags = 63;
+    unsigned int wh_flags = 127;
     c_float_color whcol = c_float_color(168, 168, 255);
     c_float_color hpcol = c_float_color(110, 220, 110);
     c_float_color armorcol = c_float_color(110, 150, 255);
@@ -82,6 +82,7 @@ struct config_t
     c_float_color skelcol = c_float_color(255, 255, 255);
     c_float_color skeloccludedcol = c_float_color(255, 80, 80);
     c_float_color snapcol = c_float_color(0, 255, 0);
+    c_float_color weaponcol = c_float_color(255, 220, 120);
     bool gamespeed = false;
     keybind_t gamespeed_bind{};
     float gamespeedval = 1.0f;

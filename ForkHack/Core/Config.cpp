@@ -287,6 +287,7 @@ bool config_t::Save(const std::string& name)
     WriteColor(body, "skelcol", skelcol);
     WriteColor(body, "skeloccludedcol", skeloccludedcol);
     WriteColor(body, "snapcol", snapcol);
+    WriteColor(body, "weaponcol", weaponcol);
     WriteBool(body, "gamespeed", gamespeed);
     WriteInt(body, "gamespeed_key", gamespeed_bind.key);
     WriteInt(body, "gamespeed_mode", gamespeed_bind.mode);
@@ -509,6 +510,7 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "skelcol") { ReadColor(value, skelcol); }
     else if (key == "skeloccludedcol") { ReadColor(value, skeloccludedcol); }
     else if (key == "snapcol") { ReadColor(value, snapcol); }
+    else if (key == "weaponcol") { ReadColor(value, weaponcol); }
     else if (key == "gamespeed") { ReadBool(value, gamespeed); }
     else if (key == "gamespeed_key") { ReadInt(value, gamespeed_bind.key); }
     else if (key == "gamespeed_mode") { ReadInt(value, gamespeed_bind.mode); }

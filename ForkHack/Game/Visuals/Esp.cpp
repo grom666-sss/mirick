@@ -9,11 +9,75 @@
 #include "CPools.h"
 #include "CSprite.h"
 #include "ePedBones.h"
+#include "eWeaponType.h"
 
 #include <array>
 #include <cmath>
 #include <cstdio>
 #include <vector>
+
+namespace
+{
+    const char* WeaponName(eWeaponType type)
+    {
+        switch (type)
+        {
+        case WEAPONTYPE_UNARMED: return "Fists";
+        case WEAPONTYPE_BRASSKNUCKLE: return "Brass Knuckles";
+        case WEAPONTYPE_GOLFCLUB: return "Golf Club";
+        case WEAPONTYPE_NIGHTSTICK: return "Nightstick";
+        case WEAPONTYPE_KNIFE: return "Knife";
+        case WEAPONTYPE_BASEBALLBAT: return "Baseball Bat";
+        case WEAPONTYPE_SHOVEL: return "Shovel";
+        case WEAPONTYPE_POOLCUE: return "Pool Cue";
+        case WEAPONTYPE_KATANA: return "Katana";
+        case WEAPONTYPE_CHAINSAW: return "Chainsaw";
+        case WEAPONTYPE_DILDO1: return "Dildo";
+        case WEAPONTYPE_DILDO2: return "Dildo 2";
+        case WEAPONTYPE_VIBE1: return "Vibrator";
+        case WEAPONTYPE_VIBE2: return "Vibrator 2";
+        case WEAPONTYPE_FLOWERS: return "Flowers";
+        case WEAPONTYPE_CANE: return "Cane";
+        case WEAPONTYPE_GRENADE: return "Grenade";
+        case WEAPONTYPE_TEARGAS: return "Tear Gas";
+        case WEAPONTYPE_MOLOTOV: return "Molotov";
+        case WEAPONTYPE_PISTOL: return "Pistol";
+        case WEAPONTYPE_PISTOL_SILENCED: return "Silenced Pistol";
+        case WEAPONTYPE_DESERT_EAGLE: return "Desert Eagle";
+        case WEAPONTYPE_SHOTGUN: return "Shotgun";
+        case WEAPONTYPE_SAWNOFF: return "Sawed-Off";
+        case WEAPONTYPE_SPAS12: return "SPAS-12";
+        case WEAPONTYPE_MICRO_UZI: return "Micro Uzi";
+        case WEAPONTYPE_MP5: return "MP5";
+        case WEAPONTYPE_AK47: return "AK-47";
+        case WEAPONTYPE_M4: return "M4";
+        case WEAPONTYPE_TEC9: return "TEC-9";
+        case WEAPONTYPE_COUNTRYRIFLE: return "Country Rifle";
+        case WEAPONTYPE_SNIPERRIFLE: return "Sniper Rifle";
+        case WEAPONTYPE_RLAUNCHER: return "RPG";
+        case WEAPONTYPE_RLAUNCHER_HS: return "Heat-Seeking RPG";
+        case WEAPONTYPE_FTHROWER: return "Flamethrower";
+        case WEAPONTYPE_MINIGUN: return "Minigun";
+        case WEAPONTYPE_SATCHEL_CHARGE: return "Satchel Charge";
+        case WEAPONTYPE_DETONATOR: return "Detonator";
+        case WEAPONTYPE_SPRAYCAN: return "Spray Can";
+        case WEAPONTYPE_EXTINGUISHER: return "Extinguisher";
+        case WEAPONTYPE_CAMERA: return "Camera";
+        case WEAPONTYPE_NIGHTVISION: return "Night Vision";
+        case WEAPONTYPE_INFRARED: return "Thermal Goggles";
+        case WEAPONTYPE_PARACHUTE: return "Parachute";
+        default: return "Unknown";
+        }
+    }
+
+    bool WeaponUsesAmmo(eWeaponType type)
+    {
+        return (type >= WEAPONTYPE_GRENADE && type <= WEAPONTYPE_SATCHEL_CHARGE)
+            || type == WEAPONTYPE_SPRAYCAN
+            || type == WEAPONTYPE_EXTINGUISHER
+            || type == WEAPONTYPE_CAMERA;
+    }
+}
 
 void Esp::Update()
 {
@@ -39,6 +103,7 @@ void Esp::Update()
     const ImU32 skelCol = g_cfg.skelcol.to_color().as_imcolor();
     const ImU32 skelOccludedCol = g_cfg.skeloccludedcol.to_color().as_imcolor();
     const ImU32 snapCol = g_cfg.snapcol.to_color().as_imcolor();
+    const ImU32 weaponCol = g_cfg.weaponcol.to_color().as_imcolor();
 
     const int poolSize = CPools::ms_pPedPool->m_nSize;
 
@@ -173,6 +238,33 @@ void Esp::Update()
             draw->AddRect(min - ImVec2(1.0f, 1.0f), max + ImVec2(1.0f, 1.0f), backCol, 0.0f, 0, 1.0f);
             draw->AddRect(min, max, boxCol, 0.0f, 0, 1.0f);
             draw->AddRect(min + ImVec2(1.0f, 1.0f), max - ImVec2(1.0f, 1.0f), backCol, 0.0f, 0, 1.0f);
+        }
+
+        if (g_cfg.wh_flags & WH_WEAPON)
+        {
+            if (CWeapon* weapon = ped->GetWeapon())
+            {
+                const eWeaponType type = weapon->m_eWeaponType;
+                char weaponText[96]{};
+
+                if (WeaponUsesAmmo(type))
+                {
+                    const unsigned int clip = weapon->m_nAmmoInClip;
+                    const unsigned int reserve = weapon->m_nAmmoTotal > clip
+                        ? weapon->m_nAmmoTotal - clip
+                        : 0;
+                    snprintf(weaponText, sizeof(weaponText), "%s [%u / %u]", WeaponName(type), clip, reserve);
+                }
+                else
+                {
+                    snprintf(weaponText, sizeof(weaponText), "%s", WeaponName(type));
+                }
+
+                const ImVec2 textSize = ImGui::CalcTextSize(weaponText);
+                const ImVec2 weaponPos(boxCenterX - textSize.x * 0.5f, min.y - textSize.y - 2.0f * s);
+                draw->AddText(weaponPos + ImVec2(1.0f, 1.0f), IM_COL32(0, 0, 0, 210), weaponText);
+                draw->AddText(weaponPos, weaponCol, weaponText);
+            }
         }
 
         if (g_cfg.wh_flags & WH_HP)
