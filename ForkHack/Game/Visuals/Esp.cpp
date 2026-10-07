@@ -249,7 +249,14 @@ void Esp::Update()
 
                 if (WeaponUsesAmmo(type))
                 {
-                    const unsigned int clip = weapon->m_nAmmoInClip;
+                    unsigned int clip = weapon->m_nAmmoInClip;
+                    // For firearms GTA keeps the currently chambered/queued
+                    // round in m_nAmmoInClip, while the HUD shows rounds left
+                    // after the active shot. Match the HUD value.
+                    if (type >= WEAPONTYPE_PISTOL && type <= WEAPONTYPE_MINIGUN && clip > 0)
+                    {
+                        --clip;
+                    }
                     snprintf(weaponText, sizeof(weaponText), "%s [%u]", WeaponName(type), clip);
                 }
                 else
