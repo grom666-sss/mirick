@@ -250,10 +250,7 @@ void Esp::Update()
                 if (WeaponUsesAmmo(type))
                 {
                     const unsigned int clip = weapon->m_nAmmoInClip;
-                    const unsigned int reserve = weapon->m_nAmmoTotal > clip
-                        ? weapon->m_nAmmoTotal - clip
-                        : 0;
-                    snprintf(weaponText, sizeof(weaponText), "%s [%u / %u]", WeaponName(type), clip, reserve);
+                    snprintf(weaponText, sizeof(weaponText), "%s [%u]", WeaponName(type), clip);
                 }
                 else
                 {
