@@ -39,7 +39,4 @@ If Visual Studio was already open when the dependencies were installed, close an
 
 ## Special Thanks
 
-* **ShunK**
-* **Akira**
-* **DroidZero // NtKernelMC**
-* **Kirill Sorokin // gamesnus**
+* **ThatRuxe**
