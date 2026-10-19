@@ -245,29 +245,66 @@ void Esp::Update()
             if (CWeapon* weapon = ped->GetWeapon())
             {
                 const eWeaponType type = weapon->m_eWeaponType;
-                char weaponText[96]{};
+                const char* weaponName = WeaponName(type);
+                char ammoText[16]{};
+                bool showAmmo = WeaponUsesAmmo(type);
 
-                if (WeaponUsesAmmo(type))
+                if (showAmmo)
                 {
                     unsigned int clip = weapon->m_nAmmoInClip;
-                    // For firearms GTA keeps the currently chambered/queued
-                    // round in m_nAmmoInClip, while the HUD shows rounds left
-                    // after the active shot. Match the HUD value.
+                    // Match GTA's HUD: the internal value includes the round
+                    // currently prepared for the next firearm shot.
                     if (type >= WEAPONTYPE_PISTOL && type <= WEAPONTYPE_MINIGUN && clip > 0)
                     {
                         --clip;
                     }
-                    snprintf(weaponText, sizeof(weaponText), "%s [%u]", WeaponName(type), clip);
-                }
-                else
-                {
-                    snprintf(weaponText, sizeof(weaponText), "%s", WeaponName(type));
+                    snprintf(ammoText, sizeof(ammoText), "%u", clip);
                 }
 
-                const ImVec2 textSize = ImGui::CalcTextSize(weaponText);
-                const ImVec2 weaponPos(boxCenterX - textSize.x * 0.5f, min.y - textSize.y - 2.0f * s);
-                draw->AddText(weaponPos + ImVec2(1.0f, 1.0f), IM_COL32(0, 0, 0, 210), weaponText);
-                draw->AddText(weaponPos, weaponCol, weaponText);
+                const ImVec2 nameSize = ImGui::CalcTextSize(weaponName);
+                const ImVec2 ammoSize = showAmmo ? ImGui::CalcTextSize(ammoText) : ImVec2(0.0f, 0.0f);
+                const float padX = 6.0f * s;
+                const float padY = 3.0f * s;
+                const float gap = showAmmo ? 8.0f * s : 0.0f;
+                const float badgeH = std::max(nameSize.y, ammoSize.y) + padY * 2.0f;
+                const float badgeW = nameSize.x + ammoSize.x + gap + padX * 2.0f;
+                const ImVec2 badgeMin(boxCenterX - badgeW * 0.5f, min.y - badgeH - 5.0f * s);
+                const ImVec2 badgeMax = badgeMin + ImVec2(badgeW, badgeH);
+                const float rounding = 4.0f * s;
+
+                // Compact dark badge with a colored edge keeps the text readable
+                // against both bright sky and dark interiors.
+                draw->AddRectFilled(
+                    badgeMin + ImVec2(1.0f, 2.0f),
+                    badgeMax + ImVec2(1.0f, 2.0f),
+                    IM_COL32(0, 0, 0, 95),
+                    rounding);
+                draw->AddRectFilled(badgeMin, badgeMax, IM_COL32(13, 14, 18, 220), rounding);
+                draw->AddRect(badgeMin, badgeMax, g_cfg.weaponcol.to_color(125).as_imcolor(), rounding, 0, 1.0f);
+                draw->AddRectFilled(
+                    badgeMin + ImVec2(1.0f, 3.0f * s),
+                    ImVec2(badgeMin.x + 3.0f * s, badgeMax.y - 3.0f * s),
+                    weaponCol,
+                    2.0f * s);
+
+                const ImVec2 namePos(
+                    badgeMin.x + padX,
+                    badgeMin.y + (badgeH - nameSize.y) * 0.5f);
+                draw->AddText(namePos, weaponCol, weaponName);
+
+                if (showAmmo)
+                {
+                    const float dividerX = namePos.x + nameSize.x + gap * 0.5f;
+                    draw->AddLine(
+                        ImVec2(dividerX, badgeMin.y + 4.0f * s),
+                        ImVec2(dividerX, badgeMax.y - 4.0f * s),
+                        IM_COL32(255, 255, 255, 35),
+                        1.0f);
+                    const ImVec2 ammoPos(
+                        badgeMax.x - padX - ammoSize.x,
+                        badgeMin.y + (badgeH - ammoSize.y) * 0.5f);
+                    draw->AddText(ammoPos, IM_COL32(245, 245, 248, 255), ammoText);
+                }
             }
         }
 
