@@ -10,7 +10,7 @@
 [Rr]elease/
 x64/
 x86/
-ForkHack/Release/
+mirick/Release/
 
 # Build artifacts
 *.obj

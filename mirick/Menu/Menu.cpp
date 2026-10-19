@@ -193,7 +193,7 @@ void Menu::InitTextures()
 
     if (!logo_texture)
     {
-        Texture::FromMemory(device, cheatLogo, sizeof(cheatLogo), &logo_texture);
+        Texture::FromMemory(device, mirickLogo, sizeof(mirickLogo), &logo_texture);
     }
 
     if (!kb_texture)
