@@ -7,7 +7,7 @@ set "ROOT=%~dp0"
 set "PLUGIN_SDK_DIR=%ROOT%thirdparty\plugin-sdk"
 set "PREMAKE=%PLUGIN_SDK_DIR%\tools\premake\premake5.exe"
 set "PREMAKE_FILE=%PLUGIN_SDK_DIR%\tools\premake\premake5.lua"
-set "SDK_ZIP=%TEMP%\forkhack-plugin-sdk.zip"
+set "SDK_ZIP=%TEMP%\mirick-plugin-sdk.zip"
 
 if not exist "%ROOT%thirdparty" mkdir "%ROOT%thirdparty"
 
@@ -40,7 +40,7 @@ if not exist "%PREMAKE%" (
 )
 
 if not exist "%PLUGIN_SDK_DIR%\output\lib\plugin.lib" (
-    rem ForkHack uses the v145 toolset, so generate a matching VS 2026 project.
+    rem mirick uses the v145 toolset, so generate a matching VS 2026 project.
     rem Always regenerate while plugin.lib is absent: a previous attempt may have
     rem left behind a VS 2022/v143 project that cannot be built by VS 2026.
     echo [2/3] Generating Plugin-SDK projects for Visual Studio 2026 ^(v145^)...
@@ -87,7 +87,7 @@ if not exist "%PLUGIN_SDK_DIR%\output\lib\plugin.lib" (
 )
 
 echo.
-echo Dependencies are ready. Build ForkHack using Release ^| Win32.
+echo Dependencies are ready. Build mirick using Release ^| Win32.
 exit /b 0
 
 :DownloadZip

@@ -54,7 +54,7 @@ void Bypass::InstallHook()
     }
     else
     {
-        MessageBoxA(NULL, "Failed to find signature for gowno", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to find signature for gowno", "mirick", MB_OK | MB_ICONERROR);
     }
 
 
@@ -65,7 +65,7 @@ void Bypass::InstallHook()
     }
     else
     {
-        MessageBoxA(NULL, "Failed to find signature for SendClientKick", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to find signature for SendClientKick", "mirick", MB_OK | MB_ICONERROR);
     }
 
     if (const auto& target = Utils::PatternScan("netc.dll", "55 8B EC 6A FF 68 ? ? ? ? 64 A1 ? ? ? ? 50 81 EC ? ? ? ? A1 ? ? ? ? 33 C5 89 45 F0 53 56 57 50 8D 45 F4 64 A3 ? ? ? ? 8B F1 8B 45 18 8B 7D 08 8B 5D 0C 89 85 ? ? ? ? E8 ? ? ? ? 84 C0 75 1A FF B5 ? ? ? ?", false))
@@ -80,7 +80,7 @@ void Bypass::InstallHook()
     }
     else
     {
-        MessageBoxA(NULL, "Failed to find signature for SendReport", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to find signature for SendReport", "mirick", MB_OK | MB_ICONERROR);
     }
 
     if (const auto& target = Utils::PatternScan("netc.dll", "55 8B EC 6A FF 68 ? ? ? ? 64 A1 ? ? ? ? 50 81 EC ? ? ? ? A1 ? ? ? ? 33 C5 89 45 F0 56 57 50 8D 45 F4 64 A3 ? ? ? ? 8B F1 89 B5 ? ? ? ? 8B 7D 0C", false))
@@ -90,6 +90,6 @@ void Bypass::InstallHook()
     }
     else
     {
-        MessageBoxA(NULL, "Failed to find signature for SendPacket", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to find signature for SendPacket", "mirick", MB_OK | MB_ICONERROR);
     }
 }

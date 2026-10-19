@@ -20,7 +20,7 @@ void Hooks::InstallHooks()
     status = MH_Initialize();
     if (status != MH_OK)
     {
-        MessageBoxA(NULL, "Failed to initialize MinHook", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to initialize MinHook", "mirick", MB_OK | MB_ICONERROR);
         return;
     }
     VIRTUALIZER_START;
@@ -42,6 +42,6 @@ void Hooks::RemoveHooks()
     status = MH_Uninitialize();
     if (status != MH_OK)
     {
-        MessageBoxA(NULL, "Failed to uninitialize MinHook", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to uninitialize MinHook", "mirick", MB_OK | MB_ICONERROR);
     }
 }

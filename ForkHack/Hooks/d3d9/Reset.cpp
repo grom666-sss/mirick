@@ -42,20 +42,20 @@ void Reset::InstallHook()
 
     if (!sResetTarget)
     {
-        MessageBoxA(NULL, "Failed to find device for d3d9/reset", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to find device for d3d9/reset", "mirick", MB_OK | MB_ICONERROR);
         return;
     }
 
     status = MH_CreateHook(sResetTarget, &hkReset, reinterpret_cast<LPVOID*>(&oReset));
     if (status != MH_OK)
     {
-        MessageBoxA(NULL, "Failed to create hook on function d3d9/reset", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to create hook on function d3d9/reset", "mirick", MB_OK | MB_ICONERROR);
     }
 
     status = MH_EnableHook(sResetTarget);
     if (status != MH_OK)
     {
-        MessageBoxA(NULL, "Failed to enable hook on function d3d9/reset", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to enable hook on function d3d9/reset", "mirick", MB_OK | MB_ICONERROR);
     }
 }
 
@@ -71,12 +71,12 @@ void Reset::RemoveHook()
     status = MH_DisableHook(sResetTarget);
     if (status != MH_OK)
     {
-        MessageBoxA(NULL, "Failed to disable hook on function d3d9/reset", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to disable hook on function d3d9/reset", "mirick", MB_OK | MB_ICONERROR);
     }
 
     status = MH_RemoveHook(sResetTarget);
     if (status != MH_OK)
     {
-        MessageBoxA(NULL, "Failed to remove hook on function d3d9/reset", "ForkHack", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to remove hook on function d3d9/reset", "mirick", MB_OK | MB_ICONERROR);
     }
 }

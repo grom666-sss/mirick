@@ -296,9 +296,9 @@ void Menu::DrawBackground()
 
     static const std::string letter_s =
 #ifdef BETA_BUILD
-        "ForkHack (beta)";
+        "mirick (beta)";
 #else
-        "ForkHack";
+        "mirick";
 #endif
     const char* letter = letter_s.c_str();
 
@@ -312,6 +312,13 @@ void Menu::DrawBackground()
 
     float base_x = window_pos.x + image_pos_min.x - text_size.x + 18.0f * s;
     list->AddText(ImVec2(base_x + 30.0f * s, window_pos.y + 13.0f * s), c_color(255, 255, 255, 150.0f * alpha).as_imcolor(), letter);
+
+    static const char* author = "m1racl";
+    const ImVec2 author_size = ImGui::CalcTextSize(author);
+    list->AddText(
+        ImVec2(window_pos.x + header_size.x - author_size.x - 18.0f * s, window_pos.y + 13.0f * s),
+        clr.new_alpha((int)(185.0f * alpha)).as_imcolor(),
+        author);
     ImGui::PopFont();
 
     Blur::Create(list, window_pos + ImVec2(0, 47.0f * s), ImVec2(window_pos.x + 720.0f * s, window_pos.y + 520.0f * s), ImColor(80, 80, 80, (int)(window_alpha)), 6.0f * s, ImDrawCornerFlags_Bot);

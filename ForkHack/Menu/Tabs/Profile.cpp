@@ -63,7 +63,7 @@ void Menu::DrawProfile()
 
                 if ((INT_PTR)ShellExecuteA(NULL, "open", folder.c_str(), NULL, NULL, SW_SHOWNORMAL) <= 32)
                 {
-                    MessageBoxA(NULL, tr("Не удалось открыть папку конфигов", "Failed to open configs folder"), "ForkHack", MB_OK | MB_ICONERROR);
+                    MessageBoxA(NULL, tr("Не удалось открыть папку конфигов", "Failed to open configs folder"), "mirick", MB_OK | MB_ICONERROR);
                 }
             }
             GroupEnd();

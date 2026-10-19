@@ -8,7 +8,7 @@
 
 namespace
 {
-    constexpr wchar_t kOverlayClass[] = L"ForkHackProtectedOverlay";
+    constexpr wchar_t kOverlayClass[] = L"mirickProtectedOverlay";
 
     HWND gameWindow = nullptr;
     HWND overlayWindow = nullptr;
@@ -158,7 +158,7 @@ bool ProtectedOverlay::Initialize(HWND targetGameWindow, IDirect3DDevice9* gameD
     overlayWindow = CreateWindowExW(
         WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
         kOverlayClass,
-        L"ForkHack protected overlay",
+        L"mirick protected overlay",
         WS_POPUP,
         origin.x,
         origin.y,
