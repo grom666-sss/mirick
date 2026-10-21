@@ -17,7 +17,7 @@ Made as a base for your own projects and easy to understand for beginners. Every
 
 ## Lua scripts
 
-Place scripts in `C:\Astral\scripts`. All `.lua` files are loaded when mirick starts. Script errors and output are written to `C:\Astral\lua.log`.
+Place scripts in `C:\Astral\scripts`. All `.lua` files are loaded when mirick starts. Script errors and output are written to `C:\Astral\lua.log`. You can also open **Profile → Lua**, paste code into the in-game editor and run it immediately. The editor supports multiline text, clipboard paste and tab characters.
 
 Available callbacks and API:
 

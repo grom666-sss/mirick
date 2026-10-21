@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <string_view>
 
 class LuaManager
 {
@@ -12,7 +14,9 @@ public:
     void Reload();
     void Shutdown();
 
+    bool Execute(std::string_view code);
     bool IsInitialized() const;
+    const std::string& GetLastMessage() const;
 
 private:
     struct Impl;

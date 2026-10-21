@@ -63,6 +63,7 @@ struct LuaManager::Impl
     sol::state lua;
     std::vector<Script> scripts;
     std::chrono::steady_clock::time_point lastUpdate = std::chrono::steady_clock::now();
+    std::string lastMessage;
     bool initialized = false;
 
     void UnloadScripts()
@@ -249,7 +250,41 @@ void LuaManager::Shutdown()
     impl_->initialized = false;
 }
 
+bool LuaManager::Execute(std::string_view code)
+{
+    if (code.empty())
+    {
+        impl_->lastMessage = "Nothing to execute";
+        return false;
+    }
+
+    if (!impl_->initialized)
+    {
+        Initialize();
+    }
+
+    const sol::protected_function_result result = impl_->lua.safe_script(
+        std::string(code), sol::script_pass_on_error);
+
+    if (!result.valid())
+    {
+        const sol::error error = result;
+        impl_->lastMessage = error.what();
+        WriteLog("[console] " + impl_->lastMessage);
+        return false;
+    }
+
+    impl_->lastMessage = "Script executed successfully";
+    WriteLog("[console] Script executed successfully");
+    return true;
+}
+
 bool LuaManager::IsInitialized() const
 {
     return impl_->initialized;
+}
+
+const std::string& LuaManager::GetLastMessage() const
+{
+    return impl_->lastMessage;
 }
