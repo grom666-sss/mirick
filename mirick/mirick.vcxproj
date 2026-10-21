@@ -54,7 +54,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USE_BGRA_PACKED_COLOR;GTASA;RW;PLUGIN_SGV_10US;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Utils;$(ProjectDir)..\thirdparty\MinHook;$(ProjectDir)..\thirdparty\imgui;$(PluginSdkDir)\shared;$(PluginSdkDir)\shared\game;$(PluginSdkDir)\plugin_sa\game_sa\rw;$(PluginSdkDir)\plugin_sa;$(PluginSdkDir)\plugin_sa\game_sa;$(PluginSdkDir)\plugin_sa\game_sa\enums;$(PluginSdkDir)\shared\extensions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Utils;$(ProjectDir)..\thirdparty\MinHook;$(ProjectDir)..\thirdparty\imgui;$(ProjectDir)..\thirdparty\sol2\include;$(ProjectDir)..\thirdparty\lua;$(PluginSdkDir)\shared;$(PluginSdkDir)\shared\game;$(PluginSdkDir)\plugin_sa\game_sa\rw;$(PluginSdkDir)\plugin_sa;$(PluginSdkDir)\plugin_sa\game_sa;$(PluginSdkDir)\plugin_sa\game_sa\enums;$(PluginSdkDir)\shared\extensions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp23</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -73,7 +73,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;BETA_BUILD;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USE_BGRA_PACKED_COLOR;GTASA;RW;PLUGIN_SGV_10US;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Utils;$(ProjectDir)..\thirdparty\MinHook;$(ProjectDir)..\thirdparty\imgui;$(PluginSdkDir)\shared;$(PluginSdkDir)\shared\game;$(PluginSdkDir)\plugin_sa\game_sa\rw;$(PluginSdkDir)\plugin_sa;$(PluginSdkDir)\plugin_sa\game_sa;$(PluginSdkDir)\plugin_sa\game_sa\enums;$(PluginSdkDir)\shared\extensions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Utils;$(ProjectDir)..\thirdparty\MinHook;$(ProjectDir)..\thirdparty\imgui;$(ProjectDir)..\thirdparty\sol2\include;$(ProjectDir)..\thirdparty\lua;$(PluginSdkDir)\shared;$(PluginSdkDir)\shared\game;$(PluginSdkDir)\plugin_sa\game_sa\rw;$(PluginSdkDir)\plugin_sa;$(PluginSdkDir)\plugin_sa\game_sa;$(PluginSdkDir)\plugin_sa\game_sa\enums;$(PluginSdkDir)\shared\extensions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp23</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -86,6 +86,39 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="Lua\LuaManager.cpp" />
+    <ClCompile Include="..\thirdparty\lua\lapi.c" />
+    <ClCompile Include="..\thirdparty\lua\lauxlib.c" />
+    <ClCompile Include="..\thirdparty\lua\lbaselib.c" />
+    <ClCompile Include="..\thirdparty\lua\lcode.c" />
+    <ClCompile Include="..\thirdparty\lua\lcorolib.c" />
+    <ClCompile Include="..\thirdparty\lua\lctype.c" />
+    <ClCompile Include="..\thirdparty\lua\ldblib.c" />
+    <ClCompile Include="..\thirdparty\lua\ldebug.c" />
+    <ClCompile Include="..\thirdparty\lua\ldo.c" />
+    <ClCompile Include="..\thirdparty\lua\ldump.c" />
+    <ClCompile Include="..\thirdparty\lua\lfunc.c" />
+    <ClCompile Include="..\thirdparty\lua\lgc.c" />
+    <ClCompile Include="..\thirdparty\lua\linit.c" />
+    <ClCompile Include="..\thirdparty\lua\liolib.c" />
+    <ClCompile Include="..\thirdparty\lua\llex.c" />
+    <ClCompile Include="..\thirdparty\lua\lmathlib.c" />
+    <ClCompile Include="..\thirdparty\lua\lmem.c" />
+    <ClCompile Include="..\thirdparty\lua\loadlib.c" />
+    <ClCompile Include="..\thirdparty\lua\lobject.c" />
+    <ClCompile Include="..\thirdparty\lua\lopcodes.c" />
+    <ClCompile Include="..\thirdparty\lua\loslib.c" />
+    <ClCompile Include="..\thirdparty\lua\lparser.c" />
+    <ClCompile Include="..\thirdparty\lua\lstate.c" />
+    <ClCompile Include="..\thirdparty\lua\lstring.c" />
+    <ClCompile Include="..\thirdparty\lua\lstrlib.c" />
+    <ClCompile Include="..\thirdparty\lua\ltable.c" />
+    <ClCompile Include="..\thirdparty\lua\ltablib.c" />
+    <ClCompile Include="..\thirdparty\lua\ltm.c" />
+    <ClCompile Include="..\thirdparty\lua\lundump.c" />
+    <ClCompile Include="..\thirdparty\lua\lutf8lib.c" />
+    <ClCompile Include="..\thirdparty\lua\lvm.c" />
+    <ClCompile Include="..\thirdparty\lua\lzio.c" />
     <ClCompile Include="Hooks\core\ForceCursorVisible.cpp" />
     <ClCompile Include="Hooks\Hooks.cpp" />
     <ClCompile Include="Hooks\Collision\Collision.cpp" />
@@ -178,6 +211,7 @@
     <ClInclude Include="Hooks\netc\Bypass.hpp" />
     <ClInclude Include="Hooks\LdrDll\LdrDll.hpp" />
     <ClInclude Include="Game\Features.h" />
+    <ClInclude Include="Lua\LuaManager.hpp" />
     <ClInclude Include="Game\Common.hpp" />
     <ClInclude Include="Game\Legit\Triggerbot.hpp" />
     <ClInclude Include="Game\Misc\AirBreak.hpp" />
@@ -242,11 +276,13 @@
     <ClInclude Include="..\thirdparty\MinHook\hde\table32.hpp" />
     <ClInclude Include="..\thirdparty\MinHook\hde\table64.hpp" />
   </ItemGroup>
-  <Target Name="EnsurePluginSdk" BeforeTargets="PrepareForBuild">
-    <Message Condition="!Exists('$(PluginSdkDir)\shared\plugin.h') Or !Exists('$(PluginSdkDir)\output\lib\plugin.lib')" Text="Plugin-SDK is missing; downloading and building it now..." Importance="high" />
-    <Exec Condition="!Exists('$(PluginSdkDir)\shared\plugin.h') Or !Exists('$(PluginSdkDir)\output\lib\plugin.lib')" Command="call &quot;$(SolutionDir)setup_dependencies.bat&quot;" WorkingDirectory="$(SolutionDir)" />
+  <Target Name="EnsureDependencies" BeforeTargets="PrepareForBuild">
+    <Message Condition="!Exists('$(PluginSdkDir)\shared\plugin.h') Or !Exists('$(PluginSdkDir)\output\lib\plugin.lib') Or !Exists('$(SolutionDir)thirdparty\lua\lua.h') Or !Exists('$(SolutionDir)thirdparty\sol2\include\sol\sol.hpp')" Text="One or more dependencies are missing; downloading and building them now..." Importance="high" />
+    <Exec Condition="!Exists('$(PluginSdkDir)\shared\plugin.h') Or !Exists('$(PluginSdkDir)\output\lib\plugin.lib') Or !Exists('$(SolutionDir)thirdparty\lua\lua.h') Or !Exists('$(SolutionDir)thirdparty\sol2\include\sol\sol.hpp')" Command="call &quot;$(SolutionDir)setup_dependencies.bat&quot;" WorkingDirectory="$(SolutionDir)" />
     <Error Condition="!Exists('$(PluginSdkDir)\shared\plugin.h')" Text="Plugin-SDK setup failed: plugin.h was not created. Run setup_dependencies.bat manually to see the complete error." />
     <Error Condition="!Exists('$(PluginSdkDir)\output\lib\plugin.lib')" Text="Plugin-SDK setup failed: plugin.lib was not created. Run setup_dependencies.bat manually to see the complete error." />
+    <Error Condition="!Exists('$(SolutionDir)thirdparty\lua\lua.h')" Text="Lua setup failed: lua.h was not created. Run setup_dependencies.bat manually to see the complete error." />
+    <Error Condition="!Exists('$(SolutionDir)thirdparty\sol2\include\sol\sol.hpp')" Text="sol2 setup failed: sol.hpp was not created. Run setup_dependencies.bat manually to see the complete error." />
   </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -13,6 +13,29 @@ Made as a base for your own projects and easy to understand for beginners. Every
 * Custom ImGui menu
 * Binds
 * Configs
+* Lua 5.4 scripting through sol2
+
+## Lua scripts
+
+Place scripts in `C:\Astral\scripts`. All `.lua` files are loaded when mirick starts. Script errors and output are written to `C:\Astral\lua.log`.
+
+Available callbacks and API:
+
+```lua
+function on_load()
+    mirick.log("script loaded; API " .. mirick.version)
+end
+
+function on_tick(delta_time)
+    -- Called once per rendered frame.
+end
+
+function on_unload()
+    mirick.log("script unloaded")
+end
+```
+
+Lua runs with the base, coroutine, math, string, table and UTF-8 libraries. The OS, I/O, debug and package libraries are intentionally not exposed.
 
 ## Build
 
@@ -23,7 +46,7 @@ Requirements:
 * Visual Studio 2026 with the **Desktop development with C++** workload and the **v145** toolset;
 * an internet connection during the first build.
 
-The first build runs `setup_dependencies.bat` automatically. The script downloads [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk) using Git, or a PowerShell ZIP fallback when Git is unavailable. It then generates a Visual Studio 2026/v145 project and builds the required `plugin.lib`. mirick uses the repository-local path `thirdparty\plugin-sdk`; no user-specific absolute paths are required.
+The first build runs `setup_dependencies.bat` automatically. The script downloads [Lua 5.4.9](https://github.com/lua/lua), [sol2 3.5.0](https://github.com/ThePhD/sol2) and [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk) using Git, or a PowerShell ZIP fallback when Git is unavailable. It then generates a Visual Studio 2026/v145 project and builds the required `plugin.lib`. All dependencies use repository-local paths under `thirdparty`; no user-specific absolute paths are required.
 
 Then open `mirick.slnx`, select **Release | Win32**, build the project and inject the DLL into `gta_sa.exe`.
 
