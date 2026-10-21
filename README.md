@@ -43,10 +43,10 @@ Lua runs with the base, coroutine, math, string, table and UTF-8 libraries. The 
 
 Requirements:
 
-* Visual Studio 2026 with the **Desktop development with C++** workload and the **v145** toolset;
+* Visual Studio 2022 with the **Desktop development with C++** workload and the **MSVC v143** toolset;
 * an internet connection during the first build.
 
-The first build runs `setup_dependencies.bat` automatically. The script downloads [Lua 5.4.9](https://github.com/lua/lua), [sol2 3.5.0](https://github.com/ThePhD/sol2) and [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk) using Git, or a PowerShell ZIP fallback when Git is unavailable. It then generates a Visual Studio 2026/v145 project and builds the required `plugin.lib`. All dependencies use repository-local paths under `thirdparty`; no user-specific absolute paths are required.
+The first build runs `setup_dependencies.bat` automatically. The script downloads [Lua 5.4.9](https://github.com/lua/lua), [sol2 3.5.0](https://github.com/ThePhD/sol2) and [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk) using Git, or a PowerShell ZIP fallback when Git is unavailable. It then generates a Visual Studio 2022/v143 project and builds the required `plugin.lib`. All dependencies use repository-local paths under `thirdparty`; no user-specific absolute paths are required.
 
 Then open `mirick.sln` (the traditional solution format with the widest Visual Studio compatibility), select **Release | Win32**, and build the project. `mirick.slnx` is also provided for Visual Studio versions that support the newer solution format.
 

@@ -76,11 +76,11 @@ if not exist "%PREMAKE%" (
 )
 
 if not exist "%PLUGIN_SDK_DIR%\output\lib\plugin.lib" (
-    rem mirick uses the v145 toolset, so generate a matching VS 2026 project.
+    rem Generate a Visual Studio 2022 project that uses the widely available v143 toolset.
     rem Always regenerate while plugin.lib is absent: a previous attempt may have
-    rem left behind a VS 2022/v143 project that cannot be built by VS 2026.
-    echo [4/5] Generating Plugin-SDK projects for Visual Studio 2026 ^(v145^)...
-    "%PREMAKE%" vs2026 --file="%PREMAKE_FILE%"
+    rem left behind a project for a toolset that is not installed.
+    echo [4/5] Generating Plugin-SDK projects for Visual Studio 2022 ^(v143^)...
+    "%PREMAKE%" vs2022 --file="%PREMAKE_FILE%"
     if errorlevel 1 (
         echo [ERROR] Premake could not generate the Plugin-SDK project.
         exit /b 1
