@@ -48,7 +48,7 @@ Requirements:
 
 The first build runs `setup_dependencies.bat` automatically. The script downloads [Lua 5.4.9](https://github.com/lua/lua), [sol2 3.5.0](https://github.com/ThePhD/sol2) and [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk) using Git, or a PowerShell ZIP fallback when Git is unavailable. It then generates a Visual Studio 2026/v145 project and builds the required `plugin.lib`. All dependencies use repository-local paths under `thirdparty`; no user-specific absolute paths are required.
 
-Then open `mirick.slnx`, select **Release | Win32**, build the project and inject the DLL into `gta_sa.exe`.
+Then open `mirick.sln` (the traditional solution format with the widest Visual Studio compatibility), select **Release | Win32**, and build the project. `mirick.slnx` is also provided for Visual Studio versions that support the newer solution format.
 
 ## Capture protection
 
