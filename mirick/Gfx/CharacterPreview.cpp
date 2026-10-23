@@ -3,9 +3,11 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <mutex>
 #include <vector>
 
 #include "Utils/Sdk.hpp"
+#include "Gfx/Blur.hpp"
 
 #include "CBaseModelInfo.h"
 #include "CModelInfo.h"
@@ -19,12 +21,6 @@ namespace
 {
     constexpr int kPreviewWidth = 384;
     constexpr int kPreviewHeight = 512;
-    constexpr int kD3D9RasterExtOffsetAddress = 0xB4E9E0;
-
-    struct RasterExtension
-    {
-        IDirect3DTexture9* texture;
-    };
 
     RwCamera* camera = nullptr;
     RwFrame* cameraFrame = nullptr;
@@ -35,6 +31,11 @@ namespace
     CBaseModelInfo* modelInfo = nullptr;
     RpHAnimHierarchy* hierarchy = nullptr;
     std::vector<RwMatrix> bindPose;
+    IDirect3DTexture9* displayTexture = nullptr;
+    std::vector<unsigned char> capturedPixels;
+    std::mutex capturedPixelsMutex;
+    unsigned int capturedGeneration = 0;
+    unsigned int uploadedGeneration = 0;
 
     plugin::CdeclEvent<plugin::AddressList<0x53EA12, plugin::H_CALL>, plugin::PRIORITY_BEFORE,
         plugin::ArgPickNone, void()> previewRenderEvent;
@@ -73,6 +74,17 @@ namespace
     void ReleaseScene()
     {
         ReleaseClump();
+        if (displayTexture)
+        {
+            displayTexture->Release();
+            displayTexture = nullptr;
+        }
+        {
+            std::lock_guard<std::mutex> lock(capturedPixelsMutex);
+            capturedPixels.clear();
+            capturedGeneration = 0;
+            uploadedGeneration = 0;
+        }
 
         if (ambientLight)
         {
@@ -151,29 +163,6 @@ namespace
         RwRGBAReal lightColor{ 1.0f, 1.0f, 1.0f, 1.0f };
         RpLightSetColor(ambientLight, &lightColor);
         return true;
-    }
-
-    IDirect3DTexture9* GetD3DTexture()
-    {
-        if (!colorRaster)
-        {
-            return nullptr;
-        }
-
-        RwRaster* root = colorRaster;
-        while (root->parent && root->parent != root)
-        {
-            root = root->parent;
-        }
-
-        const int offset = *reinterpret_cast<const int*>(kD3D9RasterExtOffsetAddress);
-        if (offset <= 0 || offset > 256)
-        {
-            return nullptr;
-        }
-
-        auto* extension = reinterpret_cast<RasterExtension*>(reinterpret_cast<unsigned char*>(root) + offset);
-        return extension->texture;
     }
 
     bool CreateClump()
@@ -340,6 +329,38 @@ void CharacterPreview::ResetPose()
 
 namespace
 {
+    bool CapturePreviewPixels()
+    {
+        if (!colorRaster)
+        {
+            return false;
+        }
+
+        unsigned char* pixels = RwRasterLock(colorRaster, 0, rwRASTERLOCKREAD);
+        if (!pixels || colorRaster->stride < kPreviewWidth * 4)
+        {
+            if (pixels)
+            {
+                RwRasterUnlock(colorRaster);
+            }
+            return false;
+        }
+
+        std::vector<unsigned char> next(static_cast<size_t>(kPreviewWidth) * kPreviewHeight * 4);
+        for (int y = 0; y < kPreviewHeight; ++y)
+        {
+            std::memcpy(next.data() + static_cast<size_t>(y) * kPreviewWidth * 4,
+                pixels + static_cast<size_t>(y) * colorRaster->stride,
+                static_cast<size_t>(kPreviewWidth) * 4);
+        }
+        RwRasterUnlock(colorRaster);
+
+        std::lock_guard<std::mutex> lock(capturedPixelsMutex);
+        capturedPixels.swap(next);
+        ++capturedGeneration;
+        return true;
+    }
+
     void RenderPreviewFrame()
     {
         if (!visible || requestedModelId < 0)
@@ -357,6 +378,7 @@ namespace
         RwRGBA clear{ 7, 10, 17, 0 };
         const bool began = RwCameraClear(camera, &clear, rwCAMERACLEARIMAGE | rwCAMERACLEARZ)
             && RwCameraBeginUpdate(camera);
+        bool captured = false;
         if (began)
         {
             RpWorldAddLight(Scene.m_pWorld, ambientLight);
@@ -367,13 +389,14 @@ namespace
             RpClumpRender(modelClump);
             RwCameraEndUpdate(camera);
             RpWorldRemoveLight(Scene.m_pWorld, ambientLight);
+            captured = CapturePreviewPixels();
         }
 
         if (Scene.m_pCamera)
         {
             CVisibilityPlugins::SetRenderWareCamera(Scene.m_pCamera);
         }
-        state = began ? CharacterPreview::State::Ready : CharacterPreview::State::RenderError;
+        state = began && captured ? CharacterPreview::State::Ready : CharacterPreview::State::RenderError;
     }
 }
 
@@ -402,7 +425,49 @@ IDirect3DTexture9* CharacterPreview::GetTexture()
     {
         return nullptr;
     }
-    return GetD3DTexture();
+
+    IDirect3DDevice9* device = Blur::GetDevice();
+    if (!device)
+    {
+        return nullptr;
+    }
+    if (!displayTexture && FAILED(device->CreateTexture(kPreviewWidth, kPreviewHeight, 1, 0,
+        D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &displayTexture, nullptr)))
+    {
+        state = State::RenderError;
+        return nullptr;
+    }
+
+    std::vector<unsigned char> pixels;
+    unsigned int generation = 0;
+    {
+        std::lock_guard<std::mutex> lock(capturedPixelsMutex);
+        generation = capturedGeneration;
+        if (generation != uploadedGeneration)
+        {
+            pixels = capturedPixels;
+        }
+    }
+
+    if (!pixels.empty())
+    {
+        D3DLOCKED_RECT locked{};
+        if (FAILED(displayTexture->LockRect(0, &locked, nullptr, 0)))
+        {
+            state = State::RenderError;
+            return nullptr;
+        }
+        for (int y = 0; y < kPreviewHeight; ++y)
+        {
+            std::memcpy(static_cast<unsigned char*>(locked.pBits) + static_cast<size_t>(y) * locked.Pitch,
+                pixels.data() + static_cast<size_t>(y) * kPreviewWidth * 4,
+                static_cast<size_t>(kPreviewWidth) * 4);
+        }
+        displayTexture->UnlockRect(0);
+        uploadedGeneration = generation;
+    }
+
+    return uploadedGeneration ? displayTexture : nullptr;
 }
 
 CharacterPreview::State CharacterPreview::GetState()
