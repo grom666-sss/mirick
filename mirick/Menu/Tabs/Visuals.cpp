@@ -41,7 +41,7 @@ void Menu::DrawVisuals()
                 {
                     const float prev_mul = widget_alpha_mul;
                     widget_alpha_mul = wh_fade;
-                    std::vector<std::string> esp_items = { tr("Бокс", "Box"), tr("Значение ХП", "HP value"), tr("Значение брони", "Armor value"), tr("Дистанция", "Distance"), tr("Скелет", "Skeleton"), tr("Снаплайн", "Snapline"), tr("Оружие", "Weapon") };
+                    std::vector<std::string> esp_items = { tr("Бокс", "Box"), tr("Значение ХП", "HP value"), tr("Значение брони", "Armor value"), tr("Дистанция", "Distance"), tr("Скелет", "Skeleton"), tr("Оружие", "Weapon") };
                     const unsigned int prev_flags = g_cfg.wh_flags;
                     MultiCombo(tr("Рисовать", "Draw"), g_cfg.wh_flags, esp_items);
                     if (prev_flags != g_cfg.wh_flags)
@@ -88,13 +88,6 @@ void Menu::DrawVisuals()
                         }
                     }
                     if (g_cfg.wh_flags & 32)
-                    {
-                        if (ColorPicker(tr("Снаплайн", "Snapline"), g_cfg.snapcol))
-                        {
-                            SaveGeneralConfig();
-                        }
-                    }
-                    if (g_cfg.wh_flags & 64)
                     {
                         if (ColorPicker(tr("Оружие", "Weapon"), g_cfg.weaponcol))
                         {

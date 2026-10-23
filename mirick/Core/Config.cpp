@@ -272,7 +272,6 @@ bool config_t::Save(const std::string& name)
     WriteColor(body, "distcol", distcol);
     WriteColor(body, "skelcol", skelcol);
     WriteColor(body, "skeloccludedcol", skeloccludedcol);
-    WriteColor(body, "snapcol", snapcol);
     WriteColor(body, "weaponcol", weaponcol);
     WriteBool(body, "fastcross", fastcross);
     WriteInt(body, "fastcross_key", fastcross_bind.key);
@@ -438,14 +437,22 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "infammo_key") { ReadInt(value, infammo_bind.key); }
     else if (key == "infammo_mode") { ReadInt(value, infammo_bind.mode); }
 
-    else if (key == "wh_flags") { int t = 15; if (ReadInt(value, t)) { wh_flags = (unsigned int)t; } }
+    else if (key == "wh_flags")
+    {
+        int t = 63;
+        if (ReadInt(value, t))
+        {
+            // Older configs used bit 6 for Weapon; migrate it into bit 5.
+            if (t & 64) t |= 32;
+            wh_flags = (unsigned int)(t & 63);
+        }
+    }
     else if (key == "whcol") { ReadColor(value, whcol); }
     else if (key == "hpcol") { ReadColor(value, hpcol); }
     else if (key == "armorcol") { ReadColor(value, armorcol); }
     else if (key == "distcol") { ReadColor(value, distcol); }
     else if (key == "skelcol") { ReadColor(value, skelcol); }
     else if (key == "skeloccludedcol") { ReadColor(value, skeloccludedcol); }
-    else if (key == "snapcol") { ReadColor(value, snapcol); }
     else if (key == "weaponcol") { ReadColor(value, weaponcol); }
     else if (key == "fastcross") { ReadBool(value, fastcross); }
     else if (key == "fastcross_key") { ReadInt(value, fastcross_bind.key); }

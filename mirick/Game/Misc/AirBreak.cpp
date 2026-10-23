@@ -58,22 +58,14 @@ void AirBreak::Run()
         airBrake = g_cfg.airbreake;
         airBrakeWasEnabled = g_cfg.airbreake;
 
-        if (GetAsyncKeyState(VK_LSHIFT) && airBrake && g_cfg.airbreake)
+        if (airBrake && g_cfg.airbreake && (GetAsyncKeyState('D') & 1))
         {
-            airSpeed += 0.02f;
-            Sleep(100);
+            airSpeed = std::min(airSpeed + 0.02f, 2.0f);
         }
 
-        if (GetAsyncKeyState(VK_LCONTROL) && airBrake && g_cfg.airbreake)
+        if (airBrake && g_cfg.airbreake && (GetAsyncKeyState('A') & 1))
         {
-            airSpeed -= 0.02f;
-
-            if (airSpeed < 0.05f)
-            {
-                airSpeed = 0.05f;
-            }
-
-            Sleep(100);
+            airSpeed = std::max(airSpeed - 0.02f, 0.05f);
         }
 
         if (airBrake && g_cfg.airbreake)
@@ -93,24 +85,12 @@ void AirBreak::Run()
                 airBrkY = airBrkY + airSpeed * cos(-(angle - 1.5708));
             }
 
-            if (GetAsyncKeyState(0x41))
-            {
-                airBrkX = airBrkX - airSpeed * sin(-angle);
-                airBrkY = airBrkY - airSpeed * cos(-angle);
-            }
-
-            if (GetAsyncKeyState(0x44))
-            {
-                airBrkX = airBrkX + airSpeed * sin(-angle);
-                airBrkY = airBrkY + airSpeed * cos(-angle);
-            }
-
-            if (GetAsyncKeyState(VK_UP))
+            if (GetAsyncKeyState(VK_SPACE) & 0x8000)
             {
                 airBrkZ += airSpeed;
             }
 
-            if (GetAsyncKeyState(VK_DOWN))
+            if (GetAsyncKeyState(VK_SHIFT) & 0x8000)
             {
                 airBrkZ -= airSpeed;
             }

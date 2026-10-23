@@ -103,7 +103,6 @@ void Esp::Update()
     const ImU32 textCol = g_cfg.distcol.to_color().as_imcolor();
     const ImU32 skelCol = g_cfg.skelcol.to_color().as_imcolor();
     const ImU32 skelOccludedCol = g_cfg.skeloccludedcol.to_color().as_imcolor();
-    const ImU32 snapCol = g_cfg.snapcol.to_color().as_imcolor();
     const ImU32 weaponCol = g_cfg.weaponcol.to_color().as_imcolor();
 
     const int poolSize = CPools::ms_pPedPool->m_nSize;
@@ -143,49 +142,6 @@ void Esp::Update()
         if (dist > g_cfg.whDistance)
         {
             continue;
-        }
-
-        if (g_cfg.wh_flags & WH_SNAP)
-        {
-            const RwV3d epos = { foot.x, foot.y, foot.z - 1.1f };
-            RwV3d escr{};
-            float ew = 0.0f, eh = 0.0f;
-            ImVec2 to;
-
-            if (CSprite::CalcScreenCoors(epos, &escr, &ew, &eh, true, true))
-            {
-                to = ImVec2(escr.x, escr.y);
-            }
-            else
-            {
-                CMatrix& cm = TheCamera.m_mCameraMatrix;
-                float dx = foot.x - cm.pos.x;
-                float dy = foot.y - cm.pos.y;
-                float dz = foot.z - cm.pos.z;
-                float rx = dx * cm.right.x + dy * cm.right.y + dz * cm.right.z;
-                float fx = dx * cm.at.x + dy * cm.at.y + dz * cm.at.z;
-                float ang = atan2f(rx, fx);
-                float cx = ImGui::GetIO().DisplaySize.x * 0.5f;
-                float cy = ImGui::GetIO().DisplaySize.y * 0.5f;
-                float rr = (cx < cy ? cx : cy) * 0.9f;
-                to = ImVec2(cx + sinf(ang) * rr, cy - cosf(ang) * rr);
-            }
-
-            const RwV3d lpos = { localPos.x, localPos.y, localPos.z - 1.1f };
-            RwV3d lscr{};
-            float lw = 0.0f, lh = 0.0f;
-            ImVec2 from;
-
-            if (CSprite::CalcScreenCoors(lpos, &lscr, &lw, &lh, true, true))
-            {
-                from = ImVec2(lscr.x, lscr.y);
-            }
-            else
-            {
-                from = ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y);
-            }
-
-            draw->AddLine(from, to, snapCol, 2.0f);
         }
 
         float pedH = 1.8f;
@@ -242,7 +198,6 @@ void Esp::Update()
         ImVec2 hpTextSize{};
         ImVec2 armorTextSize{};
         const ImVec2 separatorSize = ImGui::CalcTextSize("  |  ");
-        const float vitalsPadX = 6.0f * s;
         const float vitalsPadY = 2.0f * s;
         float vitalsHeight = 0.0f;
 
@@ -297,49 +252,18 @@ void Esp::Update()
 
                 const ImVec2 nameSize = ImGui::CalcTextSize(weaponName);
                 const ImVec2 ammoSize = showAmmo ? ImGui::CalcTextSize(ammoLabel) : ImVec2(0.0f, 0.0f);
-                const float padX = 9.0f * s;
-                const float titlePadY = 4.0f * s;
-                const float rowGap = showAmmo ? 4.0f * s : 0.0f;
-                const float badgeW = std::max(nameSize.x, ammoSize.x) + padX * 2.0f;
-                const float badgeH = nameSize.y + titlePadY * 2.0f
-                    + (showAmmo ? ammoSize.y + rowGap + 3.0f * s : 0.0f);
+                const float rowGap = showAmmo ? 3.0f * s : 0.0f;
+                const float blockHeight = nameSize.y + (showAmmo ? ammoSize.y + rowGap : 0.0f);
                 const float vitalsStack = showVitals ? vitalsHeight + 4.0f * s : 0.0f;
-                const ImVec2 badgeMin(boxCenterX - badgeW * 0.5f, min.y - badgeH - 5.0f * s - vitalsStack);
-                const ImVec2 badgeMax = badgeMin + ImVec2(badgeW, badgeH);
-                const float rounding = 6.0f * s;
-
-                // Two-row loadout card: the weapon is the primary line and the
-                // current magazine is isolated in a small accent-tinted row.
-                draw->AddRectFilled(
-                    badgeMin + ImVec2(2.0f, 3.0f),
-                    badgeMax + ImVec2(2.0f, 3.0f),
-                    IM_COL32(0, 0, 0, 85),
-                    rounding);
-                draw->AddRectFilled(badgeMin, badgeMax, IM_COL32(8, 12, 20, 225), rounding);
-                draw->AddRectFilledMultiColor(
-                    badgeMin,
-                    ImVec2(badgeMax.x, badgeMin.y + 2.0f * s),
-                    g_cfg.weaponcol.to_color(230).as_imcolor(),
-                    g_cfg.weaponcol.to_color(45).as_imcolor(),
-                    g_cfg.weaponcol.to_color(45).as_imcolor(),
-                    g_cfg.weaponcol.to_color(230).as_imcolor());
-
-                const ImVec2 namePos(
-                    boxCenterX - nameSize.x * 0.5f,
-                    badgeMin.y + titlePadY);
+                const float blockTop = min.y - blockHeight - 5.0f * s - vitalsStack;
+                const ImVec2 namePos(boxCenterX - nameSize.x * 0.5f, blockTop);
                 draw->AddText(namePos, IM_COL32(242, 245, 251, 255), weaponName);
 
                 if (showAmmo)
                 {
-                    const float dividerY = namePos.y + nameSize.y + 2.0f * s;
-                    draw->AddLine(
-                        ImVec2(badgeMin.x + 7.0f * s, dividerY),
-                        ImVec2(badgeMax.x - 7.0f * s, dividerY),
-                        IM_COL32(255, 255, 255, 28),
-                        1.0f);
                     const ImVec2 ammoPos(
                         boxCenterX - ammoSize.x * 0.5f,
-                        dividerY + rowGap);
+                        namePos.y + nameSize.y + rowGap);
                     draw->AddText(ammoPos, weaponCol, ammoLabel);
                 }
             }
@@ -349,17 +273,8 @@ void Esp::Update()
         {
             const float separatorWidth = showHealth && showArmor ? separatorSize.x : 0.0f;
             const float textWidth = hpTextSize.x + separatorWidth + armorTextSize.x;
-            const float badgeWidth = textWidth + vitalsPadX * 2.0f;
-            const ImVec2 badgeMin(boxCenterX - badgeWidth * 0.5f, min.y - vitalsHeight - 3.0f * s);
-            const ImVec2 badgeMax = badgeMin + ImVec2(badgeWidth, vitalsHeight);
-            const float rounding = 4.0f * s;
-
-            draw->AddRectFilled(badgeMin + ImVec2(1.0f, 2.0f), badgeMax + ImVec2(1.0f, 2.0f), IM_COL32(0, 0, 0, 90), rounding);
-            draw->AddRectFilled(badgeMin, badgeMax, IM_COL32(10, 13, 20, 220), rounding);
-            draw->AddRect(badgeMin, badgeMax, IM_COL32(255, 255, 255, 35), rounding, 0, 1.0f);
-
-            float textX = badgeMin.x + vitalsPadX;
-            const float textY = badgeMin.y + vitalsPadY;
+            float textX = boxCenterX - textWidth * 0.5f;
+            const float textY = min.y - vitalsHeight - 3.0f * s + vitalsPadY;
             if (showHealth)
             {
                 draw->AddText(ImVec2(textX, textY), hpCol, hpText);
