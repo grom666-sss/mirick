@@ -58,7 +58,7 @@ jobs:
   release:
     # The push condition is a one-shot fallback for environments where manual
     # workflow dispatch is unavailable to the current GitHub integration.
-    if: (github.event_name == 'workflow_dispatch' && inputs.release_tag != '') || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Publish v1.1.0'))
+    if: (github.event_name == 'workflow_dispatch' && inputs.release_tag != '') || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Publish v1.1.1'))
     needs: [launcher, plugin]
     runs-on: windows-latest
     steps:
@@ -86,7 +86,7 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || 'v1.1.0' }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || 'v1.1.1' }}
         run: |
           gh release create $env:RELEASE_TAG `
             --repo $env:GITHUB_REPOSITORY `
