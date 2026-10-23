@@ -59,14 +59,15 @@ bool Menu::Checkbox(const char* label, bool* value)
     CreateAnimation(mod.alpha, *value, 0.4f, AnimLerp);
 
     ImVec2 back_size = ImVec2(256.0f * s, 32.0f * s);
-    float back_alpha = (20 + (30 * mod.hovered_alpha)) * alpha;
-    c_color back_clr = c_color(217, 217, 217).increase((int)(38 * mod.hovered_alpha)).new_alpha((int)back_alpha);
+    const int hover_lift = (int)(7.0f * mod.hovered_alpha);
+    const c_color back_clr(15 + hover_lift, 21 + hover_lift, 33 + hover_lift, (int)(255.0f * alpha));
     draw_list->AddRectFilled(pos, pos + back_size, back_clr.as_imcolor(), 4.0f * s);
+    draw_list->AddRect(pos, pos + back_size, c_color(35, 43, 59, (int)(190.0f * alpha)).as_imcolor(), 4.0f * s);
 
     ImVec2 body_size = ImVec2(28.0f * s, 14.0f * s);
     ImVec2 body_min = pos + ImVec2(220.0f * s, 9.0f * s);
     ImVec2 body_max = body_min + body_size;
-    draw_list->AddRectFilled(body_min, body_max, c_color(0, 0, 0, (int)(80 * alpha)).as_imcolor(), 8.0f * s);
+    draw_list->AddRectFilled(body_min, body_max, c_color(5, 8, 14, (int)(255.0f * alpha)).as_imcolor(), 8.0f * s);
 
     c_color accent = g_cfg.accent.to_color();
     ImVec2 circle_offset = ImVec2(14.0f * s * mod.alpha, 0);

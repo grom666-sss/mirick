@@ -211,7 +211,7 @@ void Menu::DrawBinds()
 
     // Match the main menu's opaque navy shell instead of the old grey blur.
     list->AddRectFilled(window_pos + ImVec2(3.0f * s, 4.0f * s), window_max + ImVec2(3.0f * s, 4.0f * s), IM_COL32(0, 0, 0, (int)(90.0f * bind_alpha)), 6.0f * s);
-    list->AddRectFilled(window_pos, window_max, IM_COL32(7, 10, 17, (int)(250.0f * bind_alpha)), 6.0f * s);
+    list->AddRectFilled(window_pos, window_max, IM_COL32(7, 10, 17, (int)(255.0f * bind_alpha)), 6.0f * s);
     list->AddRectFilled(window_pos, window_pos + ImVec2(content_w, head_h), IM_COL32(15, 21, 33, (int)window_alpha), 6.0f * s, ImDrawCornerFlags_Top);
     list->AddRectFilledMultiColor(
         window_pos + ImVec2(0.0f, head_h - 2.0f * s),

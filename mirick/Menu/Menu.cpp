@@ -354,7 +354,7 @@ void Menu::DrawBackground()
     // A solid, layered shell replaces the translucent layout inherited from the
     // original menu and keeps the interface readable over bright game scenes.
     list->AddRectFilled(window_pos + ImVec2(5.0f * s, 7.0f * s), window_max + ImVec2(5.0f * s, 7.0f * s), IM_COL32(0, 0, 0, (int)(105.0f * alpha)), 10.0f * s);
-    list->AddRectFilled(window_pos, window_max, IM_COL32(7, 10, 17, (int)(250.0f * alpha)), 10.0f * s);
+    list->AddRectFilled(window_pos, window_max, IM_COL32(7, 10, 17, (int)(255.0f * alpha)), 10.0f * s);
     list->AddRectFilled(window_pos, window_pos + header_size, IM_COL32(15, 21, 33, (int)(255.0f * alpha)), 10.0f * s, ImDrawCornerFlags_Top);
     list->AddRectFilled(window_pos + ImVec2(0.0f, 47.0f * s), window_pos + ImVec2(160.0f * s, 520.0f * s), IM_COL32(10, 15, 24, (int)(255.0f * alpha)), 0.0f);
     list->AddRectFilledMultiColor(
@@ -453,7 +453,7 @@ void Menu::DrawCharacterPanel()
     ImDrawList* panel_draw = ImGui::GetWindowDrawList();
     const ImVec2 panel_max = panel_pos + panel_size;
     panel_draw->AddRectFilled(panel_pos + ImVec2(4.0f * s, 6.0f * s), panel_max + ImVec2(4.0f * s, 6.0f * s), IM_COL32(0, 0, 0, (int)(95.0f * panel_alpha)), 9.0f * s);
-    panel_draw->AddRectFilled(panel_pos, panel_max, IM_COL32(7, 10, 17, (int)(250.0f * panel_alpha)), 9.0f * s);
+    panel_draw->AddRectFilled(panel_pos, panel_max, IM_COL32(7, 10, 17, (int)(255.0f * panel_alpha)), 9.0f * s);
     panel_draw->AddRectFilled(panel_pos, panel_pos + ImVec2(panel_size.x, 43.0f * s), IM_COL32(15, 21, 33, (int)(255.0f * panel_alpha)), 9.0f * s, ImDrawCornerFlags_Top);
     panel_draw->AddRectFilledMultiColor(
         panel_pos + ImVec2(0, 42.0f * s), panel_pos + ImVec2(panel_size.x, 44.0f * s),
@@ -625,7 +625,7 @@ void Menu::DrawAuthorPanel()
     const ImVec2 panel_max(panel_min.x + panel_width, panel_min.y + panel_height);
 
     panel_draw->AddRectFilled(panel_min + ImVec2(4.0f * s, 6.0f * s), panel_max + ImVec2(4.0f * s, 6.0f * s), IM_COL32(0, 0, 0, static_cast<int>(80.0f * panel_alpha)), 9.0f * s);
-    panel_draw->AddRectFilled(panel_min, panel_max, IM_COL32(11, 16, 26, static_cast<int>(252.0f * panel_alpha)), 9.0f * s);
+    panel_draw->AddRectFilled(panel_min, panel_max, IM_COL32(11, 16, 26, static_cast<int>(255.0f * panel_alpha)), 9.0f * s);
     panel_draw->AddRectFilled(panel_min, ImVec2(panel_min.x + 3.0f * s, panel_max.y), accent.new_alpha(static_cast<int>(210.0f * panel_alpha)).as_imcolor(), 2.0f * s);
 
     const ImVec2 avatar_center(panel_min.x + 34.0f * s, panel_min.y + 38.0f * s);
