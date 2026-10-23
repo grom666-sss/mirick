@@ -63,7 +63,9 @@ struct LuaManager::Impl
     sol::state lua;
     std::vector<Script> scripts;
     std::chrono::steady_clock::time_point lastUpdate = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point notificationUntil{};
     std::string lastMessage;
+    bool lastExecutionSucceeded = true;
     bool initialized = false;
 
     void UnloadScripts()
@@ -255,6 +257,8 @@ bool LuaManager::Execute(std::string_view code)
     if (code.empty())
     {
         impl_->lastMessage = "Nothing to execute";
+        impl_->lastExecutionSucceeded = false;
+        impl_->notificationUntil = std::chrono::steady_clock::now() + std::chrono::seconds(4);
         return false;
     }
 
@@ -270,13 +274,52 @@ bool LuaManager::Execute(std::string_view code)
     {
         const sol::error error = result;
         impl_->lastMessage = error.what();
+        impl_->lastExecutionSucceeded = false;
+        impl_->notificationUntil = std::chrono::steady_clock::now() + std::chrono::seconds(4);
         WriteLog("[console] " + impl_->lastMessage);
         return false;
     }
 
     impl_->lastMessage = "Script executed successfully";
+    impl_->lastExecutionSucceeded = true;
+    impl_->notificationUntil = std::chrono::steady_clock::now() + std::chrono::seconds(4);
     WriteLog("[console] Script executed successfully");
     return true;
+}
+
+void LuaManager::DrawNotification()
+{
+    const auto now = std::chrono::steady_clock::now();
+    if (now >= impl_->notificationUntil)
+    {
+        return;
+    }
+
+    const float remaining = std::chrono::duration<float>(impl_->notificationUntil - now).count();
+    const float alpha = std::clamp(remaining * 2.0f, 0.0f, 1.0f);
+    const bool success = impl_->lastExecutionSucceeded;
+    const char* title = success
+        ? (g_cfg.language == 1 ? "Lua script executed" : "Lua-скрипт выполнен")
+        : (g_cfg.language == 1 ? "Lua execution error" : "Ошибка выполнения Lua");
+    const char* detail = success
+        ? (g_cfg.language == 1 ? "Execution completed successfully" : "Код успешно выполнен")
+        : (g_cfg.language == 1 ? "Open the Lua module or lua.log for details" : "Подробности в модуле Lua и lua.log");
+
+    ImDrawList* draw = ImGui::GetForegroundDrawList();
+    const ImVec2 display = ImGui::GetIO().DisplaySize;
+    const ImVec2 size(278.0f, 58.0f);
+    const ImVec2 max(display.x - 18.0f, 78.0f);
+    const ImVec2 min(max.x - size.x, max.y - size.y);
+    const ImU32 accent = success
+        ? IM_COL32(70, 220, 145, static_cast<int>(255.0f * alpha))
+        : IM_COL32(255, 88, 96, static_cast<int>(255.0f * alpha));
+
+    draw->AddRectFilled(ImVec2(min.x + 2.0f, min.y + 3.0f), ImVec2(max.x + 2.0f, max.y + 3.0f), IM_COL32(0, 0, 0, static_cast<int>(90.0f * alpha)), 7.0f);
+    draw->AddRectFilled(min, max, IM_COL32(10, 14, 22, static_cast<int>(238.0f * alpha)), 7.0f);
+    draw->AddRectFilled(min, ImVec2(min.x + 4.0f, max.y), accent, 7.0f, ImDrawCornerFlags_Left);
+    draw->AddCircleFilled(ImVec2(min.x + 20.0f, min.y + 20.0f), 5.0f, accent);
+    draw->AddText(ImVec2(min.x + 34.0f, min.y + 11.0f), IM_COL32(245, 247, 252, static_cast<int>(255.0f * alpha)), title);
+    draw->AddText(ImVec2(min.x + 14.0f, min.y + 35.0f), IM_COL32(145, 154, 174, static_cast<int>(245.0f * alpha)), detail);
 }
 
 bool LuaManager::IsInitialized() const

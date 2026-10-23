@@ -15,6 +15,7 @@ public:
     void Shutdown();
 
     bool Execute(std::string_view code);
+    void DrawNotification();
     bool IsInitialized() const;
     const std::string& GetLastMessage() const;
 

@@ -98,6 +98,7 @@ void Esp::Update()
     ImDrawList* draw = ImGui::GetForegroundDrawList();
     const ImU32 boxCol = g_cfg.whcol.to_color().as_imcolor();
     const ImU32 backCol = IM_COL32(0, 0, 0, 180);
+    const ImU32 hpCol = g_cfg.hpcol.to_color().as_imcolor();
     const ImU32 armorCol = g_cfg.armorcol.to_color().as_imcolor();
     const ImU32 textCol = g_cfg.distcol.to_color().as_imcolor();
     const ImU32 skelCol = g_cfg.skelcol.to_color().as_imcolor();
@@ -233,6 +234,33 @@ void Esp::Update()
         const ImVec2 min(boxCenterX - boxW * 0.5f, boxTop);
         const ImVec2 max(boxCenterX + boxW * 0.5f, boxBottom);
 
+        const bool showHpPercent = (g_cfg.wh_flags & WH_HP) != 0;
+        const bool showArmorPercent = (g_cfg.wh_flags & WH_ARMOR) != 0;
+        const bool showVitals = showHpPercent || showArmorPercent;
+        char hpText[20]{};
+        char armorText[24]{};
+        ImVec2 hpTextSize{};
+        ImVec2 armorTextSize{};
+        const ImVec2 separatorSize = ImGui::CalcTextSize("  |  ");
+        const float vitalsPadX = 6.0f * s;
+        const float vitalsPadY = 2.0f * s;
+        float vitalsHeight = 0.0f;
+
+        if (showHpPercent)
+        {
+            const int hpPercent = static_cast<int>(std::clamp(ped->m_fHealth, 0.0f, 100.0f) + 0.5f);
+            snprintf(hpText, sizeof(hpText), "HP %d%%", hpPercent);
+            hpTextSize = ImGui::CalcTextSize(hpText);
+            vitalsHeight = hpTextSize.y + vitalsPadY * 2.0f;
+        }
+        if (showArmorPercent)
+        {
+            const int armorPercent = static_cast<int>(std::clamp(ped->m_fArmour, 0.0f, 100.0f) + 0.5f);
+            snprintf(armorText, sizeof(armorText), "ARMOR %d%%", armorPercent);
+            armorTextSize = ImGui::CalcTextSize(armorText);
+            vitalsHeight = std::max(vitalsHeight, armorTextSize.y + vitalsPadY * 2.0f);
+        }
+
         if (g_cfg.wh_flags & WH_BOX)
         {
             draw->AddRect(min - ImVec2(1.0f, 1.0f), max + ImVec2(1.0f, 1.0f), backCol, 0.0f, 0, 1.0f);
@@ -268,7 +296,8 @@ void Esp::Update()
                 const float gap = showAmmo ? 8.0f * s : 0.0f;
                 const float badgeH = std::max(nameSize.y, ammoSize.y) + padY * 2.0f;
                 const float badgeW = nameSize.x + ammoSize.x + gap + padX * 2.0f;
-                const ImVec2 badgeMin(boxCenterX - badgeW * 0.5f, min.y - badgeH - 5.0f * s);
+                const float vitalsStack = showVitals ? vitalsHeight + 4.0f * s : 0.0f;
+                const ImVec2 badgeMin(boxCenterX - badgeW * 0.5f, min.y - badgeH - 5.0f * s - vitalsStack);
                 const ImVec2 badgeMax = badgeMin + ImVec2(badgeW, badgeH);
                 const float rounding = 4.0f * s;
 
@@ -308,25 +337,35 @@ void Esp::Update()
             }
         }
 
-        if (g_cfg.wh_flags & WH_HP)
+        if (showVitals)
         {
-            const float hp = std::clamp(ped->m_fHealth / 100.0f, 0.0f, 1.0f);
-            const ImVec2 barMin(min.x - 5.0f * s, min.y);
-            const ImVec2 barMax(min.x - 2.0f * s, max.y);
-            const ImU32 hpFill = g_cfg.hpcol.to_color().multiply(c_color(255, 30, 30), 1.0f - hp).as_imcolor();
-            draw->AddRect(barMin - ImVec2(1.0f, 1.0f), barMax + ImVec2(1.0f, 1.0f), backCol, 0.0f, 0, 1.0f);
-            draw->AddRectFilled(barMin, barMax, IM_COL32(0, 0, 0, 150), 0.0f);
-            draw->AddRectFilled(ImVec2(barMin.x, barMax.y - (barMax.y - barMin.y) * hp), barMax, hpFill, 0.0f);
-        }
+            const float separatorWidth = showHpPercent && showArmorPercent ? separatorSize.x : 0.0f;
+            const float textWidth = hpTextSize.x + separatorWidth + armorTextSize.x;
+            const float badgeWidth = textWidth + vitalsPadX * 2.0f;
+            const ImVec2 badgeMin(boxCenterX - badgeWidth * 0.5f, min.y - vitalsHeight - 3.0f * s);
+            const ImVec2 badgeMax = badgeMin + ImVec2(badgeWidth, vitalsHeight);
+            const float rounding = 4.0f * s;
 
-        if ((g_cfg.wh_flags & WH_ARMOR) && ped->m_fArmour > 0.0f)
-        {
-            const float ap = std::clamp(ped->m_fArmour / 100.0f, 0.0f, 1.0f);
-            const ImVec2 barMin(max.x + 2.0f * s, min.y);
-            const ImVec2 barMax(max.x + 5.0f * s, max.y);
-            draw->AddRect(barMin - ImVec2(1.0f, 1.0f), barMax + ImVec2(1.0f, 1.0f), backCol, 0.0f, 0, 1.0f);
-            draw->AddRectFilled(barMin, barMax, IM_COL32(0, 0, 0, 150), 0.0f);
-            draw->AddRectFilled(ImVec2(barMin.x, barMax.y - (barMax.y - barMin.y) * ap), barMax, armorCol, 0.0f);
+            draw->AddRectFilled(badgeMin + ImVec2(1.0f, 2.0f), badgeMax + ImVec2(1.0f, 2.0f), IM_COL32(0, 0, 0, 90), rounding);
+            draw->AddRectFilled(badgeMin, badgeMax, IM_COL32(10, 13, 20, 220), rounding);
+            draw->AddRect(badgeMin, badgeMax, IM_COL32(255, 255, 255, 35), rounding, 0, 1.0f);
+
+            float textX = badgeMin.x + vitalsPadX;
+            const float textY = badgeMin.y + vitalsPadY;
+            if (showHpPercent)
+            {
+                draw->AddText(ImVec2(textX, textY), hpCol, hpText);
+                textX += hpTextSize.x;
+            }
+            if (showHpPercent && showArmorPercent)
+            {
+                draw->AddText(ImVec2(textX, textY), IM_COL32(145, 151, 166, 210), "  |  ");
+                textX += separatorSize.x;
+            }
+            if (showArmorPercent)
+            {
+                draw->AddText(ImVec2(textX, textY), armorCol, armorText);
+            }
         }
 
         if (g_cfg.wh_flags & WH_DIST)

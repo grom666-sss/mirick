@@ -186,6 +186,7 @@ HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, cons
 
     menu->Draw();
     menu->DrawBinds();
+    LuaManager::Instance().DrawNotification();
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
