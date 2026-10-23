@@ -196,9 +196,6 @@
     <ClCompile Include="Menu\Tabs\Misc.cpp">
       <Filter>Menu\Tabs</Filter>
     </ClCompile>
-    <ClCompile Include="Menu\Tabs\Profile.cpp">
-      <Filter>Menu\Tabs</Filter>
-    </ClCompile>
     <ClCompile Include="Menu\Widgets\Checkbox.cpp">
       <Filter>Menu\Widgets</Filter>
     </ClCompile>

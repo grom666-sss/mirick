@@ -287,10 +287,6 @@ void Menu::InitTextures()
         Texture::FromMemory(device, misc_icon, sizeof(misc_icon), &icon_textures[3]);
     }
 
-    if (!icon_textures[4])
-    {
-        Texture::FromMemory(device, cfg_icon, sizeof(cfg_icon), &icon_textures[4]);
-    }
 }
 
 void Menu::WindowBegin()
@@ -696,10 +692,10 @@ void Menu::DrawTabs()
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, GetAlpha()));
 
-    const std::string names[5] = { tr("Рейдж", "Rage"), tr("Легит", "Legit"), tr("Визуалы", "Visuals"), tr("Разное", "Misc"), tr("Профиль", "Profile") };
+    const std::string names[4] = { tr("Рейдж", "Rage"), tr("Легит", "Legit"), tr("Визуалы", "Visuals"), tr("Разное", "Misc") };
     c_color accent = g_cfg.accent.to_color();
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 4; i++)
     {
         tab_animation_t& info = tab_info[i];
         ImGui::SetCursorPos(ImVec2(53.0f * s, (78.0f + 40.0f * i) * s));
@@ -772,9 +768,7 @@ void Menu::DrawTabs()
             list->AddCircleFilled(center + ImVec2(3.0f * s, 0.0f), 2.0f * s, icon_color, 10);
             list->AddCircleFilled(center + ImVec2(-1.0f * s, 4.5f * s), 2.0f * s, icon_color, 10);
             break;
-        default: // Profile.
-            list->AddCircle(center - ImVec2(0.0f, 4.0f * s), 3.2f * s, icon_color, 14, stroke);
-            list->AddRect(center + ImVec2(-5.5f * s, 1.0f * s), center + ImVec2(5.5f * s, 7.0f * s), icon_color, 3.0f * s, ImDrawCornerFlags_Top, stroke);
+        default:
             break;
         }
 
@@ -921,11 +915,6 @@ void Menu::DrawContent()
     else if (tab_selector == 3)
     {
         DrawMisc();
-    }
-
-    else if (tab_selector == 4)
-    {
-        DrawProfile();
     }
 
     ImGui::EndChild(false);

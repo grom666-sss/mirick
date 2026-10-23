@@ -7,6 +7,5 @@ extern unsigned char antihit_icon[434];
 extern unsigned char visuals_icon[372];
 extern unsigned char misc_icon[466];
 extern unsigned char skins_icon[331];
-extern unsigned char cfg_icon[186];
 extern unsigned char keyboard_icon[260];
 

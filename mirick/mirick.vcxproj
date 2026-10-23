@@ -124,7 +124,6 @@
     <ClCompile Include="Menu\Tabs\Legit.cpp" />
     <ClCompile Include="Menu\Tabs\Visuals.cpp" />
     <ClCompile Include="Menu\Tabs\Misc.cpp" />
-    <ClCompile Include="Menu\Tabs\Profile.cpp" />
     <ClCompile Include="Menu\Widgets\Checkbox.cpp" />
     <ClCompile Include="Menu\Widgets\Slider.cpp" />
     <ClCompile Include="Menu\Widgets\Combo.cpp" />
