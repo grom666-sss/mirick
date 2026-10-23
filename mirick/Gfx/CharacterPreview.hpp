@@ -22,20 +22,24 @@ namespace CharacterPreview
         RenderError
     };
 
+    // Hooks preview rendering into GTA's RenderWare render phase. RenderWare
+    // work must never run from IDirect3DDevice9::Present.
+    void Initialize();
+    void SetVisible(bool visible);
+
     // Selects a registered runtime model. This never changes the player ped.
     void SelectModel(int modelId);
     void SetRotation(float yawDegrees);
     void AdjustPose(PosePart part, float deltaDegrees);
     void ResetPose();
 
-    // Renders the standalone clump into the camera texture and returns the
-    // underlying D3D9 texture accepted by ImGui's DX9 backend.
-    IDirect3DTexture9* Render();
+    // Returns the camera texture produced during GTA's previous render phase.
+    // It is safe to pass this pointer to ImGui; no RenderWare calls happen here.
+    IDirect3DTexture9* GetTexture();
 
     State GetState();
     int GetModelId();
 
-    // RenderWare camera textures live in the D3D default pool.
     void OnDeviceLost();
     void Shutdown();
 }

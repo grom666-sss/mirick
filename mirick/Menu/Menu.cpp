@@ -467,7 +467,7 @@ void Menu::DrawCharacterPanel()
     panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 54.0f * s), IM_COL32(124, 137, 160, (int)(235.0f * panel_alpha)), preview_model);
 
     CharacterPreview::SelectModel(preview_skin_id);
-    IDirect3DTexture9* preview_texture = CharacterPreview::Render();
+    IDirect3DTexture9* preview_texture = CharacterPreview::GetTexture();
     const ImVec2 preview_min = panel_pos + ImVec2(15.0f * s, 76.0f * s);
     const ImVec2 preview_max = panel_pos + ImVec2(197.0f * s, 358.0f * s);
     panel_draw->AddRectFilled(preview_min, preview_max, IM_COL32(5, 8, 14, (int)(245.0f * panel_alpha)), 6.0f * s);
@@ -949,6 +949,7 @@ void Menu::Draw()
 {
     InitTextures();
     UpdateAlpha();
+    CharacterPreview::SetVisible(g_cfg.show_character_model && (g_cfg.menu_open || alpha > 0.01f));
 
     if (!g_cfg.menu_open && alpha <= 0.01f)
     {

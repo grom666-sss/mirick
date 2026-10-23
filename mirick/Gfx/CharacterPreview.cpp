@@ -36,9 +36,14 @@ namespace
     RpHAnimHierarchy* hierarchy = nullptr;
     std::vector<RwMatrix> bindPose;
 
+    plugin::CdeclEvent<plugin::AddressList<0x53EA12, plugin::H_CALL>, plugin::PRIORITY_BEFORE,
+        plugin::ArgPickNone, void()> previewRenderEvent;
+
     int requestedModelId = -1;
     int activeModelId = -1;
     bool streamingRequested = false;
+    bool initialized = false;
+    bool visible = false;
     float yaw = 0.0f;
     float headPose = 0.0f;
     float armPose = 0.0f;
@@ -333,57 +338,71 @@ void CharacterPreview::ResetPose()
     yaw = 0.0f;
 }
 
-IDirect3DTexture9* CharacterPreview::Render()
+namespace
 {
-    if (!CreateScene() || !CreateClump())
+    void RenderPreviewFrame()
+    {
+        if (!visible || requestedModelId < 0)
+        {
+            return;
+        }
+
+        if (!CreateScene() || !CreateClump())
+        {
+            return;
+        }
+
+        PositionClump();
+        CVisibilityPlugins::SetRenderWareCamera(camera);
+        RwRGBA clear{ 7, 10, 17, 0 };
+        const bool began = RwCameraClear(camera, &clear, rwCAMERACLEARIMAGE | rwCAMERACLEARZ)
+            && RwCameraBeginUpdate(camera);
+        if (began)
+        {
+            RpWorldAddLight(Scene.m_pWorld, ambientLight);
+            RwRenderStateSet(rwRENDERSTATEZTESTENABLE, reinterpret_cast<void*>(TRUE));
+            RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, reinterpret_cast<void*>(TRUE));
+            RwRenderStateSet(rwRENDERSTATEFOGENABLE, reinterpret_cast<void*>(FALSE));
+            RwRenderStateSet(rwRENDERSTATECULLMODE, reinterpret_cast<void*>(rwCULLMODECULLBACK));
+            RpClumpRender(modelClump);
+            RwCameraEndUpdate(camera);
+            RpWorldRemoveLight(Scene.m_pWorld, ambientLight);
+        }
+
+        if (Scene.m_pCamera)
+        {
+            CVisibilityPlugins::SetRenderWareCamera(Scene.m_pCamera);
+        }
+        state = began ? CharacterPreview::State::Ready : CharacterPreview::State::RenderError;
+    }
+}
+
+void CharacterPreview::Initialize()
+{
+    if (initialized)
+    {
+        return;
+    }
+
+    // 0x53EA12 is immediately before GTA's main RenderWare scene render. At
+    // this point RenderWare is initialized and owns the D3D device. Calling
+    // these APIs from Present caused a D3D9 access violation on Next RP.
+    previewRenderEvent += [] { RenderPreviewFrame(); };
+    initialized = true;
+}
+
+void CharacterPreview::SetVisible(bool isVisible)
+{
+    visible = isVisible;
+}
+
+IDirect3DTexture9* CharacterPreview::GetTexture()
+{
+    if (state != State::Ready)
     {
         return nullptr;
     }
-
-    IDirect3DDevice9* device = nullptr;
-    IDirect3DTexture9* texture = GetD3DTexture();
-    if (!texture || FAILED(texture->GetDevice(&device)) || !device)
-    {
-        state = State::RenderError;
-        return nullptr;
-    }
-
-    IDirect3DStateBlock9* stateBlock = nullptr;
-    if (FAILED(device->CreateStateBlock(D3DSBT_ALL, &stateBlock)))
-    {
-        device->Release();
-        state = State::RenderError;
-        return nullptr;
-    }
-    stateBlock->Capture();
-
-    PositionClump();
-    CVisibilityPlugins::SetRenderWareCamera(camera);
-    const RwRGBA clear{ 7, 10, 17, 0 };
-    const bool began = RwCameraClear(camera, const_cast<RwRGBA*>(&clear), rwCAMERACLEARIMAGE | rwCAMERACLEARZ)
-        && RwCameraBeginUpdate(camera);
-    if (began)
-    {
-        RpWorldAddLight(Scene.m_pWorld, ambientLight);
-        RwRenderStateSet(rwRENDERSTATEZTESTENABLE, reinterpret_cast<void*>(TRUE));
-        RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, reinterpret_cast<void*>(TRUE));
-        RwRenderStateSet(rwRENDERSTATEFOGENABLE, reinterpret_cast<void*>(FALSE));
-        RwRenderStateSet(rwRENDERSTATECULLMODE, reinterpret_cast<void*>(rwCULLMODECULLBACK));
-        RpClumpRender(modelClump);
-        RwCameraEndUpdate(camera);
-        RpWorldRemoveLight(Scene.m_pWorld, ambientLight);
-    }
-
-    if (Scene.m_pCamera)
-    {
-        CVisibilityPlugins::SetRenderWareCamera(Scene.m_pCamera);
-    }
-    stateBlock->Apply();
-    stateBlock->Release();
-    device->Release();
-
-    state = began ? State::Ready : State::RenderError;
-    return began ? texture : nullptr;
+    return GetD3DTexture();
 }
 
 CharacterPreview::State CharacterPreview::GetState()

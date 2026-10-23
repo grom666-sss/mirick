@@ -7,6 +7,7 @@
 #include "Hooks/Hooks.hpp"
 #include "Core/Config.hpp"
 #include "Game/Features.h"
+#include "Gfx/CharacterPreview.hpp"
 
 #include "Utils/xorstr.h"
 #include "../thirdparty/virtualiser/VirtualizerSDK.h"
@@ -14,6 +15,7 @@
 void Main()
 {
     config_t::EnsureDir();
+    CharacterPreview::Initialize();
     Hooks::InstallHooks();
 }
 
