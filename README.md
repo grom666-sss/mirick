@@ -13,29 +13,6 @@ Made as a base for your own projects and easy to understand for beginners. Every
 * Custom ImGui menu
 * Binds
 * Configs
-* Lua 5.4 scripting through sol2
-
-## Lua scripts
-
-Place scripts in `C:\Astral\scripts`. All `.lua` files are loaded when mirick starts. Script errors and output are written to `C:\Astral\lua.log`. You can also open the dedicated **Lua** module in the main navigation, paste code into the in-game editor and run it immediately. Its buffer grows dynamically for large scripts and supports multiline text, clipboard paste and tab characters.
-
-Available callbacks and API:
-
-```lua
-function on_load()
-    mirick.log("script loaded; API " .. mirick.version)
-end
-
-function on_tick(delta_time)
-    -- Called once per rendered frame.
-end
-
-function on_unload()
-    mirick.log("script unloaded")
-end
-```
-
-Lua runs with the standard base, coroutine, math, string, table, UTF-8, package, I/O, OS and debug libraries. Pasted scripts with an UTF-8 BOM or a Unix shebang are normalized automatically.
 
 ## Build
 
@@ -46,7 +23,7 @@ Requirements:
 * Visual Studio 2022 with the **Desktop development with C++** workload and the **MSVC v143** toolset;
 * an internet connection during the first build.
 
-The first build runs `setup_dependencies.bat` automatically. The script downloads [Lua 5.4.9](https://github.com/lua/lua), [sol2 3.5.0](https://github.com/ThePhD/sol2) and [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk) using Git, or a PowerShell ZIP fallback when Git is unavailable. It then generates a Visual Studio 2022/v143 project and builds the required `plugin.lib`. All dependencies use repository-local paths under `thirdparty`; no user-specific absolute paths are required.
+The first build runs `setup_dependencies.bat` automatically. The script downloads [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk) using Git, or a PowerShell ZIP fallback when Git is unavailable. It then generates a Visual Studio 2022/v143 project and builds the required `plugin.lib`. The dependency uses a repository-local path under `thirdparty`; no user-specific absolute paths are required.
 
 Then open `mirick.sln` (the traditional solution format with the widest Visual Studio compatibility), select **Release | Win32**, and build the project. `mirick.slnx` is also provided for Visual Studio versions that support the newer solution format.
 

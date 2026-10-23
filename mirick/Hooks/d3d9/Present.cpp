@@ -18,7 +18,6 @@
 #include "Game/Features.h"
 
 #include "Present.hpp"
-#include "Lua/LuaManager.hpp"
 #include "ProtectedOverlay.hpp"
 
 #include "../core/ForceCursorVisible.hpp"
@@ -143,7 +142,6 @@ HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, cons
     ImGui::GetIO().FontGlobalScale = g_cfg.ui_scale / 100.0f;
 
     KeyBinds::Update();
-    LuaManager::Instance().Update();
     World::Update();
     RapidFire::Update();
     InfAmmo::Update();
@@ -186,7 +184,6 @@ HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, cons
 
     menu->Draw();
     menu->DrawBinds();
-    LuaManager::Instance().DrawNotification();
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;

@@ -29,5 +29,3 @@ mirick/Release/
 
 # Downloaded by setup_dependencies.bat
 thirdparty/plugin-sdk/
-thirdparty/lua/
-thirdparty/sol2/

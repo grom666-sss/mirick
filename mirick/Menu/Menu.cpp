@@ -319,7 +319,6 @@ void Menu::DrawBackground()
     ImGui::PushFont(g_fonts.dmg);
     list->AddText(window_pos + ImVec2(49.0f * s, 12.0f * s), IM_COL32(242, 245, 255, (int)(255.0f * alpha)), title.c_str());
     ImGui::PopFont();
-    list->AddText(window_pos + ImVec2(119.0f * s, 17.0f * s), IM_COL32(91, 103, 127, (int)(255.0f * alpha)), "LUA EDITION");
 
     static const char* author = "m1racl";
     const ImVec2 author_size = ImGui::CalcTextSize(author);
@@ -474,10 +473,10 @@ void Menu::DrawTabs()
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, GetAlpha()));
 
-    const std::string names[6] = { tr("Рейдж", "Rage"), tr("Легит", "Legit"), tr("Визуалы", "Visuals"), tr("Разное", "Misc"), "Lua", tr("Профиль", "Profile") };
+    const std::string names[5] = { tr("Рейдж", "Rage"), tr("Легит", "Legit"), tr("Визуалы", "Visuals"), tr("Разное", "Misc"), tr("Профиль", "Profile") };
     c_color accent = g_cfg.accent.to_color();
 
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 5; i++)
     {
         tab_animation_t& info = tab_info[i];
         ImGui::SetCursorPos(ImVec2(53.0f * s, (78.0f + 40.0f * i) * s));
@@ -504,22 +503,11 @@ void Menu::DrawTabs()
             list->AddRectFilled(tmin + ImVec2(0.0f, 7.0f * s), tmin + ImVec2(3.0f * s, 25.0f * s), accent.new_alpha((int)(255.0f * info.alpha * GetAlpha())).as_imcolor(), 2.0f * s);
         }
 
-        if (i == 5)
+        if (i == 4)
         {
             ImVec2 ip0 = tmin + ImVec2(10.0f * s, 9.0f * s);
             list->AddCircleFilled(ip0 + ImVec2(7.5f * s, 4.0f * s), 2.8f * s, text_clr.as_imcolor());
             list->AddRectFilled(ip0 + ImVec2(3.0f * s, 8.5f * s), ip0 + ImVec2(12.0f * s, 15.0f * s), text_clr.as_imcolor(), 3.0f * s);
-        }
-        else if (i == 4)
-        {
-            const char* luaGlyph = "{}";
-            const ImVec2 glyphSize = ImGui::CalcTextSize(luaGlyph);
-            const ImVec2 iconMin = tmin + ImVec2(10.0f * s, 9.0f * s);
-            const ImVec2 iconSize(15.0f * s, 15.0f * s);
-            list->AddText(
-                iconMin + ImVec2((iconSize.x - glyphSize.x) * 0.5f, (iconSize.y - glyphSize.y) * 0.5f),
-                text_clr.as_imcolor(),
-                luaGlyph);
         }
         else if (icon_textures[i])
         {
@@ -672,11 +660,6 @@ void Menu::DrawContent()
     }
 
     else if (tab_selector == 4)
-    {
-        DrawLua();
-    }
-
-    else if (tab_selector == 5)
     {
         DrawProfile();
     }

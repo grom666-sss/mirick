@@ -15,7 +15,7 @@ void Menu::DrawProfile()
 
         std::vector<std::string> items = { tr("Конфиг", "Config"), tr("Настройки", "Settings") };
         DrawSubTabs(sub4, items);
-        UpdateSubFade(5, sub4);
+        UpdateSubFade(4, sub4);
         ImGui::SetCursorPosX(0);
         ImGui::BeginChild("subtab_cfg", ImVec2(), false);
         ImGui::Columns(2, NULL, false);

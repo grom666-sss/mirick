@@ -71,52 +71,11 @@
     <Filter Include="Hooks\core">
       <UniqueIdentifier>{c4dffbed-711f-4e9b-b1ed-7a1e6914a801}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Lua">
-      <UniqueIdentifier>{4a497321-6b17-4ead-891f-b033df82da92}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="thirdparty\Lua">
-      <UniqueIdentifier>{43758ee0-7672-485c-bff2-f6c43c60f220}</UniqueIdentifier>
-    </Filter>
     <Filter Include="thirdparty\Virt">
       <UniqueIdentifier>{76241c58-6e30-4c5e-8521-e71745233556}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Lua\LuaManager.cpp">
-      <Filter>Lua</Filter>
-    </ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lapi.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lauxlib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lbaselib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lcode.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lcorolib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lctype.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\ldblib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\ldebug.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\ldo.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\ldump.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lfunc.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lgc.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\linit.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\liolib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\llex.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lmathlib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lmem.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\loadlib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lobject.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lopcodes.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\loslib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lparser.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lstate.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lstring.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lstrlib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\ltable.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\ltablib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\ltm.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lundump.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lutf8lib.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lvm.c"><Filter>thirdparty\Lua</Filter></ClCompile>
-    <ClCompile Include="..\thirdparty\lua\lzio.c"><Filter>thirdparty\Lua</Filter></ClCompile>
     <ClCompile Include="dllmain.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -237,9 +196,6 @@
     <ClCompile Include="Menu\Tabs\Misc.cpp">
       <Filter>Menu\Tabs</Filter>
     </ClCompile>
-    <ClCompile Include="Menu\Tabs\Lua.cpp">
-      <Filter>Menu\Tabs</Filter>
-    </ClCompile>
     <ClCompile Include="Menu\Tabs\Profile.cpp">
       <Filter>Menu\Tabs</Filter>
     </ClCompile>
@@ -343,9 +299,6 @@
     </ClInclude>
     <ClInclude Include="Hooks\LdrDll\LdrDll.hpp">
       <Filter>Hooks\LdrDll</Filter>
-    </ClInclude>
-    <ClInclude Include="Lua\LuaManager.hpp">
-      <Filter>Lua</Filter>
     </ClInclude>
     <ClInclude Include="Game\Features.h">
       <Filter>Game</Filter>
