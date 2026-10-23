@@ -587,9 +587,10 @@ void Menu::DrawCharacterPanel()
         skin_status = IsNextRpSkinId(g_cfg.player_skin_id) ? tr("ID есть в каталоге Next RP", "ID is in the Next RP catalogue") : tr("ID не отмечен в каталоге", "ID is not listed in catalogue");
         skin_status_ok = IsNextRpSkinId(g_cfg.player_skin_id);
     }
-    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 489.0f * s),
-        skin_status_ok ? accent.new_alpha((int)(220.0f * panel_alpha)).as_imcolor() : IM_COL32(225, 112, 112, (int)(220.0f * panel_alpha)),
-        skin_status.c_str());
+    const ImU32 status_color = skin_status_ok
+        ? accent.new_alpha((int)(220.0f * panel_alpha)).u32()
+        : IM_COL32(225, 112, 112, (int)(220.0f * panel_alpha));
+    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 489.0f * s), status_color, skin_status.c_str());
     panel_draw->AddRect(panel_pos, panel_max, IM_COL32(40, 49, 67, (int)(220.0f * panel_alpha)), 9.0f * s);
 
     ImGui::End(false);
