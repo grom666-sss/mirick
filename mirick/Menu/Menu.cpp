@@ -14,9 +14,6 @@
 
 #include "Game/Features.h"
 
-#include "CModelInfo.h"
-#include "CStreaming.h"
-
 Menu* menu = new Menu;
 
 static bool s_dragging = false;
@@ -438,6 +435,13 @@ void Menu::DrawCharacterPanel()
     const ImVec2 panel_size(212.0f * s, 520.0f * s);
     const ImVec2 panel_pos = GetWindowPos() - ImVec2(224.0f * s, 0.0f);
     const c_color accent = g_cfg.accent.to_color();
+    static int preview_skin_id = 39;
+    static bool preview_initialized = false;
+    if (!preview_initialized)
+    {
+        preview_skin_id = g_cfg.player_skin_id;
+        preview_initialized = true;
+    }
 
     ImGui::SetNextWindowPos(panel_pos, ImGuiCond_Always);
     ImGui::SetNextWindowSize(panel_size, ImGuiCond_Always);
@@ -461,10 +465,9 @@ void Menu::DrawCharacterPanel()
         accent.new_alpha((int)(220.0f * panel_alpha)).as_imcolor(), accent.new_alpha(0).as_imcolor());
     panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 13.0f * s), IM_COL32(242, 245, 255, (int)(255.0f * panel_alpha)), tr("МОДЕЛЬ ПЕРСОНАЖА", "CHARACTER MODEL"));
 
-    CPed* player = FindPlayerPed();
-    char current_model[64]{};
-    ImFormatString(current_model, IM_ARRAYSIZE(current_model), "%s: %d", tr("Текущий ID", "Current ID"), player ? (int)player->m_nModelIndex : -1);
-    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 54.0f * s), IM_COL32(124, 137, 160, (int)(235.0f * panel_alpha)), current_model);
+    char preview_model[64]{};
+    ImFormatString(preview_model, IM_ARRAYSIZE(preview_model), "%s: %d", tr("Скин в превью", "Preview skin"), preview_skin_id);
+    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 54.0f * s), IM_COL32(124, 137, 160, (int)(235.0f * panel_alpha)), preview_model);
 
     // Articulated pose rig. Every highlighted joint can be dragged separately.
     enum joint_t { Head, Neck, LeftElbow, LeftHand, RightElbow, RightHand, Pelvis, LeftKnee, LeftFoot, RightKnee, RightFoot, JointCount };
@@ -542,36 +545,20 @@ void Menu::DrawCharacterPanel()
         skin_status.clear();
     }
     ImGui::SameLine(0.0f, 5.0f * s);
-    if (ImGui::Button(tr("Применить##skin_apply", "Apply##skin_apply"), ImVec2(88.0f * s, 27.0f * s)))
+    if (ImGui::Button(tr("В превью##skin_preview", "Preview##skin_preview"), ImVec2(88.0f * s, 27.0f * s)))
     {
-        CPed* ped = FindPlayerPed();
         const int id = g_cfg.player_skin_id;
-        if (!ped)
+        if (id < 0 || id > 32767 || !IsNextRpSkinId(id))
         {
-            skin_status = tr("Игрок не найден", "Player not found");
-            skin_status_ok = false;
-        }
-        else if (id < 0 || id > 32767 || !CModelInfo::GetModelInfo(id) || !CModelInfo::IsPedModel(id))
-        {
-            skin_status = tr("Модель недоступна в клиенте", "Model is unavailable in client");
+            skin_status = tr("ID отсутствует в каталоге", "ID is not in the catalogue");
             skin_status_ok = false;
         }
         else
         {
-            CStreaming::RequestModel(id, 0);
-            CStreaming::LoadAllRequestedModels(false);
-            if (CStreaming::HasModelLoaded(id))
-            {
-                ped->SetModelIndex((unsigned int)id);
-                skin_status = tr("Скин применён", "Skin applied");
-                skin_status_ok = true;
-                SaveGeneralConfig();
-            }
-            else
-            {
-                skin_status = tr("Не удалось загрузить модель", "Could not load model");
-                skin_status_ok = false;
-            }
+            preview_skin_id = id;
+            skin_status = tr("Скин выбран для превью", "Skin selected for preview");
+            skin_status_ok = true;
+            SaveGeneralConfig();
         }
     }
     ImGui::SameLine(0.0f, 5.0f * s);
