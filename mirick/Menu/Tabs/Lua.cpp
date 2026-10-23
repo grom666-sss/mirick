@@ -69,7 +69,11 @@ void Menu::DrawLua()
     ImGui::TextColored(ImVec4(0.72f, 0.76f, 0.86f, a), "%s", tr("КОД СКРИПТА", "SCRIPT CODE"));
     ImGui::SameLine();
     const float stats_width = ImGui::CalcTextSize(statistics.c_str()).x;
-    ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionWidth() - stats_width - 18.0f * s));
+    const float statistics_x = ImGui::GetWindowContentRegionWidth() - stats_width - 18.0f * s;
+    if (ImGui::GetCursorPosX() < statistics_x)
+    {
+        ImGui::SetCursorPosX(statistics_x);
+    }
     ImGui::TextColored(ImVec4(0.42f, 0.47f, 0.58f, a), "%s", statistics.c_str());
 
     ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.025f, 0.035f, 0.055f, a));
@@ -113,7 +117,8 @@ void Menu::DrawLua()
     ImGui::SameLine(0.0f, gap);
     if (action_button(tr("Очистить", "Clear"), ImVec2(button_width, 34.0f * s), false))
     {
-        const size_t capacity = std::max<size_t>(code.size(), 64 * 1024);
+        const size_t minimum_capacity = 64 * 1024;
+        const size_t capacity = code.size() > minimum_capacity ? code.size() : minimum_capacity;
         code.assign(capacity, '\0');
     }
     ImGui::SameLine(0.0f, gap);
