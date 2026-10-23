@@ -336,6 +336,11 @@ void Menu::DrawBackground()
     ImVec2 header_max = ImVec2(window_pos.x + header_size.x, window_pos.y + header_size.y);
 
     const bool author_hovered = ImGui::IsMouseHoveringRect(badge_min, badge_max);
+    if (author_hovered && ImGui::IsMouseClicked(0))
+    {
+        author_panel_open = !author_panel_open;
+    }
+
     if (!s_dragging && !author_hovered && ImGui::IsMouseHoveringRect(window_pos, header_max) && ImGui::IsMouseClicked(0))
     {
         s_dragging = true;
@@ -363,22 +368,11 @@ void Menu::DrawAuthorPanel()
     const float s = GetScale();
     const float menu_alpha = GetAlpha();
     const ImVec2 menu_pos = GetWindowPos();
-    const ImVec2 previous_cursor = ImGui::GetCursorPos();
     const c_color accent = g_cfg.accent.to_color();
 
-    // Header badge toggle. The drawer itself is a separate ImGui window so it
-    // can open outside the main menu instead of covering its content.
-    const char* author = "m1racl";
-    const ImVec2 author_size = ImGui::CalcTextSize(author);
-    const ImVec2 badge_max = menu_pos + ImVec2(701.0f * s, 34.0f * s);
-    const ImVec2 badge_min = badge_max - ImVec2(author_size.x + 22.0f * s, 22.0f * s);
-    ImGui::SetCursorScreenPos(badge_min);
-    if (ImGui::InvisibleButton("##author_contact_toggle", badge_max - badge_min))
-    {
-        author_panel_open = !author_panel_open;
-    }
-    ImGui::SetCursorPos(previous_cursor);
-
+    // The drawer is a separate ImGui window so it can open outside the main
+    // menu instead of covering its content. The header badge toggles it in
+    // DrawBackground, independently of content-tab clipping rectangles.
     CreateAnimation(author_panel_anim, author_panel_open, 0.32f, AnimLerp);
     if (author_panel_anim <= 0.01f)
     {
@@ -422,16 +416,6 @@ void Menu::DrawAuthorPanel()
     panel_draw->AddText(panel_min + ImVec2(61.0f * s, 22.0f * s), IM_COL32(244, 247, 253, static_cast<int>(255.0f * panel_alpha)), "m1racl");
     panel_draw->AddText(panel_min + ImVec2(61.0f * s, 43.0f * s), IM_COL32(116, 128, 151, static_cast<int>(245.0f * panel_alpha)), tr("Автор mirick", "mirick author"));
     panel_draw->AddLine(panel_min + ImVec2(18.0f * s, 75.0f * s), panel_min + ImVec2(248.0f * s, 75.0f * s), IM_COL32(45, 54, 72, static_cast<int>(190.0f * panel_alpha)));
-
-    if (eased > 0.82f)
-    {
-        ImGui::SetCursorScreenPos(panel_min + ImVec2(228.0f * s, 15.0f * s));
-        if (ImGui::InvisibleButton("##close_author_panel", ImVec2(23.0f * s, 23.0f * s)))
-        {
-            author_panel_open = false;
-        }
-    }
-    panel_draw->AddText(panel_min + ImVec2(234.0f * s, 17.0f * s), IM_COL32(151, 160, 179, static_cast<int>(240.0f * panel_alpha)), "x");
 
     auto contact_card = [&](const char* id, const char* service, const char* value, float y, const ImU32 service_color)
     {
@@ -528,7 +512,14 @@ void Menu::DrawTabs()
         }
         else if (i == 4)
         {
-            list->AddText(tmin + ImVec2(8.0f * s, 7.0f * s), text_clr.as_imcolor(), "{ }");
+            const char* luaGlyph = "{}";
+            const ImVec2 glyphSize = ImGui::CalcTextSize(luaGlyph);
+            const ImVec2 iconMin = tmin + ImVec2(10.0f * s, 9.0f * s);
+            const ImVec2 iconSize(15.0f * s, 15.0f * s);
+            list->AddText(
+                iconMin + ImVec2((iconSize.x - glyphSize.x) * 0.5f, (iconSize.y - glyphSize.y) * 0.5f),
+                text_clr.as_imcolor(),
+                luaGlyph);
         }
         else if (icon_textures[i])
         {

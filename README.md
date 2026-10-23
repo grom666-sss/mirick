@@ -35,7 +35,7 @@ function on_unload()
 end
 ```
 
-Lua runs with the base, coroutine, math, string, table and UTF-8 libraries. The OS, I/O, debug and package libraries are intentionally not exposed.
+Lua runs with the standard base, coroutine, math, string, table, UTF-8, package, I/O, OS and debug libraries. Pasted scripts with an UTF-8 BOM or a Unix shebang are normalized automatically.
 
 ## Build
 

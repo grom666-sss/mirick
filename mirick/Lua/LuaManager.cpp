@@ -161,11 +161,11 @@ void LuaManager::Initialize()
         sol::lib::math,
         sol::lib::string,
         sol::lib::table,
-        sol::lib::utf8);
-
-    // Keep scripts deterministic: file and process access are not part of the API.
-    impl_->lua["dofile"] = sol::nil;
-    impl_->lua["loadfile"] = sol::nil;
+        sol::lib::utf8,
+        sol::lib::package,
+        sol::lib::io,
+        sol::lib::os,
+        sol::lib::debug);
 
     sol::table mirick = impl_->lua.create_named_table("mirick");
     mirick["version"] = "1.0";
@@ -267,8 +267,24 @@ bool LuaManager::Execute(std::string_view code)
         Initialize();
     }
 
+    std::string source(code);
+    // Pasted files often contain an UTF-8 BOM or a Unix shebang. Lua's file
+    // loader handles those, while execution from a memory buffer does not.
+    if (source.size() >= 3
+        && static_cast<unsigned char>(source[0]) == 0xEF
+        && static_cast<unsigned char>(source[1]) == 0xBB
+        && static_cast<unsigned char>(source[2]) == 0xBF)
+    {
+        source.erase(0, 3);
+    }
+    if (source.starts_with("#!"))
+    {
+        const size_t lineEnd = source.find('\n');
+        source.erase(0, lineEnd == std::string::npos ? source.size() : lineEnd + 1);
+    }
+
     const sol::protected_function_result result = impl_->lua.safe_script(
-        std::string(code), sol::script_pass_on_error);
+        source, sol::script_pass_on_error);
 
     if (!result.valid())
     {
