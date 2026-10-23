@@ -2,8 +2,6 @@
 
 #include <shellapi.h>
 
-#include "Lua/LuaManager.hpp"
-
 void Menu::DrawProfile()
 {
         static int sub4 = 0;
@@ -15,9 +13,9 @@ void Menu::DrawProfile()
             cfg_scanned = true;
         }
 
-        std::vector<std::string> items = { tr("Конфиг", "Config"), tr("Настройки", "Settings"), "Lua" };
+        std::vector<std::string> items = { tr("Конфиг", "Config"), tr("Настройки", "Settings") };
         DrawSubTabs(sub4, items);
-        UpdateSubFade(4, sub4);
+        UpdateSubFade(5, sub4);
         ImGui::SetCursorPosX(0);
         ImGui::BeginChild("subtab_cfg", ImVec2(), false);
         ImGui::Columns(2, NULL, false);
@@ -141,61 +139,7 @@ void Menu::DrawProfile()
             }
             GroupEnd();
         }
-        else if (sub4 == 2)
-        {
-            ImGui::Columns(1, NULL, false);
-            static std::array<char, 32768> lua_code{};
 
-            GroupBegin(tr("Редактор Lua", "Lua editor"));
-            ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.055f, 0.065f, 0.08f, GetAlpha()));
-            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.22f, 0.24f, 0.29f, GetAlpha()));
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f * GetScale());
-            ImGui::InputTextMultiline(
-                "##lua_editor",
-                lua_code.data(),
-                lua_code.size(),
-                ImVec2(-1.0f, 245.0f * GetScale()),
-                ImGuiInputTextFlags_AllowTabInput);
-            ImGui::PopStyleVar(2);
-            ImGui::PopStyleColor(2);
-
-            if (Button(tr("Выполнить", "Execute")))
-            {
-                LuaManager::Instance().Execute(lua_code.data());
-            }
-            if (Button(tr("Очистить редактор", "Clear editor")))
-            {
-                lua_code.fill(0);
-            }
-            GroupEnd();
-
-            GroupBegin(tr("Управление", "Management"));
-            if (Button(tr("Перезагрузить файлы Lua", "Reload Lua files")))
-            {
-                LuaManager::Instance().Reload();
-            }
-            if (Button(tr("Открыть папку скриптов", "Open scripts folder")))
-            {
-                const std::string folder = config_t::ConfigDir() + "\\scripts";
-                CreateDirectoryA(folder.c_str(), nullptr);
-                ShellExecuteA(NULL, "open", folder.c_str(), NULL, NULL, SW_SHOWNORMAL);
-            }
-            if (Button(tr("Открыть журнал Lua", "Open Lua log")))
-            {
-                const std::string log = config_t::ConfigDir() + "\\lua.log";
-                ShellExecuteA(NULL, "open", log.c_str(), NULL, NULL, SW_SHOWNORMAL);
-            }
-
-            const std::string& status = LuaManager::Instance().GetLastMessage();
-            if (!status.empty())
-            {
-                ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x);
-                ImGui::TextUnformatted(status.c_str());
-                ImGui::PopTextWrapPos();
-            }
-            GroupEnd();
-        }
 
         ImGui::EndChild(false);
 }

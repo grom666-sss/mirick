@@ -64,14 +64,14 @@ class Menu
     float alpha = 0.0f;
     float widget_alpha_mul = 1.0f;
     ImVec2 window_pos{};
-    std::array<tab_animation_t, 5> tab_info{};
+    std::array<tab_animation_t, 6> tab_info{};
     std::map<std::string, std::array<tab_animation_t, 6>> subtab_info{};
     std::map<uint32_t, item_animation_t> item_animations{};
     std::map<std::string, std::string> combo_items{};
     float tab_alpha = 0.0f;
-    std::array<float, 5> subtab_alpha{};
+    std::array<float, 6> subtab_alpha{};
     int prev_tab = 0;
-    std::array<int, 5> prev_sub{};
+    std::array<int, 6> prev_sub{};
     LPDIRECT3DTEXTURE9 logo_texture = nullptr;
     LPDIRECT3DTEXTURE9 kb_texture = nullptr;
     std::array<LPDIRECT3DTEXTURE9, 5> icon_textures{};
@@ -108,6 +108,7 @@ public:
     void DrawLegit();
     void DrawVisuals();
     void DrawMisc();
+    void DrawLua();
     void DrawProfile();
     void Draw();
     void DrawBinds();

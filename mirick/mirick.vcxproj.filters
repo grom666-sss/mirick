@@ -258,6 +258,9 @@
     <ClCompile Include="Menu\Tabs\Misc.cpp">
       <Filter>Menu\Tabs</Filter>
     </ClCompile>
+    <ClCompile Include="Menu\Tabs\Lua.cpp">
+      <Filter>Menu\Tabs</Filter>
+    </ClCompile>
     <ClCompile Include="Menu\Tabs\Profile.cpp">
       <Filter>Menu\Tabs</Filter>
     </ClCompile>
