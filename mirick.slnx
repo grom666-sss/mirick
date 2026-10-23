@@ -5,4 +5,5 @@
     <Platform Name="Win32" />
   </Configurations>
   <Project Path="mirick/mirick.vcxproj" />
+  <Project Path="launcher/mirick-launcher.vcxproj" />
 </Solution>

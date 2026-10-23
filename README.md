@@ -27,6 +27,23 @@ The first build runs `setup_dependencies.bat` automatically. The script download
 
 Then open `mirick.sln` (the traditional solution format with the widest Visual Studio compatibility), select **Release | Win32**, and build the project. `mirick.slnx` is also provided for Visual Studio versions that support the newer solution format.
 
+## Safe launcher
+
+The solution also contains `mirick-launcher`, a standalone Win32 launcher/updater. It does not inject DLLs, map processes, collect HWIDs, or bypass security software. It can:
+
+* check this repository's latest GitHub Release without a token;
+* download a normal Windows executable over HTTPS;
+* verify its SHA-256 checksum before installation;
+* remember the selected installation directory;
+* install atomically and launch the installed application.
+
+For an update to be installable, the GitHub Release must contain both assets below:
+
+* `mirick-client.exe` — the regular application to install;
+* `mirick-client.exe.sha256` — a text file beginning with the executable's 64-character SHA-256 hash.
+
+Build **Release | Win32** and use `Release\mirick-launcher.exe`. Launcher settings are stored in `%LOCALAPPDATA%\mirick\launcher.ini`.
+
 ## Capture protection
 
 ESP, skeletons, snaplines, binds and the menu are rendered in a separate top-level overlay protected with `WDA_EXCLUDEFROMCAPTURE`. OBS Game Capture receives only the GTA render device, while Windows display/window capture excludes the protected overlay. Use **borderless/windowed mode**: Windows cannot place a separate overlay above an exclusive-fullscreen DirectX 9 surface. Capture exclusion requires Windows 10 version 2004 or newer. If protected overlay creation fails, visuals are disabled rather than rendered into the captured game frame.

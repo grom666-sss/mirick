@@ -4,6 +4,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{BC8A1FFA-BEE3-4634-8014-F334798102B3}") = "mirick", "mirick\mirick.vcxproj", "{50F067DB-D29D-4253-972D-6B9216429909}"
 EndProject
+Project("{BC8A1FFA-BEE3-4634-8014-F334798102B3}") = "mirick-launcher", "launcher\mirick-launcher.vcxproj", "{A6E9C90D-0C2F-47DA-B9BE-59D30B93D5D1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Beta|Win32 = Beta|Win32
@@ -14,6 +16,10 @@ Global
 		{50F067DB-D29D-4253-972D-6B9216429909}.Beta|Win32.Build.0 = Beta|Win32
 		{50F067DB-D29D-4253-972D-6B9216429909}.Release|Win32.ActiveCfg = Release|Win32
 		{50F067DB-D29D-4253-972D-6B9216429909}.Release|Win32.Build.0 = Release|Win32
+		{A6E9C90D-0C2F-47DA-B9BE-59D30B93D5D1}.Beta|Win32.ActiveCfg = Beta|Win32
+		{A6E9C90D-0C2F-47DA-B9BE-59D30B93D5D1}.Beta|Win32.Build.0 = Beta|Win32
+		{A6E9C90D-0C2F-47DA-B9BE-59D30B93D5D1}.Release|Win32.ActiveCfg = Release|Win32
+		{A6E9C90D-0C2F-47DA-B9BE-59D30B93D5D1}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

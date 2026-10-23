@@ -1,30 +1,32 @@
-name: Build Windows DLL
+name: Build Windows launcher
 
 on:
   push:
     branches:
-      - arena/01a0fe3d-mirick
+      - main
+      - 'arena/**'
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  build:
+  launcher:
     runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure Win32 Release
-        run: cmake -S . -B build -A Win32
+      - name: Configure MSBuild
+        uses: microsoft/setup-msbuild@v2
 
-      - name: Build DLL
-        run: cmake --build build --config Release
+      - name: Build launcher
+        run: msbuild launcher\mirick-launcher.vcxproj /m /nologo /p:Configuration=Release /p:Platform=Win32
 
-      - name: Upload DLL
+      - name: Upload launcher
         uses: actions/upload-artifact@v4
         with:
-          name: MirickMenu-Win32
-          path: build/Release/MirickMenu.dll
+          name: mirick-launcher-Win32
+          path: Release/mirick-launcher.exe
           if-no-files-found: error
