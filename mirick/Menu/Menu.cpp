@@ -312,9 +312,9 @@ void Menu::DrawBackground()
 
     static const std::string title =
 #ifdef BETA_BUILD
-        "MIRICK  /  BETA";
+        "MIRICK MENU  /  BETA";
 #else
-        "MIRICK";
+        "MIRICK MENU";
 #endif
     ImGui::PushFont(g_fonts.dmg);
     list->AddText(window_pos + ImVec2(49.0f * s, 12.0f * s), IM_COL32(242, 245, 255, (int)(255.0f * alpha)), title.c_str());
@@ -503,15 +503,56 @@ void Menu::DrawTabs()
             list->AddRectFilled(tmin + ImVec2(0.0f, 7.0f * s), tmin + ImVec2(3.0f * s, 25.0f * s), accent.new_alpha((int)(255.0f * info.alpha * GetAlpha())).as_imcolor(), 2.0f * s);
         }
 
-        if (i == 4)
+        const ImU32 icon_color = text_clr.as_imcolor();
+        const float stroke = 1.6f * s;
+        const ImVec2 center = tmin + ImVec2(17.5f * s, 16.5f * s);
+
+        // Crisp vector module icons replace the old bitmap symbols. They stay
+        // sharp at every UI scale and inherit the tab hover/selection color.
+        switch (i)
         {
-            ImVec2 ip0 = tmin + ImVec2(10.0f * s, 9.0f * s);
-            list->AddCircleFilled(ip0 + ImVec2(7.5f * s, 4.0f * s), 2.8f * s, text_clr.as_imcolor());
-            list->AddRectFilled(ip0 + ImVec2(3.0f * s, 8.5f * s), ip0 + ImVec2(12.0f * s, 15.0f * s), text_clr.as_imcolor(), 3.0f * s);
+        case 0: // Crosshair.
+            list->AddCircle(center, 5.0f * s, icon_color, 16, stroke);
+            list->AddCircleFilled(center, 1.5f * s, icon_color, 8);
+            list->AddLine(center - ImVec2(0.0f, 8.0f * s), center - ImVec2(0.0f, 5.5f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(0.0f, 5.5f * s), center + ImVec2(0.0f, 8.0f * s), icon_color, stroke);
+            list->AddLine(center - ImVec2(8.0f * s, 0.0f), center - ImVec2(5.5f * s, 0.0f), icon_color, stroke);
+            list->AddLine(center + ImVec2(5.5f * s, 0.0f), center + ImVec2(8.0f * s, 0.0f), icon_color, stroke);
+            break;
+        case 1: // Shield with a check mark.
+        {
+            const ImVec2 top = center - ImVec2(0.0f, 7.5f * s);
+            list->AddLine(top, center + ImVec2(6.0f * s, -5.0f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(6.0f * s, -5.0f * s), center + ImVec2(5.0f * s, 3.0f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(5.0f * s, 3.0f * s), center + ImVec2(0.0f, 7.5f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(0.0f, 7.5f * s), center + ImVec2(-5.0f * s, 3.0f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(-5.0f * s, 3.0f * s), center + ImVec2(-6.0f * s, -5.0f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(-6.0f * s, -5.0f * s), top, icon_color, stroke);
+            list->AddLine(center + ImVec2(-3.0f * s, 0.0f), center + ImVec2(-0.5f * s, 2.5f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(-0.5f * s, 2.5f * s), center + ImVec2(3.5f * s, -2.0f * s), icon_color, stroke);
+            break;
         }
-        else if (icon_textures[i])
-        {
-            list->AddImage((void*)icon_textures[i], tmin + ImVec2(10.0f * s, 9.0f * s), tmin + ImVec2(25.0f * s, 24.0f * s), ImVec2(0, 0), ImVec2(1, 1), text_clr.as_imcolor());
+        case 2: // Eye.
+            list->AddLine(center - ImVec2(7.5f * s, 0.0f), center + ImVec2(-3.5f * s, -4.0f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(-3.5f * s, -4.0f * s), center + ImVec2(3.5f * s, -4.0f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(3.5f * s, -4.0f * s), center + ImVec2(7.5f * s, 0.0f), icon_color, stroke);
+            list->AddLine(center + ImVec2(7.5f * s, 0.0f), center + ImVec2(3.5f * s, 4.0f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(3.5f * s, 4.0f * s), center + ImVec2(-3.5f * s, 4.0f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(-3.5f * s, 4.0f * s), center - ImVec2(7.5f * s, 0.0f), icon_color, stroke);
+            list->AddCircleFilled(center, 2.5f * s, icon_color, 12);
+            break;
+        case 3: // Adjustment sliders.
+            list->AddLine(center + ImVec2(-7.0f * s, -4.5f * s), center + ImVec2(7.0f * s, -4.5f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(-7.0f * s, 0.0f), center + ImVec2(7.0f * s, 0.0f), icon_color, stroke);
+            list->AddLine(center + ImVec2(-7.0f * s, 4.5f * s), center + ImVec2(7.0f * s, 4.5f * s), icon_color, stroke);
+            list->AddCircleFilled(center + ImVec2(-2.5f * s, -4.5f * s), 2.0f * s, icon_color, 10);
+            list->AddCircleFilled(center + ImVec2(3.0f * s, 0.0f), 2.0f * s, icon_color, 10);
+            list->AddCircleFilled(center + ImVec2(-1.0f * s, 4.5f * s), 2.0f * s, icon_color, 10);
+            break;
+        default: // Profile.
+            list->AddCircle(center - ImVec2(0.0f, 4.0f * s), 3.2f * s, icon_color, 14, stroke);
+            list->AddRect(center + ImVec2(-5.5f * s, 1.0f * s), center + ImVec2(5.5f * s, 7.0f * s), icon_color, 3.0f * s, ImDrawCornerFlags_Top, stroke);
+            break;
         }
 
         list->AddText(ImVec2(tmin.x + 32.0f * s, tmin.y + 8.0f * s), text_clr.as_imcolor(), names[i].c_str());
