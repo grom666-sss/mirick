@@ -100,6 +100,7 @@ public:
     void WindowBegin();
     void WindowEnd();
     void DrawBackground();
+    void DrawCharacterPanel();
     void DrawAuthorPanel();
     void DrawTabs();
     void DrawSubTabs(int& selector, const std::vector<std::string>& tabs);

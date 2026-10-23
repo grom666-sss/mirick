@@ -14,12 +14,81 @@
 
 #include "Game/Features.h"
 
+#include "CModelInfo.h"
+#include "CStreaming.h"
+
 Menu* menu = new Menu;
 
 static bool s_dragging = false;
 static ImVec2 s_drag_offset{};
 static bool s_drag_pending = false;
 static ImVec2 s_drag_pending_pos{};
+
+namespace
+{
+    struct skin_range_t
+    {
+        int first;
+        int last;
+    };
+
+    // IDs transcribed from the Next RP catalogue supplied by the user.
+    constexpr skin_range_t kNextRpSkinRanges[] = {
+        { 39, 41 }, { 43, 64 }, { 66, 73 }, { 75, 85 }, { 87, 118 },
+        { 120, 148 }, { 150, 207 }, { 209, 224 }, { 226, 264 },
+        { 267, 272 }, { 274, 301 }, { 303, 309 }, { 312, 312 },
+        { 6712, 6726 }, { 6732, 6752 }, { 6809, 6855 }, { 6857, 6912 },
+        { 10861, 10959 }, { 13891, 13919 }
+    };
+
+    bool IsNextRpSkinId(int id)
+    {
+        for (const skin_range_t& range : kNextRpSkinRanges)
+        {
+            if (id >= range.first && id <= range.last)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    int StepNextRpSkinId(int id, int direction)
+    {
+        if (direction > 0)
+        {
+            for (const skin_range_t& range : kNextRpSkinRanges)
+            {
+                if (id < range.first)
+                {
+                    return range.first;
+                }
+                if (id >= range.first && id < range.last)
+                {
+                    return id + 1;
+                }
+            }
+
+            return kNextRpSkinRanges[0].first;
+        }
+
+        for (int i = IM_ARRAYSIZE(kNextRpSkinRanges) - 1; i >= 0; --i)
+        {
+            const skin_range_t& range = kNextRpSkinRanges[i];
+            if (id > range.last)
+            {
+                return range.last;
+            }
+            if (id > range.first && id <= range.last)
+            {
+                return id - 1;
+            }
+        }
+
+        return kNextRpSkinRanges[IM_ARRAYSIZE(kNextRpSkinRanges) - 1].last;
+    }
+}
 
 uint32_t Menu::Hash_Label(const char* text)
 {
@@ -360,6 +429,172 @@ void Menu::DrawBackground()
             s_dragging = false;
         }
     }
+}
+
+void Menu::DrawCharacterPanel()
+{
+    const float s = GetScale();
+    const float panel_alpha = GetAlpha();
+    const ImVec2 panel_size(212.0f * s, 520.0f * s);
+    const ImVec2 panel_pos = GetWindowPos() - ImVec2(224.0f * s, 0.0f);
+    const c_color accent = g_cfg.accent.to_color();
+
+    ImGui::SetNextWindowPos(panel_pos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(panel_size, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 9.0f * s);
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
+    ImGui::Begin("##mirick_character_panel", nullptr,
+        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove);
+
+    ImDrawList* panel_draw = ImGui::GetWindowDrawList();
+    const ImVec2 panel_max = panel_pos + panel_size;
+    panel_draw->AddRectFilled(panel_pos + ImVec2(4.0f * s, 6.0f * s), panel_max + ImVec2(4.0f * s, 6.0f * s), IM_COL32(0, 0, 0, (int)(95.0f * panel_alpha)), 9.0f * s);
+    panel_draw->AddRectFilled(panel_pos, panel_max, IM_COL32(7, 10, 17, (int)(250.0f * panel_alpha)), 9.0f * s);
+    panel_draw->AddRectFilled(panel_pos, panel_pos + ImVec2(panel_size.x, 43.0f * s), IM_COL32(15, 21, 33, (int)(255.0f * panel_alpha)), 9.0f * s, ImDrawCornerFlags_Top);
+    panel_draw->AddRectFilledMultiColor(
+        panel_pos + ImVec2(0, 42.0f * s), panel_pos + ImVec2(panel_size.x, 44.0f * s),
+        accent.new_alpha(0).as_imcolor(), accent.new_alpha((int)(220.0f * panel_alpha)).as_imcolor(),
+        accent.new_alpha((int)(220.0f * panel_alpha)).as_imcolor(), accent.new_alpha(0).as_imcolor());
+    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 13.0f * s), IM_COL32(242, 245, 255, (int)(255.0f * panel_alpha)), tr("МОДЕЛЬ ПЕРСОНАЖА", "CHARACTER MODEL"));
+
+    CPed* player = FindPlayerPed();
+    char current_model[64]{};
+    ImFormatString(current_model, IM_ARRAYSIZE(current_model), "%s: %d", tr("Текущий ID", "Current ID"), player ? (int)player->m_nModelIndex : -1);
+    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 54.0f * s), IM_COL32(124, 137, 160, (int)(235.0f * panel_alpha)), current_model);
+
+    // Articulated pose rig. Every highlighted joint can be dragged separately.
+    enum joint_t { Head, Neck, LeftElbow, LeftHand, RightElbow, RightHand, Pelvis, LeftKnee, LeftFoot, RightKnee, RightFoot, JointCount };
+    static ImVec2 pose[JointCount] = {
+        ImVec2(106, 48), ImVec2(106, 82), ImVec2(70, 132), ImVec2(48, 194),
+        ImVec2(142, 132), ImVec2(164, 194), ImVec2(106, 202),
+        ImVec2(80, 258), ImVec2(68, 322), ImVec2(132, 258), ImVec2(144, 322)
+    };
+    const ImVec2 rig_origin = panel_pos + ImVec2(0.0f, 62.0f * s);
+    auto point = [&](int joint) { return rig_origin + pose[joint] * s; };
+    const ImU32 body_color = IM_COL32(76, 87, 108, (int)(235.0f * panel_alpha));
+    const ImU32 bone_color = IM_COL32(181, 190, 210, (int)(235.0f * panel_alpha));
+    const ImU32 joint_color = accent.new_alpha((int)(245.0f * panel_alpha)).as_imcolor();
+    const int links[][2] = {
+        { Head, Neck }, { Neck, LeftElbow }, { LeftElbow, LeftHand },
+        { Neck, RightElbow }, { RightElbow, RightHand }, { Neck, Pelvis },
+        { Pelvis, LeftKnee }, { LeftKnee, LeftFoot },
+        { Pelvis, RightKnee }, { RightKnee, RightFoot }
+    };
+
+    panel_draw->AddCircleFilled(point(Head), 14.0f * s, body_color, 24);
+    panel_draw->AddLine(point(Neck), point(Pelvis), body_color, 18.0f * s);
+    for (const auto& link : links)
+    {
+        panel_draw->AddLine(point(link[0]), point(link[1]), bone_color, 6.0f * s);
+    }
+
+    for (int i = 0; i < JointCount; ++i)
+    {
+        const ImVec2 p = point(i);
+        ImGui::SetCursorScreenPos(p - ImVec2(9.0f * s, 9.0f * s));
+        ImGui::PushID(i);
+        ImGui::InvisibleButton("##pose_joint", ImVec2(18.0f * s, 18.0f * s));
+        const bool hovered = ImGui::IsItemHovered();
+        if (ImGui::IsItemActive() && ImGui::IsMouseDown(0))
+        {
+            ImVec2 next = (ImGui::GetIO().MousePos - rig_origin) / s;
+            next.x = ImClamp(next.x, 18.0f, 194.0f);
+            next.y = ImClamp(next.y, 38.0f, 326.0f);
+            pose[i] = next;
+        }
+        ImGui::PopID();
+        panel_draw->AddCircleFilled(point(i), (hovered ? 5.0f : 4.0f) * s, joint_color, 14);
+        panel_draw->AddCircle(point(i), 7.0f * s, accent.new_alpha((int)((hovered ? 210.0f : 85.0f) * panel_alpha)).as_imcolor(), 14, 1.0f * s);
+    }
+
+    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 395.0f * s), IM_COL32(124, 137, 160, (int)(220.0f * panel_alpha)), tr("Перетаскивайте суставы мышью", "Drag joints with the mouse"));
+
+    ImGui::SetCursorPos(ImVec2(15.0f * s, 417.0f * s));
+    ImGui::PushItemWidth(182.0f * s);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.055f, 0.075f, 0.115f, panel_alpha));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.075f, 0.10f, 0.15f, panel_alpha));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.94f, 0.96f, 1.0f, panel_alpha));
+    ImGui::InputInt("##next_rp_skin_id", &g_cfg.player_skin_id, 0, 0, ImGuiInputTextFlags_CharsDecimal);
+    ImGui::PopStyleColor(3);
+    ImGui::PopItemWidth();
+
+    static std::string skin_status;
+    static bool skin_status_ok = false;
+    static int skin_status_id = -1;
+    if (skin_status_id != g_cfg.player_skin_id)
+    {
+        skin_status_id = g_cfg.player_skin_id;
+        skin_status.clear();
+    }
+    ImGui::SetCursorPos(ImVec2(15.0f * s, 452.0f * s));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.06f, 0.08f, 0.125f, panel_alpha));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(accent.r() / 255.0f, accent.g() / 255.0f, accent.b() / 255.0f, 0.28f * panel_alpha));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(accent.r() / 255.0f, accent.g() / 255.0f, accent.b() / 255.0f, 0.42f * panel_alpha));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.94f, 0.96f, 1.0f, panel_alpha));
+
+    if (ImGui::Button("<##skin_prev", ImVec2(42.0f * s, 27.0f * s)))
+    {
+        g_cfg.player_skin_id = StepNextRpSkinId(g_cfg.player_skin_id, -1);
+        skin_status.clear();
+    }
+    ImGui::SameLine(0.0f, 5.0f * s);
+    if (ImGui::Button(tr("Применить##skin_apply", "Apply##skin_apply"), ImVec2(88.0f * s, 27.0f * s)))
+    {
+        CPed* ped = FindPlayerPed();
+        const int id = g_cfg.player_skin_id;
+        if (!ped)
+        {
+            skin_status = tr("Игрок не найден", "Player not found");
+            skin_status_ok = false;
+        }
+        else if (id < 0 || id > 32767 || !CModelInfo::GetModelInfo(id) || !CModelInfo::IsPedModel(id))
+        {
+            skin_status = tr("Модель недоступна в клиенте", "Model is unavailable in client");
+            skin_status_ok = false;
+        }
+        else
+        {
+            CStreaming::RequestModel(id, 0);
+            CStreaming::LoadAllRequestedModels(false);
+            if (CStreaming::HasModelLoaded(id))
+            {
+                ped->SetModelIndex((unsigned int)id);
+                skin_status = tr("Скин применён", "Skin applied");
+                skin_status_ok = true;
+                SaveGeneralConfig();
+            }
+            else
+            {
+                skin_status = tr("Не удалось загрузить модель", "Could not load model");
+                skin_status_ok = false;
+            }
+        }
+    }
+    ImGui::SameLine(0.0f, 5.0f * s);
+    if (ImGui::Button(">##skin_next", ImVec2(42.0f * s, 27.0f * s)))
+    {
+        g_cfg.player_skin_id = StepNextRpSkinId(g_cfg.player_skin_id, 1);
+        skin_status.clear();
+    }
+    ImGui::PopStyleColor(4);
+
+    if (skin_status.empty())
+    {
+        skin_status = IsNextRpSkinId(g_cfg.player_skin_id) ? tr("ID есть в каталоге Next RP", "ID is in the Next RP catalogue") : tr("ID не отмечен в каталоге", "ID is not listed in catalogue");
+        skin_status_ok = IsNextRpSkinId(g_cfg.player_skin_id);
+    }
+    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 489.0f * s),
+        skin_status_ok ? accent.new_alpha((int)(220.0f * panel_alpha)).as_imcolor() : IM_COL32(225, 112, 112, (int)(220.0f * panel_alpha)),
+        skin_status.c_str());
+    panel_draw->AddRect(panel_pos, panel_max, IM_COL32(40, 49, 67, (int)(220.0f * panel_alpha)), 9.0f * s);
+
+    ImGui::End(false);
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar(2);
 }
 
 void Menu::DrawAuthorPanel()
@@ -727,6 +962,7 @@ void Menu::Draw()
     DrawBackground();
     DrawTabs();
     DrawContent();
+    DrawCharacterPanel();
     DrawAuthorPanel();
     draw_list->PopClipRect();
     ImGui::PopClipRect();

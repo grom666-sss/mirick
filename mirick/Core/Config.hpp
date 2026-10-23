@@ -22,6 +22,7 @@ struct config_t
     bool antiobs = true;
     float binds_x = 10.0f;
     float binds_y = -1.0f;
+    int player_skin_id = 39;
     bool godmode = false;
     keybind_t godmode_bind{};
     bool nofall = false;

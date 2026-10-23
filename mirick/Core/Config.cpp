@@ -207,6 +207,7 @@ bool config_t::Save(const std::string& name)
     WriteBool(body, "antiobs", antiobs);
     WriteFloat(body, "binds_x", binds_x);
     WriteFloat(body, "binds_y", binds_y);
+    WriteInt(body, "player_skin_id", player_skin_id);
     WriteBool(body, "godmode", godmode);
     WriteInt(body, "godmode_key", godmode_bind.key);
     WriteInt(body, "godmode_mode", godmode_bind.mode);
@@ -514,6 +515,7 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "antiobs") { ReadBool(value, antiobs); }
     else if (key == "binds_x") { ReadFloat(value, binds_x); }
     else if (key == "binds_y") { ReadFloat(value, binds_y); }
+    else if (key == "player_skin_id") { ReadInt(value, player_skin_id); }
 }
 
 bool config_t::Remove(const std::string& name)
