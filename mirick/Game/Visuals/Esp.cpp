@@ -22,51 +22,51 @@ namespace
     {
         switch (type)
         {
-        case WEAPONTYPE_UNARMED: return "Fists";
-        case WEAPONTYPE_BRASSKNUCKLE: return "Brass Knuckles";
-        case WEAPONTYPE_GOLFCLUB: return "Golf Club";
-        case WEAPONTYPE_NIGHTSTICK: return "Nightstick";
-        case WEAPONTYPE_KNIFE: return "Knife";
-        case WEAPONTYPE_BASEBALLBAT: return "Baseball Bat";
-        case WEAPONTYPE_SHOVEL: return "Shovel";
-        case WEAPONTYPE_POOLCUE: return "Pool Cue";
-        case WEAPONTYPE_KATANA: return "Katana";
-        case WEAPONTYPE_CHAINSAW: return "Chainsaw";
-        case WEAPONTYPE_DILDO1: return "Dildo";
-        case WEAPONTYPE_DILDO2: return "Dildo 2";
-        case WEAPONTYPE_VIBE1: return "Vibrator";
-        case WEAPONTYPE_VIBE2: return "Vibrator 2";
-        case WEAPONTYPE_FLOWERS: return "Flowers";
-        case WEAPONTYPE_CANE: return "Cane";
-        case WEAPONTYPE_GRENADE: return "Grenade";
-        case WEAPONTYPE_TEARGAS: return "Tear Gas";
-        case WEAPONTYPE_MOLOTOV: return "Molotov";
-        case WEAPONTYPE_PISTOL: return "Pistol";
-        case WEAPONTYPE_PISTOL_SILENCED: return "Silenced Pistol";
-        case WEAPONTYPE_DESERT_EAGLE: return "Desert Eagle";
-        case WEAPONTYPE_SHOTGUN: return "Shotgun";
-        case WEAPONTYPE_SAWNOFF: return "Sawed-Off";
-        case WEAPONTYPE_SPAS12: return "SPAS-12";
-        case WEAPONTYPE_MICRO_UZI: return "Micro Uzi";
-        case WEAPONTYPE_MP5: return "MP5";
-        case WEAPONTYPE_AK47: return "AK-47";
-        case WEAPONTYPE_M4: return "M4";
-        case WEAPONTYPE_TEC9: return "TEC-9";
-        case WEAPONTYPE_COUNTRYRIFLE: return "Country Rifle";
-        case WEAPONTYPE_SNIPERRIFLE: return "Sniper Rifle";
-        case WEAPONTYPE_RLAUNCHER: return "RPG";
-        case WEAPONTYPE_RLAUNCHER_HS: return "Heat-Seeking RPG";
-        case WEAPONTYPE_FTHROWER: return "Flamethrower";
-        case WEAPONTYPE_MINIGUN: return "Minigun";
-        case WEAPONTYPE_SATCHEL_CHARGE: return "Satchel Charge";
-        case WEAPONTYPE_DETONATOR: return "Detonator";
-        case WEAPONTYPE_SPRAYCAN: return "Spray Can";
-        case WEAPONTYPE_EXTINGUISHER: return "Extinguisher";
-        case WEAPONTYPE_CAMERA: return "Camera";
-        case WEAPONTYPE_NIGHTVISION: return "Night Vision";
-        case WEAPONTYPE_INFRARED: return "Thermal Goggles";
-        case WEAPONTYPE_PARACHUTE: return "Parachute";
-        default: return "Unknown";
+        case WEAPONTYPE_UNARMED: return "Кулаки";
+        case WEAPONTYPE_BRASSKNUCKLE: return "Кастет";
+        case WEAPONTYPE_GOLFCLUB: return "Клюшка";
+        case WEAPONTYPE_NIGHTSTICK: return "Дубинка";
+        case WEAPONTYPE_KNIFE: return "Нож";
+        case WEAPONTYPE_BASEBALLBAT: return "Бита";
+        case WEAPONTYPE_SHOVEL: return "Лопата";
+        case WEAPONTYPE_POOLCUE: return "Бильярдный кий";
+        case WEAPONTYPE_KATANA: return "Катана";
+        case WEAPONTYPE_CHAINSAW: return "Бензопила";
+        case WEAPONTYPE_DILDO1: return "Предмет";
+        case WEAPONTYPE_DILDO2: return "Предмет 2";
+        case WEAPONTYPE_VIBE1: return "Предмет 3";
+        case WEAPONTYPE_VIBE2: return "Предмет 4";
+        case WEAPONTYPE_FLOWERS: return "Цветы";
+        case WEAPONTYPE_CANE: return "Трость";
+        case WEAPONTYPE_GRENADE: return "Граната";
+        case WEAPONTYPE_TEARGAS: return "Слезоточивый газ";
+        case WEAPONTYPE_MOLOTOV: return "Коктейль Молотова";
+        case WEAPONTYPE_PISTOL: return "Пистолет";
+        case WEAPONTYPE_PISTOL_SILENCED: return "Пистолет с глушителем";
+        case WEAPONTYPE_DESERT_EAGLE: return "Дезерт Игл";
+        case WEAPONTYPE_SHOTGUN: return "Дробовик";
+        case WEAPONTYPE_SAWNOFF: return "Обрез";
+        case WEAPONTYPE_SPAS12: return "СПАС-12";
+        case WEAPONTYPE_MICRO_UZI: return "Микро-Узи";
+        case WEAPONTYPE_MP5: return "МП-5";
+        case WEAPONTYPE_AK47: return "АК-47";
+        case WEAPONTYPE_M4: return "М4";
+        case WEAPONTYPE_TEC9: return "ТЕК-9";
+        case WEAPONTYPE_COUNTRYRIFLE: return "Охотничья винтовка";
+        case WEAPONTYPE_SNIPERRIFLE: return "Снайперская винтовка";
+        case WEAPONTYPE_RLAUNCHER: return "РПГ";
+        case WEAPONTYPE_RLAUNCHER_HS: return "РПГ с наведением";
+        case WEAPONTYPE_FTHROWER: return "Огнемёт";
+        case WEAPONTYPE_MINIGUN: return "Миниган";
+        case WEAPONTYPE_SATCHEL_CHARGE: return "Взрывчатка";
+        case WEAPONTYPE_DETONATOR: return "Детонатор";
+        case WEAPONTYPE_SPRAYCAN: return "Баллончик";
+        case WEAPONTYPE_EXTINGUISHER: return "Огнетушитель";
+        case WEAPONTYPE_CAMERA: return "Камера";
+        case WEAPONTYPE_NIGHTVISION: return "Прибор ночного видения";
+        case WEAPONTYPE_INFRARED: return "Тепловизор";
+        case WEAPONTYPE_PARACHUTE: return "Парашют";
+        default: return "Неизвестное оружие";
         }
     }
 
@@ -289,50 +289,58 @@ void Esp::Update()
                     snprintf(ammoText, sizeof(ammoText), "%u", clip);
                 }
 
+                char ammoLabel[40]{};
+                if (showAmmo)
+                {
+                    snprintf(ammoLabel, sizeof(ammoLabel), "МАГАЗИН  %s", ammoText);
+                }
+
                 const ImVec2 nameSize = ImGui::CalcTextSize(weaponName);
-                const ImVec2 ammoSize = showAmmo ? ImGui::CalcTextSize(ammoText) : ImVec2(0.0f, 0.0f);
-                const float padX = 6.0f * s;
-                const float padY = 3.0f * s;
-                const float gap = showAmmo ? 8.0f * s : 0.0f;
-                const float badgeH = std::max(nameSize.y, ammoSize.y) + padY * 2.0f;
-                const float badgeW = nameSize.x + ammoSize.x + gap + padX * 2.0f;
+                const ImVec2 ammoSize = showAmmo ? ImGui::CalcTextSize(ammoLabel) : ImVec2(0.0f, 0.0f);
+                const float padX = 9.0f * s;
+                const float titlePadY = 4.0f * s;
+                const float rowGap = showAmmo ? 4.0f * s : 0.0f;
+                const float badgeW = std::max(nameSize.x, ammoSize.x) + padX * 2.0f;
+                const float badgeH = nameSize.y + titlePadY * 2.0f
+                    + (showAmmo ? ammoSize.y + rowGap + 3.0f * s : 0.0f);
                 const float vitalsStack = showVitals ? vitalsHeight + 4.0f * s : 0.0f;
                 const ImVec2 badgeMin(boxCenterX - badgeW * 0.5f, min.y - badgeH - 5.0f * s - vitalsStack);
                 const ImVec2 badgeMax = badgeMin + ImVec2(badgeW, badgeH);
-                const float rounding = 4.0f * s;
+                const float rounding = 6.0f * s;
 
-                // Compact dark badge with a colored edge keeps the text readable
-                // against both bright sky and dark interiors.
+                // Two-row loadout card: the weapon is the primary line and the
+                // current magazine is isolated in a small accent-tinted row.
                 draw->AddRectFilled(
-                    badgeMin + ImVec2(1.0f, 2.0f),
-                    badgeMax + ImVec2(1.0f, 2.0f),
-                    IM_COL32(0, 0, 0, 95),
+                    badgeMin + ImVec2(2.0f, 3.0f),
+                    badgeMax + ImVec2(2.0f, 3.0f),
+                    IM_COL32(0, 0, 0, 85),
                     rounding);
-                draw->AddRectFilled(badgeMin, badgeMax, IM_COL32(13, 14, 18, 220), rounding);
-                draw->AddRect(badgeMin, badgeMax, g_cfg.weaponcol.to_color(125).as_imcolor(), rounding, 0, 1.0f);
-                draw->AddRectFilled(
-                    badgeMin + ImVec2(1.0f, 3.0f * s),
-                    ImVec2(badgeMin.x + 3.0f * s, badgeMax.y - 3.0f * s),
-                    weaponCol,
-                    2.0f * s);
+                draw->AddRectFilled(badgeMin, badgeMax, IM_COL32(8, 12, 20, 225), rounding);
+                draw->AddRectFilledMultiColor(
+                    badgeMin,
+                    ImVec2(badgeMax.x, badgeMin.y + 2.0f * s),
+                    g_cfg.weaponcol.to_color(230).as_imcolor(),
+                    g_cfg.weaponcol.to_color(45).as_imcolor(),
+                    g_cfg.weaponcol.to_color(45).as_imcolor(),
+                    g_cfg.weaponcol.to_color(230).as_imcolor());
 
                 const ImVec2 namePos(
-                    badgeMin.x + padX,
-                    badgeMin.y + (badgeH - nameSize.y) * 0.5f);
-                draw->AddText(namePos, weaponCol, weaponName);
+                    boxCenterX - nameSize.x * 0.5f,
+                    badgeMin.y + titlePadY);
+                draw->AddText(namePos, IM_COL32(242, 245, 251, 255), weaponName);
 
                 if (showAmmo)
                 {
-                    const float dividerX = namePos.x + nameSize.x + gap * 0.5f;
+                    const float dividerY = namePos.y + nameSize.y + 2.0f * s;
                     draw->AddLine(
-                        ImVec2(dividerX, badgeMin.y + 4.0f * s),
-                        ImVec2(dividerX, badgeMax.y - 4.0f * s),
-                        IM_COL32(255, 255, 255, 35),
+                        ImVec2(badgeMin.x + 7.0f * s, dividerY),
+                        ImVec2(badgeMax.x - 7.0f * s, dividerY),
+                        IM_COL32(255, 255, 255, 28),
                         1.0f);
                     const ImVec2 ammoPos(
-                        badgeMax.x - padX - ammoSize.x,
-                        badgeMin.y + (badgeH - ammoSize.y) * 0.5f);
-                    draw->AddText(ammoPos, IM_COL32(245, 245, 248, 255), ammoText);
+                        boxCenterX - ammoSize.x * 0.5f,
+                        dividerY + rowGap);
+                    draw->AddText(ammoPos, weaponCol, ammoLabel);
                 }
             }
         }
