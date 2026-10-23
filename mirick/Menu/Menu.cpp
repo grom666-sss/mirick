@@ -362,69 +362,94 @@ void Menu::DrawAuthorPanel()
 {
     const float s = GetScale();
     const float menu_alpha = GetAlpha();
-    const ImVec2 window_pos = GetWindowPos();
+    const ImVec2 menu_pos = GetWindowPos();
     const ImVec2 previous_cursor = ImGui::GetCursorPos();
     const c_color accent = g_cfg.accent.to_color();
 
-    // The author badge in the header is the toggle for the contact drawer.
+    // Header badge toggle. The drawer itself is a separate ImGui window so it
+    // can open outside the main menu instead of covering its content.
     const char* author = "m1racl";
     const ImVec2 author_size = ImGui::CalcTextSize(author);
-    const ImVec2 badge_max = window_pos + ImVec2(701.0f * s, 34.0f * s);
+    const ImVec2 badge_max = menu_pos + ImVec2(701.0f * s, 34.0f * s);
     const ImVec2 badge_min = badge_max - ImVec2(author_size.x + 22.0f * s, 22.0f * s);
     ImGui::SetCursorScreenPos(badge_min);
     if (ImGui::InvisibleButton("##author_contact_toggle", badge_max - badge_min))
     {
         author_panel_open = !author_panel_open;
     }
+    ImGui::SetCursorPos(previous_cursor);
 
     CreateAnimation(author_panel_anim, author_panel_open, 0.32f, AnimLerp);
     if (author_panel_anim <= 0.01f)
     {
-        ImGui::SetCursorPos(previous_cursor);
         return;
     }
 
     const float eased = 1.0f - std::pow(1.0f - author_panel_anim, 3.0f);
     const float panel_width = 266.0f * s;
-    const float panel_left = window_pos.x + 720.0f * s - panel_width * eased;
-    const ImVec2 panel_min(panel_left, window_pos.y + 48.0f * s);
-    const ImVec2 panel_max(window_pos.x + 720.0f * s, window_pos.y + 520.0f * s);
+    const float panel_height = 472.0f * s;
+    const ImVec2 panel_position(
+        menu_pos.x + 728.0f * s - (1.0f - eased) * 24.0f * s,
+        menu_pos.y + 48.0f * s);
     const float panel_alpha = menu_alpha * author_panel_anim;
 
-    draw_list->AddRectFilled(
-        window_pos + ImVec2(160.0f * s, 48.0f * s),
-        panel_min,
-        IM_COL32(0, 0, 0, static_cast<int>(105.0f * panel_alpha)));
-    draw_list->AddRectFilled(panel_min - ImVec2(7.0f * s, 0.0f), panel_max, IM_COL32(0, 0, 0, static_cast<int>(75.0f * panel_alpha)), 9.0f * s, ImDrawCornerFlags_Left);
-    draw_list->AddRectFilled(panel_min, panel_max, IM_COL32(11, 16, 26, static_cast<int>(252.0f * panel_alpha)), 9.0f * s, ImDrawCornerFlags_Left);
-    draw_list->AddRectFilled(panel_min, ImVec2(panel_min.x + 3.0f * s, panel_max.y), accent.new_alpha(static_cast<int>(210.0f * panel_alpha)).as_imcolor(), 2.0f * s);
+    ImGui::SetNextWindowPos(panel_position, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(panel_width * eased, panel_height), ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 9.0f * s);
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
+    ImGui::Begin(
+        "##mirick_author_drawer",
+        nullptr,
+        ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoScrollWithMouse);
+
+    ImDrawList* panel_draw = ImGui::GetWindowDrawList();
+    const ImVec2 panel_min = ImGui::GetWindowPos();
+    const ImVec2 panel_max(panel_min.x + panel_width, panel_min.y + panel_height);
+
+    panel_draw->AddRectFilled(panel_min + ImVec2(4.0f * s, 6.0f * s), panel_max + ImVec2(4.0f * s, 6.0f * s), IM_COL32(0, 0, 0, static_cast<int>(80.0f * panel_alpha)), 9.0f * s);
+    panel_draw->AddRectFilled(panel_min, panel_max, IM_COL32(11, 16, 26, static_cast<int>(252.0f * panel_alpha)), 9.0f * s);
+    panel_draw->AddRectFilled(panel_min, ImVec2(panel_min.x + 3.0f * s, panel_max.y), accent.new_alpha(static_cast<int>(210.0f * panel_alpha)).as_imcolor(), 2.0f * s);
 
     const ImVec2 avatar_center(panel_min.x + 34.0f * s, panel_min.y + 38.0f * s);
-    draw_list->AddCircleFilled(avatar_center, 17.0f * s, accent.new_alpha(static_cast<int>(45.0f * panel_alpha)).as_imcolor());
-    draw_list->AddText(avatar_center - ImVec2(5.0f * s, 8.0f * s), accent.new_alpha(static_cast<int>(255.0f * panel_alpha)).as_imcolor(), "M");
-    draw_list->AddText(panel_min + ImVec2(61.0f * s, 22.0f * s), IM_COL32(244, 247, 253, static_cast<int>(255.0f * panel_alpha)), "m1racl");
-    draw_list->AddText(panel_min + ImVec2(61.0f * s, 43.0f * s), IM_COL32(116, 128, 151, static_cast<int>(245.0f * panel_alpha)), tr("Автор mirick", "mirick author"));
-    draw_list->AddLine(panel_min + ImVec2(18.0f * s, 75.0f * s), panel_min + ImVec2(248.0f * s, 75.0f * s), IM_COL32(45, 54, 72, static_cast<int>(190.0f * panel_alpha)));
+    panel_draw->AddCircleFilled(avatar_center, 17.0f * s, accent.new_alpha(static_cast<int>(45.0f * panel_alpha)).as_imcolor());
+    panel_draw->AddText(avatar_center - ImVec2(5.0f * s, 8.0f * s), accent.new_alpha(static_cast<int>(255.0f * panel_alpha)).as_imcolor(), "M");
+    panel_draw->AddText(panel_min + ImVec2(61.0f * s, 22.0f * s), IM_COL32(244, 247, 253, static_cast<int>(255.0f * panel_alpha)), "m1racl");
+    panel_draw->AddText(panel_min + ImVec2(61.0f * s, 43.0f * s), IM_COL32(116, 128, 151, static_cast<int>(245.0f * panel_alpha)), tr("Автор mirick", "mirick author"));
+    panel_draw->AddLine(panel_min + ImVec2(18.0f * s, 75.0f * s), panel_min + ImVec2(248.0f * s, 75.0f * s), IM_COL32(45, 54, 72, static_cast<int>(190.0f * panel_alpha)));
 
-    ImGui::SetCursorScreenPos(panel_min + ImVec2(228.0f * s, 15.0f * s));
-    if (ImGui::InvisibleButton("##close_author_panel", ImVec2(23.0f * s, 23.0f * s)))
+    if (eased > 0.82f)
     {
-        author_panel_open = false;
+        ImGui::SetCursorScreenPos(panel_min + ImVec2(228.0f * s, 15.0f * s));
+        if (ImGui::InvisibleButton("##close_author_panel", ImVec2(23.0f * s, 23.0f * s)))
+        {
+            author_panel_open = false;
+        }
     }
-    draw_list->AddText(panel_min + ImVec2(234.0f * s, 17.0f * s), IM_COL32(151, 160, 179, static_cast<int>(240.0f * panel_alpha)), "x");
+    panel_draw->AddText(panel_min + ImVec2(234.0f * s, 17.0f * s), IM_COL32(151, 160, 179, static_cast<int>(240.0f * panel_alpha)), "x");
 
     auto contact_card = [&](const char* id, const char* service, const char* value, float y, const ImU32 service_color)
     {
         const ImVec2 card_min(panel_min.x + 18.0f * s, panel_min.y + y * s);
         const ImVec2 card_max(panel_max.x - 18.0f * s, card_min.y + 58.0f * s);
-        ImGui::SetCursorScreenPos(card_min);
-        const bool clicked = ImGui::InvisibleButton(id, card_max - card_min);
-        const bool hovered = ImGui::IsItemHovered();
-        draw_list->AddRectFilled(card_min, card_max, hovered ? IM_COL32(28, 36, 53, static_cast<int>(245.0f * panel_alpha)) : IM_COL32(19, 26, 39, static_cast<int>(235.0f * panel_alpha)), 7.0f * s);
-        draw_list->AddRectFilled(card_min + ImVec2(10.0f * s, 13.0f * s), card_min + ImVec2(14.0f * s, 45.0f * s), service_color, 2.0f * s);
-        draw_list->AddText(card_min + ImVec2(25.0f * s, 10.0f * s), IM_COL32(235, 239, 248, static_cast<int>(255.0f * panel_alpha)), service);
-        draw_list->AddText(card_min + ImVec2(25.0f * s, 32.0f * s), IM_COL32(125, 137, 159, static_cast<int>(255.0f * panel_alpha)), value);
-        draw_list->AddText(card_max - ImVec2(18.0f * s, 41.0f * s), IM_COL32(148, 158, 178, static_cast<int>(220.0f * panel_alpha)), ">");
+        bool clicked = false;
+        bool hovered = false;
+        if (eased > 0.82f)
+        {
+            ImGui::SetCursorScreenPos(card_min);
+            clicked = ImGui::InvisibleButton(id, card_max - card_min);
+            hovered = ImGui::IsItemHovered();
+        }
+        panel_draw->AddRectFilled(card_min, card_max, hovered ? IM_COL32(28, 36, 53, static_cast<int>(245.0f * panel_alpha)) : IM_COL32(19, 26, 39, static_cast<int>(235.0f * panel_alpha)), 7.0f * s);
+        panel_draw->AddRectFilled(card_min + ImVec2(10.0f * s, 13.0f * s), card_min + ImVec2(14.0f * s, 45.0f * s), service_color, 2.0f * s);
+        panel_draw->AddText(card_min + ImVec2(25.0f * s, 10.0f * s), IM_COL32(235, 239, 248, static_cast<int>(255.0f * panel_alpha)), service);
+        panel_draw->AddText(card_min + ImVec2(25.0f * s, 32.0f * s), IM_COL32(125, 137, 159, static_cast<int>(255.0f * panel_alpha)), value);
+        panel_draw->AddText(card_max - ImVec2(18.0f * s, 41.0f * s), IM_COL32(148, 158, 178, static_cast<int>(220.0f * panel_alpha)), ">");
         return clicked;
     };
 
@@ -442,17 +467,18 @@ void Menu::DrawAuthorPanel()
     if (discord_copied_timer > 0.0f)
     {
         discord_copied_timer -= ImGui::GetIO().DeltaTime;
-        draw_list->AddText(panel_min + ImVec2(18.0f * s, 231.0f * s), accent.new_alpha(static_cast<int>(255.0f * panel_alpha)).as_imcolor(), tr("Discord скопирован", "Discord copied"));
+        panel_draw->AddText(panel_min + ImVec2(18.0f * s, 231.0f * s), accent.new_alpha(static_cast<int>(255.0f * panel_alpha)).as_imcolor(), tr("Discord скопирован", "Discord copied"));
     }
     else
     {
-        draw_list->AddText(panel_min + ImVec2(18.0f * s, 231.0f * s), IM_COL32(105, 116, 137, static_cast<int>(230.0f * panel_alpha)), tr("Нажмите, чтобы скопировать Discord", "Click to copy Discord"));
+        panel_draw->AddText(panel_min + ImVec2(18.0f * s, 231.0f * s), IM_COL32(105, 116, 137, static_cast<int>(230.0f * panel_alpha)), tr("Нажмите, чтобы скопировать Discord", "Click to copy Discord"));
     }
 
-    draw_list->AddText(panel_min + ImVec2(18.0f * s, 416.0f * s), IM_COL32(79, 90, 110, static_cast<int>(210.0f * panel_alpha)), "mirick  /  m1racl");
-    ImGui::SetCursorPos(previous_cursor);
+    panel_draw->AddText(panel_min + ImVec2(18.0f * s, 416.0f * s), IM_COL32(79, 90, 110, static_cast<int>(210.0f * panel_alpha)), "mirick  /  m1racl");
+    ImGui::End(false);
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar(2);
 }
-
 void Menu::DrawTabs()
 {
     const float s = GetScale();
