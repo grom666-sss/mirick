@@ -30,3 +30,22 @@ jobs:
           name: mirick-launcher-Win32
           path: Release/mirick-launcher.exe
           if-no-files-found: error
+
+  plugin:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build mirick plugin
+        run: msbuild mirick.sln /t:mirick /m /nologo /p:Configuration=Release /p:Platform=Win32
+
+      - name: Upload plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: mirick-plugin-Win32
+          path: Release/mirick.dll
+          if-no-files-found: error

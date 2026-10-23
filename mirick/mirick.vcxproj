@@ -133,6 +133,7 @@
     <ClCompile Include="Gfx\Blur.cpp" />
     <ClCompile Include="Gfx\Fonts.cpp" />
     <ClCompile Include="Gfx\Texture.cpp" />
+    <ClCompile Include="Gfx\CharacterPreview.cpp" />
     <ClCompile Include="Assets\Assets.cpp" />
     <ClCompile Include="..\thirdparty\imgui\imgui.cpp" />
     <ClCompile Include="..\thirdparty\imgui\imgui_demo.cpp" />
@@ -192,6 +193,7 @@
     <ClInclude Include="Gfx\Blur.hpp" />
     <ClInclude Include="Gfx\Fonts.hpp" />
     <ClInclude Include="Gfx\Texture.hpp" />
+    <ClInclude Include="Gfx\CharacterPreview.hpp" />
     <ClInclude Include="Assets\Assets.hpp" />
     <ClInclude Include="Utils\xorstr.h" />
     <ClInclude Include="Utils\PatternScan.hpp" />

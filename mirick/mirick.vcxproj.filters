@@ -223,6 +223,9 @@
     <ClCompile Include="Gfx\Texture.cpp">
       <Filter>Gfx</Filter>
     </ClCompile>
+    <ClCompile Include="Gfx\CharacterPreview.cpp">
+      <Filter>Gfx</Filter>
+    </ClCompile>
     <ClCompile Include="Assets\Assets.cpp">
       <Filter>Assets</Filter>
     </ClCompile>
@@ -360,6 +363,9 @@
     <ClInclude Include="Gfx\Texture.hpp">
       <Filter>Gfx</Filter>
     </ClInclude>
+    <ClInclude Include="Gfx\CharacterPreview.hpp">
+      <Filter>Gfx</Filter>
+    </ClInclude>
     <ClInclude Include="Assets\Assets.hpp">
       <Filter>Assets</Filter>
     </ClInclude>

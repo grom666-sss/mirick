@@ -8,6 +8,7 @@
 #include "Utils/D3D9.hpp"
 
 #include "Gfx/Blur.hpp"
+#include "Gfx/CharacterPreview.hpp"
 
 #include "Reset.hpp"
 #include "ProtectedOverlay.hpp"
@@ -19,6 +20,7 @@ static LPVOID sResetTarget = nullptr;
 
 HRESULT __stdcall hkReset(IDirect3DDevice9* self, D3DPRESENT_PARAMETERS* presentationParameters)
 {
+    CharacterPreview::OnDeviceLost();
     Blur::OnReset();
     ImGui_ImplDX9_InvalidateDeviceObjects();
     ProtectedOverlay::BeforeDeviceReset();

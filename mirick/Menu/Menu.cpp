@@ -11,6 +11,7 @@
 #include "Gfx/Blur.hpp"
 #include "Gfx/Fonts.hpp"
 #include "Gfx/Texture.hpp"
+#include "Gfx/CharacterPreview.hpp"
 
 #include "Game/Features.h"
 
@@ -465,52 +466,58 @@ void Menu::DrawCharacterPanel()
     ImFormatString(preview_model, IM_ARRAYSIZE(preview_model), "%s: %d", tr("Скин в превью", "Preview skin"), preview_skin_id);
     panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 54.0f * s), IM_COL32(124, 137, 160, (int)(235.0f * panel_alpha)), preview_model);
 
-    // Articulated pose rig. Every highlighted joint can be dragged separately.
-    enum joint_t { Head, Neck, LeftElbow, LeftHand, RightElbow, RightHand, Pelvis, LeftKnee, LeftFoot, RightKnee, RightFoot, JointCount };
-    static ImVec2 pose[JointCount] = {
-        ImVec2(106, 48), ImVec2(106, 82), ImVec2(70, 132), ImVec2(48, 194),
-        ImVec2(142, 132), ImVec2(164, 194), ImVec2(106, 202),
-        ImVec2(80, 258), ImVec2(68, 322), ImVec2(132, 258), ImVec2(144, 322)
-    };
-    const ImVec2 rig_origin = panel_pos + ImVec2(0.0f, 62.0f * s);
-    auto point = [&](int joint) { return rig_origin + pose[joint] * s; };
-    const ImU32 body_color = IM_COL32(76, 87, 108, (int)(235.0f * panel_alpha));
-    const ImU32 bone_color = IM_COL32(181, 190, 210, (int)(235.0f * panel_alpha));
-    const ImU32 joint_color = accent.new_alpha((int)(245.0f * panel_alpha)).as_imcolor();
-    const int links[][2] = {
-        { Head, Neck }, { Neck, LeftElbow }, { LeftElbow, LeftHand },
-        { Neck, RightElbow }, { RightElbow, RightHand }, { Neck, Pelvis },
-        { Pelvis, LeftKnee }, { LeftKnee, LeftFoot },
-        { Pelvis, RightKnee }, { RightKnee, RightFoot }
-    };
-
-    panel_draw->AddCircleFilled(point(Head), 14.0f * s, body_color, 24);
-    panel_draw->AddLine(point(Neck), point(Pelvis), body_color, 18.0f * s);
-    for (const auto& link : links)
+    CharacterPreview::SelectModel(preview_skin_id);
+    IDirect3DTexture9* preview_texture = CharacterPreview::Render();
+    const ImVec2 preview_min = panel_pos + ImVec2(15.0f * s, 76.0f * s);
+    const ImVec2 preview_max = panel_pos + ImVec2(197.0f * s, 358.0f * s);
+    panel_draw->AddRectFilled(preview_min, preview_max, IM_COL32(5, 8, 14, (int)(245.0f * panel_alpha)), 6.0f * s);
+    if (preview_texture)
     {
-        panel_draw->AddLine(point(link[0]), point(link[1]), bone_color, 6.0f * s);
+        panel_draw->AddImage(
+            reinterpret_cast<ImTextureID>(preview_texture), preview_min, preview_max,
+            ImVec2(0, 0), ImVec2(1, 1), IM_COL32(255, 255, 255, (int)(255.0f * panel_alpha)));
     }
 
-    for (int i = 0; i < JointCount; ++i)
+    static float preview_yaw = 0.0f;
+    static CharacterPreview::PosePart pose_part = CharacterPreview::PosePart::Head;
+    ImGui::SetCursorScreenPos(preview_min);
+    ImGui::InvisibleButton("##character_preview_view", preview_max - preview_min);
+    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
     {
-        const ImVec2 p = point(i);
-        ImGui::SetCursorScreenPos(p - ImVec2(9.0f * s, 9.0f * s));
-        ImGui::PushID(i);
-        ImGui::InvisibleButton("##pose_joint", ImVec2(18.0f * s, 18.0f * s));
-        const bool hovered = ImGui::IsItemHovered();
-        if (ImGui::IsItemActive() && ImGui::IsMouseDown(0))
-        {
-            ImVec2 next = (ImGui::GetIO().MousePos - rig_origin) / s;
-            next.x = ImClamp(next.x, 18.0f, 194.0f);
-            next.y = ImClamp(next.y, 38.0f, 326.0f);
-            pose[i] = next;
-        }
-        ImGui::PopID();
-        panel_draw->AddCircleFilled(point(i), (hovered ? 5.0f : 4.0f) * s, joint_color, 14);
-        panel_draw->AddCircle(point(i), 7.0f * s, accent.new_alpha((int)((hovered ? 210.0f : 85.0f) * panel_alpha)).as_imcolor(), 14, 1.0f * s);
+        preview_yaw = 0.0f;
+        CharacterPreview::ResetPose();
+    }
+    else if (ImGui::IsItemActive() && ImGui::IsMouseDragging(0))
+    {
+        preview_yaw += ImGui::GetIO().MouseDelta.x * 0.8f;
+        CharacterPreview::SetRotation(preview_yaw);
+    }
+    if (ImGui::IsItemHovered() && ImGui::IsMouseDragging(1))
+    {
+        CharacterPreview::AdjustPose(pose_part, ImGui::GetIO().MouseDelta.x * 0.35f);
     }
 
-    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 395.0f * s), IM_COL32(124, 137, 160, (int)(220.0f * panel_alpha)), tr("Перетаскивайте суставы мышью", "Drag joints with the mouse"));
+    ImGui::SetCursorPos(ImVec2(15.0f * s, 365.0f * s));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f * s, 0.0f));
+    if (ImGui::SmallButton(tr("Голова##pose_head", "Head##pose_head")))
+    {
+        pose_part = CharacterPreview::PosePart::Head;
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton(tr("Руки##pose_arms", "Arms##pose_arms")))
+    {
+        pose_part = CharacterPreview::PosePart::Arms;
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton(tr("Ноги##pose_legs", "Legs##pose_legs")))
+    {
+        pose_part = CharacterPreview::PosePart::Legs;
+    }
+    ImGui::PopStyleVar();
+
+    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 395.0f * s),
+        IM_COL32(124, 137, 160, (int)(220.0f * panel_alpha)),
+        tr("ЛКМ: обзор, ПКМ: поза", "LMB: rotate, RMB: pose"));
 
     ImGui::SetCursorPos(ImVec2(15.0f * s, 417.0f * s));
     ImGui::PushItemWidth(182.0f * s);
@@ -521,14 +528,6 @@ void Menu::DrawCharacterPanel()
     ImGui::PopStyleColor(3);
     ImGui::PopItemWidth();
 
-    static std::string skin_status;
-    static bool skin_status_ok = false;
-    static int skin_status_id = -1;
-    if (skin_status_id != g_cfg.player_skin_id)
-    {
-        skin_status_id = g_cfg.player_skin_id;
-        skin_status.clear();
-    }
     ImGui::SetCursorPos(ImVec2(15.0f * s, 452.0f * s));
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.06f, 0.08f, 0.125f, panel_alpha));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(accent.r() / 255.0f, accent.g() / 255.0f, accent.b() / 255.0f, 0.28f * panel_alpha));
@@ -538,22 +537,15 @@ void Menu::DrawCharacterPanel()
     if (ImGui::Button("<##skin_prev", ImVec2(42.0f * s, 27.0f * s)))
     {
         g_cfg.player_skin_id = StepNextRpSkinId(g_cfg.player_skin_id, -1);
-        skin_status.clear();
     }
     ImGui::SameLine(0.0f, 5.0f * s);
     if (ImGui::Button(tr("В превью##skin_preview", "Preview##skin_preview"), ImVec2(88.0f * s, 27.0f * s)))
     {
         const int id = g_cfg.player_skin_id;
-        if (id < 0 || id > 32767 || !IsNextRpSkinId(id))
+        preview_skin_id = id;
+        CharacterPreview::SelectModel(id);
+        if (id >= 0 && id <= 32767)
         {
-            skin_status = tr("ID отсутствует в каталоге", "ID is not in the catalogue");
-            skin_status_ok = false;
-        }
-        else
-        {
-            preview_skin_id = id;
-            skin_status = tr("Скин выбран для превью", "Skin selected for preview");
-            skin_status_ok = true;
             SaveGeneralConfig();
         }
     }
@@ -561,19 +553,39 @@ void Menu::DrawCharacterPanel()
     if (ImGui::Button(">##skin_next", ImVec2(42.0f * s, 27.0f * s)))
     {
         g_cfg.player_skin_id = StepNextRpSkinId(g_cfg.player_skin_id, 1);
-        skin_status.clear();
     }
     ImGui::PopStyleColor(4);
 
-    if (skin_status.empty())
+    const char* status_text = tr("Ожидание модели", "Waiting for model");
+    bool status_ok = false;
+    switch (CharacterPreview::GetState())
     {
-        skin_status = IsNextRpSkinId(g_cfg.player_skin_id) ? tr("ID есть в каталоге Next RP", "ID is in the Next RP catalogue") : tr("ID не отмечен в каталоге", "ID is not listed in catalogue");
-        skin_status_ok = IsNextRpSkinId(g_cfg.player_skin_id);
+    case CharacterPreview::State::Ready:
+        status_text = tr("Runtime-модель готова", "Runtime model is ready");
+        status_ok = true;
+        break;
+    case CharacterPreview::State::Loading:
+        status_text = tr("Загрузка runtime-модели...", "Loading runtime model...");
+        break;
+    case CharacterPreview::State::InvalidId:
+        status_text = tr("ID вне таблицы моделей", "ID is outside model table");
+        break;
+    case CharacterPreview::State::NotPed:
+        status_text = tr("ID не является моделью персонажа", "ID is not a ped model");
+        break;
+    case CharacterPreview::State::Unavailable:
+        status_text = tr("Runtime-модель не зарегистрирована", "Runtime model is not registered");
+        break;
+    case CharacterPreview::State::RenderError:
+        status_text = tr("Ошибка off-screen рендера", "Off-screen render error");
+        break;
+    default:
+        break;
     }
-    const ImU32 status_color = skin_status_ok
+    const ImU32 status_color = status_ok
         ? accent.new_alpha((int)(220.0f * panel_alpha)).u32()
-        : IM_COL32(225, 112, 112, (int)(220.0f * panel_alpha));
-    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 489.0f * s), status_color, skin_status.c_str());
+        : IM_COL32(225, 160, 112, (int)(220.0f * panel_alpha));
+    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 489.0f * s), status_color, status_text);
     panel_draw->AddRect(panel_pos, panel_max, IM_COL32(40, 49, 67, (int)(220.0f * panel_alpha)), 9.0f * s);
 
     ImGui::End(false);
