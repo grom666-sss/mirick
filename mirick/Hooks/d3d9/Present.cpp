@@ -145,23 +145,17 @@ HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, cons
     World::Update();
     RapidFire::Update();
     InfAmmo::Update();
-    GameSpeed::Update();
-    FastRot::Update();
     Aspect::Update();
     Fov::Update();
     FastCrosshair::Update();
     NoRecoil::Update();
     NoSpread::Update();
     Triggerbot::Update();
-    NoCamCol::Update();
-    CamHack::Update();
-    CamHack::Update();
 
     Esp::Update();
 
     GodMode::Update();
     NoFall::Update();
-    FastRun::Update();
 
     Blur::NewFrame();
 

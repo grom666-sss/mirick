@@ -6,50 +6,6 @@
 
 #include <cmath>
 
-static std::string Bind_Display_Name(int i)
-{
-    switch (i)
-    {
-    case 0: return tr("Годмод", "Godmode");
-    case 1: return tr("Быстрый бег", "Fast run");
-    case 2: return tr("Валлхак", "Wallhack");
-    case 3: return tr("Спидхак", "Speedhack");
-    case 4: return tr("Аирбрейк", "Airbreak");
-    case 5: return tr("Поменять скин", "Change skin");
-    case 6: return tr("Найтмод", "Nightmode");
-    case 7: return tr("Своё время", "Custom time");
-    case 8: return tr("Свет и вода", "Light & water");
-    case 9: return tr("Небо", "Sky");
-    case 10: return tr("Рапид", "Rapid fire");
-    case 11: return tr("Скорость игры", "Game speed");
-    case 12: return tr("Быстрая ротация", "Fast Rotation");
-    case 13: return tr("Не падать с байка", "No bike fall");
-    case 14: return tr("Машины по воде", "Drive on water");
-    case 15: return tr("Летающие машины", "Flying cars");
-    case 16: return tr("Анти-колизия", "No collision");
-    case 17: return tr("Чистка мира", "World Removals");
-    case 18: return tr("Бесконечные патроны", "Infinite ammo");
-    case 19: return tr("Свой цвет", "Custom color");
-    case 20: return tr("Фулбрайт", "Fullbright");
-    case 21: return tr("Аспект", "Aspect");
-    case 22: return tr("Автозавод", "Auto engine");
-    case 23: return tr("Автооткрытие", "Auto unlock");
-    case 24: return tr("Быстрый прицел", "Fast crosshair");
-    case 25: return tr("Без отдачи", "No recoil");
-    case 26: return tr("Без разброса", "No spread");
-    case 27: return tr("Фов", "Fov");
-    case 28: return tr("Рванка", "Rvanka");
-    case 29: return tr("Заморозить время", "Freeze time");
-    case 30: return tr("Туман", "Fog");
-    case 31: return tr("Солнце", "Sun");
-    case 32: return tr("Триггербот", "Triggerbot");
-    case 33: return tr("Без колизии камеры", "No camera collision");
-    case 34: return tr("Камхак", "Camhack");
-    case 35: return tr("Без урона от падения", "No fall damage");
-    default: return "";
-    }
-}
-
 void Menu::DrawBinds()
 {
     if (!g_cfg.showbinds)
@@ -61,37 +17,33 @@ void Menu::DrawBinds()
     {
         keybind_t* bind;
         bool* value;
+        const char* ru;
+        const char* en;
         bool vehicle;
     };
 
     static const bind_ref_t kBinds[] = {
-        { &g_cfg.godmode_bind, &g_cfg.godmode, false },
-        { &g_cfg.fastbeg_bind, &g_cfg.fastbeg, false },
-        { &g_cfg.wh_bind, &g_cfg.wh, false },
-        { &g_cfg.airbreake_bind, &g_cfg.airbreake, false },
-        { &g_cfg.nightmode_bind, &g_cfg.nightmode, false },
-        { &g_cfg.customtime_bind, &g_cfg.customtime, false },
-        { &g_cfg.customcolor_bind, &g_cfg.customcolor, false },
-        { &g_cfg.skychange_bind, &g_cfg.skychange, false },
-        { &g_cfg.rapidfire_bind, &g_cfg.rapidfire, false },
-        { &g_cfg.gamespeed_bind, &g_cfg.gamespeed, false },
-        { &g_cfg.fastrot_bind, &g_cfg.fastrot, false },
-        { &g_cfg.nocol_bind, &g_cfg.nocol, false },
-        { &g_cfg.removals_bind, &g_cfg.removals, false },
-        { &g_cfg.infammo_bind, &g_cfg.infammo, false },
-        { &g_cfg.fullbright_bind, &g_cfg.fullbright, false },
-        { &g_cfg.aspect_bind, &g_cfg.aspect, false },
-        { &g_cfg.fastcross_bind, &g_cfg.fastcross, false },
-        { &g_cfg.norecoil_bind, &g_cfg.norecoil, false },
-        { &g_cfg.nospread_bind, &g_cfg.nospread, false },
-        { &g_cfg.fov_bind, &g_cfg.fov, false },
-        { &g_cfg.freezetime_bind, &g_cfg.freezetime, false },
-        { &g_cfg.fogchange_bind, &g_cfg.fogchange, false },
-        { &g_cfg.suncolor_bind, &g_cfg.suncolor, false },
-        { &g_cfg.trigger_bind, &g_cfg.trigger, false },
-        { &g_cfg.nocamcol_bind, &g_cfg.nocamcol, false },
-        { &g_cfg.camhack_bind, &g_cfg.camhack, false },
-        { &g_cfg.nofall_bind, &g_cfg.nofall, false },
+        { &g_cfg.godmode_bind, &g_cfg.godmode, "Годмод", "Godmode", false },
+        { &g_cfg.wh_bind, &g_cfg.wh, "Валлхак", "Wallhack", false },
+        { &g_cfg.airbreake_bind, &g_cfg.airbreake, "Аирбрейк", "Airbreak", false },
+        { &g_cfg.nightmode_bind, &g_cfg.nightmode, "Найтмод", "Nightmode", false },
+        { &g_cfg.customtime_bind, &g_cfg.customtime, "Своё время", "Custom time", false },
+        { &g_cfg.customcolor_bind, &g_cfg.customcolor, "Свет и вода", "Light & water", false },
+        { &g_cfg.skychange_bind, &g_cfg.skychange, "Небо", "Sky", false },
+        { &g_cfg.rapidfire_bind, &g_cfg.rapidfire, "Рапид", "Rapid fire", false },
+        { &g_cfg.removals_bind, &g_cfg.removals, "Чистка мира", "World removals", false },
+        { &g_cfg.infammo_bind, &g_cfg.infammo, "Бесконечные патроны", "Infinite ammo", false },
+        { &g_cfg.fullbright_bind, &g_cfg.fullbright, "Фулбрайт", "Fullbright", false },
+        { &g_cfg.aspect_bind, &g_cfg.aspect, "Аспект", "Aspect", false },
+        { &g_cfg.fastcross_bind, &g_cfg.fastcross, "Быстрый прицел", "Fast crosshair", false },
+        { &g_cfg.norecoil_bind, &g_cfg.norecoil, "Без отдачи", "No recoil", false },
+        { &g_cfg.nospread_bind, &g_cfg.nospread, "Без разброса", "No spread", false },
+        { &g_cfg.fov_bind, &g_cfg.fov, "Фов", "Fov", false },
+        { &g_cfg.freezetime_bind, &g_cfg.freezetime, "Заморозить время", "Freeze time", false },
+        { &g_cfg.fogchange_bind, &g_cfg.fogchange, "Туман", "Fog", false },
+        { &g_cfg.suncolor_bind, &g_cfg.suncolor, "Солнце", "Sun", false },
+        { &g_cfg.trigger_bind, &g_cfg.trigger, "Триггербот", "Triggerbot", false },
+        { &g_cfg.nofall_bind, &g_cfg.nofall, "Без урона от падения", "No fall damage", false },
     };
 
     static const int kBindCount = sizeof(kBinds) / sizeof(kBinds[0]);
@@ -145,7 +97,7 @@ void Menu::DrawBinds()
     for (int vi = 0; vi < nvis; vi++)
     {
         int i = vis[vi];
-        max_name = ImMax(max_name, ImGui::CalcTextSize(Bind_Display_Name(i).c_str()).x);
+        max_name = ImMax(max_name, ImGui::CalcTextSize(tr(kBinds[i].ru, kBinds[i].en)).x);
         std::string m = kBinds[i].bind->mode == 1 ? tr("[ холд ]", "[ hold ]") : tr("[ тогл ]", "[ toggled ]");
         max_mode = ImMax(max_mode, ImGui::CalcTextSize(m.c_str()).x);
     }
@@ -239,7 +191,7 @@ void Menu::DrawBinds()
     for (int vi = 0; vi < nvis; vi++)
     {
         int i = vis[vi];
-        std::string name = Bind_Display_Name(i);
+        std::string name = tr(kBinds[i].ru, kBinds[i].en);
         ImGui::SetCursorPos(ImVec2(pad_l, rows_top + max_pos));
 
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, bind_alpha));

@@ -19,6 +19,7 @@ struct config_t
     int ui_scale = 100;
     int language = 0;
     bool showbinds = false;
+    bool show_character_model = true;
     bool antiobs = true;
     float binds_x = 10.0f;
     float binds_y = -1.0f;
@@ -27,9 +28,6 @@ struct config_t
     keybind_t godmode_bind{};
     bool nofall = false;
     keybind_t nofall_bind{};
-    bool fastbeg = false;
-    keybind_t fastbeg_bind{};
-    float fastbegs = 1.0f;
     bool wh = false;
     keybind_t wh_bind{};
     float whDistance = 100.0f;
@@ -75,11 +73,6 @@ struct config_t
     c_float_color skeloccludedcol = c_float_color(255, 80, 80);
     c_float_color snapcol = c_float_color(0, 255, 0);
     c_float_color weaponcol = c_float_color(255, 220, 120);
-    bool gamespeed = false;
-    keybind_t gamespeed_bind{};
-    float gamespeedval = 1.0f;
-    bool fastrot = false;
-    keybind_t fastrot_bind{};
     bool fastcross = false;
     keybind_t fastcross_bind{};
     bool norecoil = false;
@@ -89,18 +82,12 @@ struct config_t
     bool trigger = false;
     keybind_t trigger_bind{};
     float triggerdelay = 0.0f;
-    bool nocamcol = false;
-    keybind_t nocamcol_bind{};
     bool aspect = false;
     keybind_t aspect_bind{};
     float aspectval = 1.78f;
     bool fov = false;
     keybind_t fov_bind{};
     float fovval = 70.0f;
-    bool camhack = false;
-    keybind_t camhack_bind{};
-    float camhackspeed = 0.05f;
-    bool camhackteleport = true;
     bool nocol = false;
     keybind_t nocol_bind{};
     unsigned int nocol_flags = 7;

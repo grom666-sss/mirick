@@ -692,10 +692,10 @@ void Menu::DrawTabs()
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, GetAlpha()));
 
-    const std::string names[4] = { tr("Рейдж", "Rage"), tr("Легит", "Legit"), tr("Визуалы", "Visuals"), tr("Разное", "Misc") };
+    const std::string names[5] = { tr("Рейдж", "Rage"), tr("Легит", "Legit"), tr("Визуалы", "Visuals"), tr("Разное", "Misc"), tr("Настройки", "Settings") };
     c_color accent = g_cfg.accent.to_color();
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 5; i++)
     {
         tab_animation_t& info = tab_info[i];
         ImGui::SetCursorPos(ImVec2(53.0f * s, (78.0f + 40.0f * i) * s));
@@ -768,7 +768,13 @@ void Menu::DrawTabs()
             list->AddCircleFilled(center + ImVec2(3.0f * s, 0.0f), 2.0f * s, icon_color, 10);
             list->AddCircleFilled(center + ImVec2(-1.0f * s, 4.5f * s), 2.0f * s, icon_color, 10);
             break;
-        default:
+        default: // Settings gear.
+            list->AddCircle(center, 5.0f * s, icon_color, 16, stroke);
+            list->AddCircleFilled(center, 1.8f * s, icon_color, 10);
+            list->AddLine(center - ImVec2(0.0f, 8.0f * s), center - ImVec2(0.0f, 5.2f * s), icon_color, stroke);
+            list->AddLine(center + ImVec2(0.0f, 5.2f * s), center + ImVec2(0.0f, 8.0f * s), icon_color, stroke);
+            list->AddLine(center - ImVec2(8.0f * s, 0.0f), center - ImVec2(5.2f * s, 0.0f), icon_color, stroke);
+            list->AddLine(center + ImVec2(5.2f * s, 0.0f), center + ImVec2(8.0f * s, 0.0f), icon_color, stroke);
             break;
         }
 
@@ -916,6 +922,10 @@ void Menu::DrawContent()
     {
         DrawMisc();
     }
+    else if (tab_selector == 4)
+    {
+        DrawSettings();
+    }
 
     ImGui::EndChild(false);
     alpha = old_alpha;
@@ -939,7 +949,10 @@ void Menu::Draw()
     DrawBackground();
     DrawTabs();
     DrawContent();
-    DrawCharacterPanel();
+    if (g_cfg.show_character_model)
+    {
+        DrawCharacterPanel();
+    }
     DrawAuthorPanel();
     draw_list->PopClipRect();
     ImGui::PopClipRect();

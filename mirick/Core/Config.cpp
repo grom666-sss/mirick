@@ -204,6 +204,7 @@ bool config_t::Save(const std::string& name)
     WriteInt(body, "ui_scale", ui_scale);
     WriteInt(body, "language", language);
     WriteBool(body, "showbinds", showbinds);
+    WriteBool(body, "show_character_model", show_character_model);
     WriteBool(body, "antiobs", antiobs);
     WriteFloat(body, "binds_x", binds_x);
     WriteFloat(body, "binds_y", binds_y);
@@ -214,10 +215,6 @@ bool config_t::Save(const std::string& name)
     WriteBool(body, "nofall", nofall);
     WriteInt(body, "nofall_key", nofall_bind.key);
     WriteInt(body, "nofall_mode", nofall_bind.mode);
-    WriteBool(body, "fastbeg", fastbeg);
-    WriteInt(body, "fastbeg_key", fastbeg_bind.key);
-    WriteInt(body, "fastbeg_mode", fastbeg_bind.mode);
-    WriteFloat(body, "fastbegs", fastbegs);
     WriteBool(body, "wh", wh);
     WriteInt(body, "wh_key", wh_bind.key);
     WriteInt(body, "wh_mode", wh_bind.mode);
@@ -277,13 +274,6 @@ bool config_t::Save(const std::string& name)
     WriteColor(body, "skeloccludedcol", skeloccludedcol);
     WriteColor(body, "snapcol", snapcol);
     WriteColor(body, "weaponcol", weaponcol);
-    WriteBool(body, "gamespeed", gamespeed);
-    WriteInt(body, "gamespeed_key", gamespeed_bind.key);
-    WriteInt(body, "gamespeed_mode", gamespeed_bind.mode);
-    WriteFloat(body, "gamespeedval", gamespeedval);
-    WriteBool(body, "fastrot", fastrot);
-    WriteInt(body, "fastrot_key", fastrot_bind.key);
-    WriteInt(body, "fastrot_mode", fastrot_bind.mode);
     WriteBool(body, "fastcross", fastcross);
     WriteInt(body, "fastcross_key", fastcross_bind.key);
     WriteInt(body, "fastcross_mode", fastcross_bind.mode);
@@ -297,9 +287,6 @@ bool config_t::Save(const std::string& name)
     WriteInt(body, "trigger_key", trigger_bind.key);
     WriteInt(body, "trigger_mode", trigger_bind.mode);
     WriteFloat(body, "triggerdelay", triggerdelay);
-    WriteBool(body, "nocamcol", nocamcol);
-    WriteInt(body, "nocamcol_key", nocamcol_bind.key);
-    WriteInt(body, "nocamcol_mode", nocamcol_bind.mode);
     WriteBool(body, "aspect", aspect);
     WriteInt(body, "aspect_key", aspect_bind.key);
     WriteInt(body, "aspect_mode", aspect_bind.mode);
@@ -308,11 +295,6 @@ bool config_t::Save(const std::string& name)
     WriteInt(body, "fov_key", fov_bind.key);
     WriteInt(body, "fov_mode", fov_bind.mode);
     WriteFloat(body, "fovval", fovval);
-    WriteBool(body, "camhack", camhack);
-    WriteInt(body, "camhack_key", camhack_bind.key);
-    WriteInt(body, "camhack_mode", camhack_bind.mode);
-    WriteFloat(body, "camhackspeed", camhackspeed);
-    WriteBool(body, "camhackteleport", camhackteleport);
     WriteBool(body, "nocol", nocol);
     WriteInt(body, "nocol_key", nocol_bind.key);
     WriteInt(body, "nocol_mode", nocol_bind.mode);
@@ -379,10 +361,6 @@ bool config_t::Load(const std::string& name)
         else if (key == "nofall") { ReadBool(value, nofall); }
         else if (key == "nofall_key") { ReadInt(value, nofall_bind.key); }
         else if (key == "nofall_mode") { ReadInt(value, nofall_bind.mode); }
-        else if (key == "fastbeg") { ReadBool(value, fastbeg); }
-        else if (key == "fastbeg_key") { ReadInt(value, fastbeg_bind.key); }
-        else if (key == "fastbeg_mode") { ReadInt(value, fastbeg_bind.mode); }
-        else if (key == "fastbegs") { ReadFloat(value, fastbegs); }
         else if (key == "wh") { ReadBool(value, wh); }
         else if (key == "wh_key") { ReadInt(value, wh_bind.key); }
         else if (key == "wh_mode") { ReadInt(value, wh_bind.mode); }
@@ -469,13 +447,6 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "skeloccludedcol") { ReadColor(value, skeloccludedcol); }
     else if (key == "snapcol") { ReadColor(value, snapcol); }
     else if (key == "weaponcol") { ReadColor(value, weaponcol); }
-    else if (key == "gamespeed") { ReadBool(value, gamespeed); }
-    else if (key == "gamespeed_key") { ReadInt(value, gamespeed_bind.key); }
-    else if (key == "gamespeed_mode") { ReadInt(value, gamespeed_bind.mode); }
-    else if (key == "gamespeedval") { ReadFloat(value, gamespeedval); }
-        else if (key == "fastrot") { ReadBool(value, fastrot); }
-        else if (key == "fastrot_key") { ReadInt(value, fastrot_bind.key); }
-        else if (key == "fastrot_mode") { ReadInt(value, fastrot_bind.mode); }
     else if (key == "fastcross") { ReadBool(value, fastcross); }
     else if (key == "fastcross_key") { ReadInt(value, fastcross_bind.key); }
     else if (key == "fastcross_mode") { ReadInt(value, fastcross_bind.mode); }
@@ -489,9 +460,6 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "trigger_key") { ReadInt(value, trigger_bind.key); }
     else if (key == "trigger_mode") { ReadInt(value, trigger_bind.mode); }
     else if (key == "triggerdelay") { ReadFloat(value, triggerdelay); }
-    else if (key == "nocamcol") { ReadBool(value, nocamcol); }
-    else if (key == "nocamcol_key") { ReadInt(value, nocamcol_bind.key); }
-    else if (key == "nocamcol_mode") { ReadInt(value, nocamcol_bind.mode); }
     else if (key == "aspect") { ReadBool(value, aspect); }
     else if (key == "aspect_key") { ReadInt(value, aspect_bind.key); }
     else if (key == "aspect_mode") { ReadInt(value, aspect_bind.mode); }
@@ -500,11 +468,6 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "fov_key") { ReadInt(value, fov_bind.key); }
     else if (key == "fov_mode") { ReadInt(value, fov_bind.mode); }
     else if (key == "fovval") { ReadFloat(value, fovval); }
-    else if (key == "camhack") { ReadBool(value, camhack); }
-    else if (key == "camhack_key") { ReadInt(value, camhack_bind.key); }
-    else if (key == "camhack_mode") { ReadInt(value, camhack_bind.mode); }
-    else if (key == "camhackspeed") { ReadFloat(value, camhackspeed); }
-    else if (key == "camhackteleport") { ReadBool(value, camhackteleport); }
     else if (key == "nocol") { ReadBool(value, nocol); }
     else if (key == "nocol_key") { ReadInt(value, nocol_bind.key); }
     else if (key == "nocol_mode") { ReadInt(value, nocol_bind.mode); }
@@ -512,6 +475,7 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "ui_scale") { ReadInt(value, ui_scale); }
     else if (key == "language") { ReadInt(value, language); }
     else if (key == "showbinds") { ReadBool(value, showbinds); }
+    else if (key == "show_character_model") { ReadBool(value, show_character_model); }
     else if (key == "antiobs") { ReadBool(value, antiobs); }
     else if (key == "binds_x") { ReadFloat(value, binds_x); }
     else if (key == "binds_y") { ReadFloat(value, binds_y); }

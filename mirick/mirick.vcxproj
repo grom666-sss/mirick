@@ -100,10 +100,6 @@
     <ClCompile Include="Game\Misc\AirBreak.cpp" />
     <ClCompile Include="Game\Misc\KeyBinds.cpp" />
     <ClCompile Include="Game\Misc\NoFall.cpp" />
-    <ClCompile Include="Game\Misc\CamHack.cpp" />
-    <ClCompile Include="Game\Misc\FastRot.cpp" />
-    <ClCompile Include="Game\Misc\FastRun.cpp" />
-    <ClCompile Include="Game\Misc\GameSpeed.cpp" />
     <ClCompile Include="Game\Misc\GodMode.cpp" />
     <ClCompile Include="Game\Rage\FastCrosshair.cpp" />
     <ClCompile Include="Game\Rage\InfAmmo.cpp" />
@@ -113,7 +109,6 @@
     <ClCompile Include="Game\Visuals\Aspect.cpp" />
     <ClCompile Include="Game\Visuals\Esp.cpp" />
     <ClCompile Include="Game\Visuals\Fov.cpp" />
-    <ClCompile Include="Game\Visuals\NoCamCol.cpp" />
     <ClCompile Include="Game\Visuals\Timecycle.cpp" />
     <ClCompile Include="Game\Visuals\World.cpp" />
     <ClCompile Include="Utils\Sdk.cpp" />
@@ -124,6 +119,7 @@
     <ClCompile Include="Menu\Tabs\Legit.cpp" />
     <ClCompile Include="Menu\Tabs\Visuals.cpp" />
     <ClCompile Include="Menu\Tabs\Misc.cpp" />
+    <ClCompile Include="Menu\Tabs\Settings.cpp" />
     <ClCompile Include="Menu\Widgets\Checkbox.cpp" />
     <ClCompile Include="Menu\Widgets\Slider.cpp" />
     <ClCompile Include="Menu\Widgets\Combo.cpp" />
@@ -177,10 +173,6 @@
     <ClInclude Include="Game\Misc\AirBreak.hpp" />
     <ClInclude Include="Game\Misc\KeyBinds.hpp" />
     <ClInclude Include="Game\Misc\NoFall.hpp" />
-    <ClInclude Include="Game\Misc\CamHack.hpp" />
-    <ClInclude Include="Game\Misc\FastRot.hpp" />
-    <ClInclude Include="Game\Misc\FastRun.hpp" />
-    <ClInclude Include="Game\Misc\GameSpeed.hpp" />
     <ClInclude Include="Game\Misc\GodMode.hpp" />
     <ClInclude Include="Game\Rage\FastCrosshair.hpp" />
     <ClInclude Include="Game\Rage\InfAmmo.hpp" />
@@ -190,7 +182,6 @@
     <ClInclude Include="Game\Visuals\Aspect.hpp" />
     <ClInclude Include="Game\Visuals\Esp.hpp" />
     <ClInclude Include="Game\Visuals\Fov.hpp" />
-    <ClInclude Include="Game\Visuals\NoCamCol.hpp" />
     <ClInclude Include="Game\Visuals\Timecycle.hpp" />
     <ClInclude Include="Game\Visuals\World.hpp" />
     <ClInclude Include="Menu\Menu.hpp" />

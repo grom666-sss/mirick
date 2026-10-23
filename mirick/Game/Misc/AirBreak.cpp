@@ -13,11 +13,6 @@ void AirBreak::Run()
 {
     for (;;)
     {
-        if (g_cfg.nocamcol)
-        {
-            TheCamera.m_bMoveCamToAvoidGeom = false;
-        }
-
         if (g_cfg.fov && (GetAsyncKeyState(VK_RBUTTON) & 0x8000) == 0)
         {
             float v = std::clamp(g_cfg.fovval, 30.0f, 120.0f);

@@ -8,6 +8,8 @@ void Menu::DrawVisuals()
         static float wh_fade = 0.0f;
         static float time_fade = 0.0f;
         static float cl_fade = 0.0f;
+        static float aspect_fade = 0.0f;
+        static float fov_fade = 0.0f;
 
         std::vector<std::string> items = { tr("Противник", "Enemy"), tr("Эффекты", "Effects") };
         DrawSubTabs(sub2, items);
@@ -172,6 +174,30 @@ void Menu::DrawVisuals()
                 }
             }
             BindableCheckbox("fullbright", tr("Фулбрайт", "Fullbright"), &g_cfg.fullbright, &g_cfg.fullbright_bind);
+            BindableCheckbox("aspect", tr("Аспект", "Aspect"), &g_cfg.aspect, &g_cfg.aspect_bind);
+            CreateAnimation(aspect_fade, g_cfg.aspect, 0.3f, AnimLerp);
+            if (g_cfg.aspect || aspect_fade > 0.02f)
+            {
+                const float prev_mul = widget_alpha_mul;
+                widget_alpha_mul = aspect_fade;
+                if (SliderFloat(tr("Соотношение сторон", "Aspect ratio"), &g_cfg.aspectval, 0.5f, 3.5f, "%.2f"))
+                {
+                    SaveGeneralConfig();
+                }
+                widget_alpha_mul = prev_mul;
+            }
+            BindableCheckbox("fov", tr("Фов", "Fov"), &g_cfg.fov, &g_cfg.fov_bind);
+            CreateAnimation(fov_fade, g_cfg.fov, 0.3f, AnimLerp);
+            if (g_cfg.fov || fov_fade > 0.02f)
+            {
+                const float prev_mul = widget_alpha_mul;
+                widget_alpha_mul = fov_fade;
+                if (SliderFloat(tr("Поле зрения", "Field of view"), &g_cfg.fovval, 30.0f, 120.0f, "%.0f"))
+                {
+                    SaveGeneralConfig();
+                }
+                widget_alpha_mul = prev_mul;
+            }
             BindableCheckbox("suncolor", tr("Солнце", "Sun"), &g_cfg.suncolor, &g_cfg.suncolor_bind);
             if (g_cfg.suncolor)
             {
