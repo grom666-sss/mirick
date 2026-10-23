@@ -39,7 +39,7 @@ void Menu::DrawVisuals()
                 {
                     const float prev_mul = widget_alpha_mul;
                     widget_alpha_mul = wh_fade;
-                    std::vector<std::string> esp_items = { tr("Бокс", "Box"), tr("ХП в процентах", "HP percentage"), tr("Броня в процентах", "Armor percentage"), tr("Дистанция", "Distance"), tr("Скелет", "Skeleton"), tr("Снаплайн", "Snapline"), tr("Оружие", "Weapon") };
+                    std::vector<std::string> esp_items = { tr("Бокс", "Box"), tr("Значение ХП", "HP value"), tr("Значение брони", "Armor value"), tr("Дистанция", "Distance"), tr("Скелет", "Skeleton"), tr("Снаплайн", "Snapline"), tr("Оружие", "Weapon") };
                     const unsigned int prev_flags = g_cfg.wh_flags;
                     MultiCombo(tr("Рисовать", "Draw"), g_cfg.wh_flags, esp_items);
                     if (prev_flags != g_cfg.wh_flags)

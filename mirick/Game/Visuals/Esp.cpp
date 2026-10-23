@@ -234,9 +234,9 @@ void Esp::Update()
         const ImVec2 min(boxCenterX - boxW * 0.5f, boxTop);
         const ImVec2 max(boxCenterX + boxW * 0.5f, boxBottom);
 
-        const bool showHpPercent = (g_cfg.wh_flags & WH_HP) != 0;
-        const bool showArmorPercent = (g_cfg.wh_flags & WH_ARMOR) != 0;
-        const bool showVitals = showHpPercent || showArmorPercent;
+        const bool showHealth = (g_cfg.wh_flags & WH_HP) != 0;
+        const bool showArmor = (g_cfg.wh_flags & WH_ARMOR) != 0;
+        const bool showVitals = showHealth || showArmor;
         char hpText[20]{};
         char armorText[24]{};
         ImVec2 hpTextSize{};
@@ -246,21 +246,17 @@ void Esp::Update()
         const float vitalsPadY = 2.0f * s;
         float vitalsHeight = 0.0f;
 
-        if (showHpPercent)
+        if (showHealth)
         {
-            constexpr float kNextRpMaxHealth = 313.0f;
-            const float hpRatio = std::clamp(ped->m_fHealth / kNextRpMaxHealth, 0.0f, 1.0f);
-            const int hpPercent = static_cast<int>(hpRatio * 100.0f + 0.5f);
-            snprintf(hpText, sizeof(hpText), "HP %d%%", hpPercent);
+            const int health = static_cast<int>(std::max(ped->m_fHealth, 0.0f) + 0.5f);
+            snprintf(hpText, sizeof(hpText), "HP %d", health);
             hpTextSize = ImGui::CalcTextSize(hpText);
             vitalsHeight = hpTextSize.y + vitalsPadY * 2.0f;
         }
-        if (showArmorPercent)
+        if (showArmor)
         {
-            constexpr float kNextRpMaxArmor = 450.0f;
-            const float armorRatio = std::clamp(ped->m_fArmour / kNextRpMaxArmor, 0.0f, 1.0f);
-            const int armorPercent = static_cast<int>(armorRatio * 100.0f + 0.5f);
-            snprintf(armorText, sizeof(armorText), "ARMOR %d%%", armorPercent);
+            const int armor = static_cast<int>(std::max(ped->m_fArmour, 0.0f) + 0.5f);
+            snprintf(armorText, sizeof(armorText), "ARMOR %d", armor);
             armorTextSize = ImGui::CalcTextSize(armorText);
             vitalsHeight = std::max(vitalsHeight, armorTextSize.y + vitalsPadY * 2.0f);
         }
@@ -343,7 +339,7 @@ void Esp::Update()
 
         if (showVitals)
         {
-            const float separatorWidth = showHpPercent && showArmorPercent ? separatorSize.x : 0.0f;
+            const float separatorWidth = showHealth && showArmor ? separatorSize.x : 0.0f;
             const float textWidth = hpTextSize.x + separatorWidth + armorTextSize.x;
             const float badgeWidth = textWidth + vitalsPadX * 2.0f;
             const ImVec2 badgeMin(boxCenterX - badgeWidth * 0.5f, min.y - vitalsHeight - 3.0f * s);
@@ -356,17 +352,17 @@ void Esp::Update()
 
             float textX = badgeMin.x + vitalsPadX;
             const float textY = badgeMin.y + vitalsPadY;
-            if (showHpPercent)
+            if (showHealth)
             {
                 draw->AddText(ImVec2(textX, textY), hpCol, hpText);
                 textX += hpTextSize.x;
             }
-            if (showHpPercent && showArmorPercent)
+            if (showHealth && showArmor)
             {
                 draw->AddText(ImVec2(textX, textY), IM_COL32(145, 151, 166, 210), "  |  ");
                 textX += separatorSize.x;
             }
-            if (showArmorPercent)
+            if (showArmor)
             {
                 draw->AddText(ImVec2(textX, textY), armorCol, armorText);
             }

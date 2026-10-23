@@ -4,43 +4,58 @@
 #include <cstring>
 #include <shellapi.h>
 #include <string>
-#include <vector>
+#include <string_view>
 
 #include "Lua/LuaManager.hpp"
 
 namespace
 {
-    int ResizeLuaBuffer(ImGuiInputTextCallbackData* data)
+    int ResizeLuaText(ImGuiInputTextCallbackData* data)
     {
         if (data->EventFlag != ImGuiInputTextFlags_CallbackResize)
         {
             return 0;
         }
 
-        auto* buffer = static_cast<std::vector<char>*>(data->UserData);
-        buffer->resize(static_cast<size_t>(data->BufSize), '\0');
-        data->Buf = buffer->data();
+        auto* text = static_cast<std::string*>(data->UserData);
+        text->resize(static_cast<size_t>(data->BufTextLen));
+        data->Buf = text->data();
         return 0;
     }
 
-    std::vector<char> CreateEditorBuffer()
+    bool LuaTextEditor(std::string& text, const ImVec2& size)
     {
-        constexpr const char* example =
-            "-- mirick Lua workspace\n"
-            "mirick.log(\"hello from the in-game editor\")\n";
-        std::vector<char> buffer(64 * 1024, '\0');
-        std::memcpy(buffer.data(), example, std::strlen(example));
-        return buffer;
+        // This mirrors ImGui's std::string adapter: use the allocated capacity
+        // directly and update the logical string length after editing.
+        const bool changed = ImGui::InputTextMultiline(
+            "##lua_workspace_editor",
+            text.data(),
+            text.capacity() + 1,
+            size,
+            ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackResize,
+            ResizeLuaText,
+            &text);
+        text.resize(std::strlen(text.c_str()));
+        return changed;
     }
 
-    size_t CountLines(const char* text)
+    std::string CreateEditorBuffer()
     {
-        if (!text || !text[0])
+        std::string text =
+            "-- mirick Lua workspace\n"
+            "mirick.log(\"hello from the in-game editor\")\n";
+        text.reserve(64 * 1024);
+        return text;
+    }
+
+    size_t CountLines(std::string_view text)
+    {
+        if (text.empty())
         {
             return 0;
         }
 
-        return 1 + static_cast<size_t>(std::count(text, text + std::strlen(text), '\n'));
+        return 1 + static_cast<size_t>(std::count(text.begin(), text.end(), '\n'));
     }
 }
 
@@ -49,7 +64,7 @@ void Menu::DrawLua()
     const float s = GetScale();
     const float a = GetAlpha();
     const c_color accent = g_cfg.accent.to_color();
-    static std::vector<char> code = CreateEditorBuffer();
+    static std::string code = CreateEditorBuffer();
     static bool last_execution_ok = true;
 
     ImGui::SetCursorPos(ImVec2(16.0f * s, 15.0f * s));
@@ -64,8 +79,8 @@ void Menu::DrawLua()
     draw_list->AddText(header_min + ImVec2(44.0f * s, 31.0f * s), IM_COL32(132, 143, 165, static_cast<int>(255.0f * a)), tr("Выполнение скриптов в реальном времени", "Real-time script execution"));
     ImGui::Dummy(ImVec2(content_width, 66.0f * s));
 
-    const size_t bytes = std::strlen(code.data());
-    const std::string statistics = std::to_string(CountLines(code.data())) + tr(" строк  •  ", " lines  •  ") + std::to_string(bytes) + tr(" байт", " bytes");
+    const size_t bytes = code.size();
+    const std::string statistics = std::to_string(CountLines(code)) + tr(" строк  •  ", " lines  •  ") + std::to_string(bytes) + tr(" байт", " bytes");
     ImGui::TextColored(ImVec4(0.72f, 0.76f, 0.86f, a), "%s", tr("КОД СКРИПТА", "SCRIPT CODE"));
     ImGui::SameLine();
     const float stats_width = ImGui::CalcTextSize(statistics.c_str()).x;
@@ -83,14 +98,7 @@ void Menu::DrawLua()
     ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, accent.new_alpha(static_cast<int>(110.0f * a)).as_imvec4());
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 7.0f * s);
-    ImGui::InputTextMultiline(
-        "##lua_workspace_editor",
-        code.data(),
-        code.size(),
-        ImVec2(content_width, 245.0f * s),
-        ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackResize,
-        ResizeLuaBuffer,
-        &code);
+    LuaTextEditor(code, ImVec2(content_width, 245.0f * s));
     ImGui::PopStyleVar(2);
     ImGui::PopStyleColor(5);
 
@@ -109,20 +117,34 @@ void Menu::DrawLua()
     };
 
     const float gap = 7.0f * s;
-    const float button_width = (content_width - gap * 2.0f) / 3.0f;
+    const float button_width = (content_width - gap * 3.0f) / 4.0f;
     if (action_button(tr("Выполнить", "Execute"), ImVec2(button_width, 34.0f * s), true))
     {
-        last_execution_ok = LuaManager::Instance().Execute(code.data());
+        last_execution_ok = LuaManager::Instance().Execute(code);
+    }
+    ImGui::SameLine(0.0f, gap);
+    if (action_button(tr("Вставить", "Paste"), ImVec2(button_width, 34.0f * s), false))
+    {
+        if (const char* clipboard = ImGui::GetClipboardText())
+        {
+            code.assign(clipboard);
+            if (code.capacity() < 64 * 1024)
+            {
+                code.reserve(64 * 1024);
+            }
+        }
     }
     ImGui::SameLine(0.0f, gap);
     if (action_button(tr("Очистить", "Clear"), ImVec2(button_width, 34.0f * s), false))
     {
-        const size_t minimum_capacity = 64 * 1024;
-        const size_t capacity = code.size() > minimum_capacity ? code.size() : minimum_capacity;
-        code.assign(capacity, '\0');
+        code.clear();
+        if (code.capacity() < 64 * 1024)
+        {
+            code.reserve(64 * 1024);
+        }
     }
     ImGui::SameLine(0.0f, gap);
-    if (action_button(tr("Перезагрузить", "Reload files"), ImVec2(button_width, 34.0f * s), false))
+    if (action_button(tr("Файлы", "Reload"), ImVec2(button_width, 34.0f * s), false))
     {
         LuaManager::Instance().Reload();
         last_execution_ok = true;
