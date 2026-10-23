@@ -2,7 +2,6 @@
 
 #include "Game/Features.h"
 
-#include "Gfx/Blur.hpp"
 #include "Gfx/Fonts.hpp"
 
 #include <cmath>
@@ -207,24 +206,32 @@ void Menu::DrawBinds()
         }
     }
 
-    Blur::Create(list, window_pos, window_pos + ImVec2(content_w, head_h), ImColor(255, 255, 255, (int)window_alpha), 4.0f * s, ImDrawCornerFlags_Top);
+    const c_color accent = g_cfg.accent.to_color();
+    const ImVec2 window_max = window_pos + ImVec2(content_w, win_h);
 
-    const std::string title = tr("Бинды", "Binds");
+    // Match the main menu's opaque navy shell instead of the old grey blur.
+    list->AddRectFilled(window_pos + ImVec2(3.0f * s, 4.0f * s), window_max + ImVec2(3.0f * s, 4.0f * s), IM_COL32(0, 0, 0, (int)(90.0f * bind_alpha)), 6.0f * s);
+    list->AddRectFilled(window_pos, window_max, IM_COL32(7, 10, 17, (int)(250.0f * bind_alpha)), 6.0f * s);
+    list->AddRectFilled(window_pos, window_pos + ImVec2(content_w, head_h), IM_COL32(15, 21, 33, (int)window_alpha), 6.0f * s, ImDrawCornerFlags_Top);
+    list->AddRectFilledMultiColor(
+        window_pos + ImVec2(0.0f, head_h - 2.0f * s),
+        window_pos + ImVec2(content_w, head_h),
+        accent.new_alpha(0).as_imcolor(),
+        accent.new_alpha((int)(220.0f * bind_alpha)).as_imcolor(),
+        accent.new_alpha((int)(220.0f * bind_alpha)).as_imcolor(),
+        accent.new_alpha(0).as_imcolor());
+
+    const std::string title = tr("Кейбинды", "Keybinds");
     ImVec2 title_size = ImGui::CalcTextSize(title.c_str());
     float head_x = window_pos.x + (content_w - (16.0f * s + 6.0f * s + title_size.x)) * 0.5f;
 
     if (kb_texture)
     {
-        list->AddImage((void*)kb_texture, ImVec2(head_x, window_pos.y + 8.0f * s), ImVec2(head_x + 16.0f * s, window_pos.y + 24.0f * s), ImVec2(0, 0), ImVec2(1, 1), g_cfg.accent.to_color().new_alpha((int)window_alpha).as_imcolor());
+        list->AddImage((void*)kb_texture, ImVec2(head_x, window_pos.y + 8.0f * s), ImVec2(head_x + 16.0f * s, window_pos.y + 24.0f * s), ImVec2(0, 0), ImVec2(1, 1), accent.new_alpha((int)window_alpha).as_imcolor());
     }
 
-    list->AddText(ImVec2(head_x + 22.0f * s, window_pos.y + 8.0f * s), c_color(255, 255, 255, (int)window_alpha).as_imcolor(), title.c_str());
-
-    list->AddLine(window_pos + ImVec2(0, head_h - 1.0f * s), window_pos + ImVec2(content_w, head_h - 1.0f * s), c_color(255, 255, 255, (int)(12.75f * bind_alpha)).as_imcolor());
-
-    Blur::Create(list, window_pos + ImVec2(0, head_h), window_pos + ImVec2(content_w, win_h), ImColor(100, 100, 100, (int)window_alpha), 4.0f * s, ImDrawCornerFlags_Bot);
-
-    list->AddRect(window_pos, window_pos + ImVec2(content_w, win_h), c_color(100, 100, 100, (int)(100.0f * bind_alpha)).as_imcolor(), 4.0f * s);
+    list->AddText(ImVec2(head_x + 22.0f * s, window_pos.y + 8.0f * s), IM_COL32(242, 245, 255, (int)window_alpha), title.c_str());
+    list->AddRect(window_pos, window_max, IM_COL32(40, 49, 67, (int)(220.0f * bind_alpha)), 6.0f * s);
 
     ImVec2 prev_pos = ImGui::GetCursorPos();
     float max_pos = 0.0f;
@@ -243,7 +250,15 @@ void Menu::DrawBinds()
         float textsize = ImGui::CalcTextSize(bind_type.c_str()).x;
         float row_y = ImGui::GetItemRectMin().y;
 
-        list->AddText(ImVec2(window_pos.x + content_w - pad_r - textsize, row_y), c_color(255, 255, 255, (int)(102.0f * bind_alpha)).as_imcolor(), bind_type.c_str());
+        list->AddRectFilled(
+            ImVec2(window_pos.x + 7.0f * s, row_y + 4.0f * s),
+            ImVec2(window_pos.x + 9.0f * s, row_y + 14.0f * s),
+            accent.new_alpha((int)(190.0f * bind_alpha)).as_imcolor(),
+            1.0f * s);
+        list->AddText(
+            ImVec2(window_pos.x + content_w - pad_r - textsize, row_y),
+            accent.new_alpha((int)(205.0f * bind_alpha)).as_imcolor(),
+            bind_type.c_str());
 
         max_pos += row_h;
     }
