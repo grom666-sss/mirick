@@ -8,7 +8,6 @@
 
 #include <common.h>
 
-#include "CAutomobile.h"
 #include "CCamera.h"
 #include "CClock.h"
 #include "CVisibilityPlugins.h"
@@ -47,15 +46,8 @@
 #include "Game/Misc/GodMode.hpp"
 #include "Game/Misc/NoFall.hpp"
 #include "Game/Misc/FastRun.hpp"
-#include "Game/Misc/Skin.hpp"
-#include "Game/Misc/Repair.hpp"
-#include "Game/Misc/Flip.hpp"
 #include "Game/Misc/AirBreak.hpp"
 #include "Game/Misc/GameSpeed.hpp"
 #include "Game/Misc/FastRot.hpp"
-#include "Game/Misc/VehicleFlags.hpp"
-#include "Game/Misc/NoBikeFall.hpp"
-#include "Game/Misc/AutoEngine.hpp"
-#include "Game/Misc/AutoUnlock.hpp"
 #include "Game/Misc/KeyBinds.hpp"
 #include "Game/Misc/CamHack.hpp"

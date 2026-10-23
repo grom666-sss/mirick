@@ -221,17 +221,9 @@ bool config_t::Save(const std::string& name)
     WriteInt(body, "wh_key", wh_bind.key);
     WriteInt(body, "wh_mode", wh_bind.mode);
     WriteFloat(body, "whDistance", whDistance);
-    WriteBool(body, "speedhack", speedhack);
-    WriteInt(body, "speedhack_key", speedhack_bind.key);
-    WriteInt(body, "speedhack_mode", speedhack_bind.mode);
-    WriteFloat(body, "MaxSpd", MaxSpd);
     WriteBool(body, "airbreake", airbreake);
     WriteInt(body, "airbreake_key", airbreake_bind.key);
     WriteInt(body, "airbreake_mode", airbreake_bind.mode);
-    WriteBool(body, "changemodel", changemodel);
-    WriteInt(body, "changemodel_key", changemodel_bind.key);
-    WriteInt(body, "changemodel_mode", changemodel_bind.mode);
-    WriteInt(body, "playerSkinID", playerSkinID);
     WriteBool(body, "nightmode", nightmode);
     WriteInt(body, "nightmode_key", nightmode_bind.key);
     WriteInt(body, "nightmode_mode", nightmode_bind.mode);
@@ -268,10 +260,6 @@ bool config_t::Save(const std::string& name)
     WriteInt(body, "removals_key", removals_bind.key);
     WriteInt(body, "removals_mode", removals_bind.mode);
     WriteInt(body, "removal_flags", (int)removal_flags);
-    WriteBool(body, "carcolor", carcolor);
-    WriteInt(body, "carcolor_key", carcolor_bind.key);
-    WriteInt(body, "carcolor_mode", carcolor_bind.mode);
-    WriteColor(body, "carrgb1", carrgb1);
     WriteBool(body, "rapidfire", rapidfire);
     WriteInt(body, "rapidfire_key", rapidfire_bind.key);
     WriteInt(body, "rapidfire_mode", rapidfire_bind.mode);
@@ -295,21 +283,6 @@ bool config_t::Save(const std::string& name)
     WriteBool(body, "fastrot", fastrot);
     WriteInt(body, "fastrot_key", fastrot_bind.key);
     WriteInt(body, "fastrot_mode", fastrot_bind.mode);
-    WriteBool(body, "nobikefall", nobikefall);
-    WriteInt(body, "nobikefall_key", nobikefall_bind.key);
-    WriteInt(body, "nobikefall_mode", nobikefall_bind.mode);
-    WriteBool(body, "waterdrive", waterdrive);
-    WriteInt(body, "waterdrive_key", waterdrive_bind.key);
-    WriteInt(body, "waterdrive_mode", waterdrive_bind.mode);
-    WriteBool(body, "carfly", carfly);
-    WriteInt(body, "carfly_key", carfly_bind.key);
-    WriteInt(body, "carfly_mode", carfly_bind.mode);
-    WriteBool(body, "autoengine", autoengine);
-    WriteInt(body, "autoengine_key", autoengine_bind.key);
-    WriteInt(body, "autoengine_mode", autoengine_bind.mode);
-    WriteBool(body, "autounlock", autounlock);
-    WriteInt(body, "autounlock_key", autounlock_bind.key);
-    WriteInt(body, "autounlock_mode", autounlock_bind.mode);
     WriteBool(body, "fastcross", fastcross);
     WriteInt(body, "fastcross_key", fastcross_bind.key);
     WriteInt(body, "fastcross_mode", fastcross_bind.mode);
@@ -319,10 +292,6 @@ bool config_t::Save(const std::string& name)
     WriteBool(body, "nospread", nospread);
     WriteInt(body, "nospread_key", nospread_bind.key);
     WriteInt(body, "nospread_mode", nospread_bind.mode);
-    WriteBool(body, "ram", ram);
-    WriteInt(body, "ram_key", ram_bind.key);
-    WriteInt(body, "ram_mode", ram_bind.mode);
-    WriteFloat(body, "rampower", rampower);
     WriteBool(body, "trigger", trigger);
     WriteInt(body, "trigger_key", trigger_bind.key);
     WriteInt(body, "trigger_mode", trigger_bind.mode);
@@ -417,17 +386,9 @@ bool config_t::Load(const std::string& name)
         else if (key == "wh_key") { ReadInt(value, wh_bind.key); }
         else if (key == "wh_mode") { ReadInt(value, wh_bind.mode); }
         else if (key == "whDistance") { ReadFloat(value, whDistance); }
-        else if (key == "speedhack") { ReadBool(value, speedhack); }
-        else if (key == "speedhack_key") { ReadInt(value, speedhack_bind.key); }
-        else if (key == "speedhack_mode") { ReadInt(value, speedhack_bind.mode); }
-        else if (key == "MaxSpd") { ReadFloat(value, MaxSpd); }
         else if (key == "airbreake") { ReadBool(value, airbreake); }
         else if (key == "airbreake_key") { ReadInt(value, airbreake_bind.key); }
         else if (key == "airbreake_mode") { ReadInt(value, airbreake_bind.mode); }
-        else if (key == "changemodel") { ReadBool(value, changemodel); }
-        else if (key == "changemodel_key") { ReadInt(value, changemodel_bind.key); }
-        else if (key == "changemodel_mode") { ReadInt(value, changemodel_bind.mode); }
-        else if (key == "playerSkinID") { ReadInt(value, playerSkinID); }
         else if (key == "nightmode") { ReadBool(value, nightmode); }
         else if (key == "nightmode_key") { ReadInt(value, nightmode_bind.key); }
         else if (key == "nightmode_mode") { ReadInt(value, nightmode_bind.mode); }
@@ -491,10 +452,6 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "removals_key") { ReadInt(value, removals_bind.key); }
     else if (key == "removals_mode") { ReadInt(value, removals_bind.mode); }
     else if (key == "removal_flags") { int t = 0; if (ReadInt(value, t)) { removal_flags = (unsigned int)t; } }
-    else if (key == "carcolor") { ReadBool(value, carcolor); }
-    else if (key == "carcolor_key") { ReadInt(value, carcolor_bind.key); }
-    else if (key == "carcolor_mode") { ReadInt(value, carcolor_bind.mode); }
-    else if (key == "carrgb1") { ReadColor(value, carrgb1); }
     else if (key == "rapidfire") { ReadBool(value, rapidfire); }
     else if (key == "rapidfire_key") { ReadInt(value, rapidfire_bind.key); }
     else if (key == "rapidfire_mode") { ReadInt(value, rapidfire_bind.mode); }
@@ -518,21 +475,6 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
         else if (key == "fastrot") { ReadBool(value, fastrot); }
         else if (key == "fastrot_key") { ReadInt(value, fastrot_bind.key); }
         else if (key == "fastrot_mode") { ReadInt(value, fastrot_bind.mode); }
-    else if (key == "nobikefall") { ReadBool(value, nobikefall); }
-    else if (key == "nobikefall_key") { ReadInt(value, nobikefall_bind.key); }
-    else if (key == "nobikefall_mode") { ReadInt(value, nobikefall_bind.mode); }
-    else if (key == "waterdrive") { ReadBool(value, waterdrive); }
-    else if (key == "waterdrive_key") { ReadInt(value, waterdrive_bind.key); }
-    else if (key == "waterdrive_mode") { ReadInt(value, waterdrive_bind.mode); }
-    else if (key == "carfly") { ReadBool(value, carfly); }
-    else if (key == "carfly_key") { ReadInt(value, carfly_bind.key); }
-        else if (key == "carfly_mode") { ReadInt(value, carfly_bind.mode); }
-    else if (key == "autoengine") { ReadBool(value, autoengine); }
-    else if (key == "autoengine_key") { ReadInt(value, autoengine_bind.key); }
-    else if (key == "autoengine_mode") { ReadInt(value, autoengine_bind.mode); }
-    else if (key == "autounlock") { ReadBool(value, autounlock); }
-    else if (key == "autounlock_key") { ReadInt(value, autounlock_bind.key); }
-    else if (key == "autounlock_mode") { ReadInt(value, autounlock_bind.mode); }
     else if (key == "fastcross") { ReadBool(value, fastcross); }
     else if (key == "fastcross_key") { ReadInt(value, fastcross_bind.key); }
     else if (key == "fastcross_mode") { ReadInt(value, fastcross_bind.mode); }
@@ -542,10 +484,6 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "nospread") { ReadBool(value, nospread); }
     else if (key == "nospread_key") { ReadInt(value, nospread_bind.key); }
     else if (key == "nospread_mode") { ReadInt(value, nospread_bind.mode); }
-    else if (key == "ram") { ReadBool(value, ram); }
-    else if (key == "ram_key") { ReadInt(value, ram_bind.key); }
-    else if (key == "ram_mode") { ReadInt(value, ram_bind.mode); }
-    else if (key == "rampower") { ReadFloat(value, rampower); }
     else if (key == "trigger") { ReadBool(value, trigger); }
     else if (key == "trigger_key") { ReadInt(value, trigger_bind.key); }
     else if (key == "trigger_mode") { ReadInt(value, trigger_bind.mode); }

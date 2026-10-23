@@ -149,12 +149,8 @@ HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, cons
     InfAmmo::Update();
     GameSpeed::Update();
     FastRot::Update();
-    VehicleFlags::Update();
-    NoBikeFall::Update();
     Aspect::Update();
     Fov::Update();
-    AutoEngine::Update();
-    AutoUnlock::Update();
     FastCrosshair::Update();
     NoRecoil::Update();
     NoSpread::Update();
@@ -169,38 +165,6 @@ HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, cons
     NoFall::Update();
     FastRun::Update();
 
-    if (g_cfg.speedhack && !g_cfg.airbreake)
-    {
-        static DWORD lastTick = 0;
-        DWORD now = GetTickCount();
-
-        if (now - lastTick >= 50)
-        {
-            lastTick = now;
-
-            CPed* pPedSelf = FindPlayerPed();
-
-            if (pPedSelf)
-            {
-                CVehicle* veh = pPedSelf->m_pVehicle;
-
-                if (veh && veh->m_pDriver == pPedSelf)
-                {
-                    CVector& vel = veh->m_vecMoveSpeed;
-                    float direction = VecLength(vel);
-
-                    if (direction > 0.01f)
-                    {
-                        float power = std::clamp(g_cfg.MaxSpd, 0.0f, 30.0f);
-                        float boost = power / 180.0f;
-                        vel.x += (vel.x / direction) * boost;
-                        vel.y += (vel.y / direction) * boost;
-                        vel.z += (vel.z / direction) * boost;
-                    }
-                }
-            }
-        }
-    }
     Blur::NewFrame();
 
     if (GetAsyncKeyState(VK_DELETE) & 1)
