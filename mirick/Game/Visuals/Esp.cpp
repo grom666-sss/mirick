@@ -248,14 +248,18 @@ void Esp::Update()
 
         if (showHpPercent)
         {
-            const int hpPercent = static_cast<int>(std::clamp(ped->m_fHealth, 0.0f, 100.0f) + 0.5f);
+            constexpr float kNextRpMaxHealth = 313.0f;
+            const float hpRatio = std::clamp(ped->m_fHealth / kNextRpMaxHealth, 0.0f, 1.0f);
+            const int hpPercent = static_cast<int>(hpRatio * 100.0f + 0.5f);
             snprintf(hpText, sizeof(hpText), "HP %d%%", hpPercent);
             hpTextSize = ImGui::CalcTextSize(hpText);
             vitalsHeight = hpTextSize.y + vitalsPadY * 2.0f;
         }
         if (showArmorPercent)
         {
-            const int armorPercent = static_cast<int>(std::clamp(ped->m_fArmour, 0.0f, 100.0f) + 0.5f);
+            constexpr float kNextRpMaxArmor = 450.0f;
+            const float armorRatio = std::clamp(ped->m_fArmour / kNextRpMaxArmor, 0.0f, 1.0f);
+            const int armorPercent = static_cast<int>(armorRatio * 100.0f + 0.5f);
             snprintf(armorText, sizeof(armorText), "ARMOR %d%%", armorPercent);
             armorTextSize = ImGui::CalcTextSize(armorText);
             vitalsHeight = std::max(vitalsHeight, armorTextSize.y + vitalsPadY * 2.0f);

@@ -69,6 +69,8 @@ class Menu
     std::map<uint32_t, item_animation_t> item_animations{};
     std::map<std::string, std::string> combo_items{};
     float tab_alpha = 0.0f;
+    bool author_panel_open = false;
+    float author_panel_anim = 0.0f;
     std::array<float, 6> subtab_alpha{};
     int prev_tab = 0;
     std::array<int, 6> prev_sub{};
@@ -98,6 +100,7 @@ public:
     void WindowBegin();
     void WindowEnd();
     void DrawBackground();
+    void DrawAuthorPanel();
     void DrawTabs();
     void DrawSubTabs(int& selector, const std::vector<std::string>& tabs);
     void UpdateSubFade(int tab, int& sub);
