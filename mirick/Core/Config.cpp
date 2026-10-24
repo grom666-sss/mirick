@@ -200,6 +200,7 @@ bool config_t::Save(const std::string& name)
 
     std::ostringstream body;
 
+    WriteInt(body, "ui_design_version", 1);
     WriteColor(body, "accent", accent);
     WriteInt(body, "ui_scale", ui_scale);
     WriteInt(body, "language", language);
@@ -344,6 +345,7 @@ bool config_t::Load(const std::string& name)
 
     std::istringstream stream(raw);
     std::string line;
+    int loadedDesignVersion = 0;
 
     while (std::getline(stream, line))
     {
@@ -357,7 +359,8 @@ bool config_t::Load(const std::string& name)
         std::string key = line.substr(0, pos);
         std::string value = line.substr(pos + 1);
 
-        if (key == "accent") { ReadColor(value, accent); }
+        if (key == "ui_design_version") { ReadInt(value, loadedDesignVersion); }
+        else if (key == "accent") { ReadColor(value, accent); }
         else if (key == "godmode") { ReadBool(value, godmode); }
         else if (key == "godmode_key") { ReadInt(value, godmode_bind.key); }
         else if (key == "godmode_mode") { ReadInt(value, godmode_bind.mode); }
@@ -397,6 +400,13 @@ bool config_t::Load(const std::string& name)
         else if (key == "skycol") { ReadColor(value, skycol); }
         else if (key == "skybotcol") { ReadColor(value, skybotcol); }
         else { LoadTail(key, value); }
+    }
+
+    // One-time migration from the previous purple layout. Once the redesigned
+    // config is saved, user-selected accent colors are preserved normally.
+    if (loadedDesignVersion < 1)
+    {
+        accent = c_float_color(52, 148, 255);
     }
 
     if (ui_scale < 50)

@@ -15,7 +15,7 @@ struct keybind_t
 struct config_t
 {
     bool menu_open = false;
-    c_float_color accent = c_float_color(168, 168, 255);
+    c_float_color accent = c_float_color(52, 148, 255);
     int ui_scale = 100;
     int language = 0;
     bool showbinds = false;

@@ -58,22 +58,30 @@ bool Menu::Checkbox(const char* label, bool* value)
     CreateAnimation(mod.hovered_alpha, hovered, 1.0f, AnimLerp);
     CreateAnimation(mod.alpha, *value, 0.4f, AnimLerp);
 
-    ImVec2 back_size = ImVec2(256.0f * s, 32.0f * s);
+    const ImVec2 back_size(256.0f * s, 32.0f * s);
     const int hover_lift = (int)(7.0f * mod.hovered_alpha);
-    const c_color back_clr(15 + hover_lift, 21 + hover_lift, 33 + hover_lift, (int)(255.0f * alpha));
-    draw_list->AddRectFilled(pos, pos + back_size, back_clr.as_imcolor(), 4.0f * s);
-    draw_list->AddRect(pos, pos + back_size, c_color(35, 43, 59, (int)(190.0f * alpha)).as_imcolor(), 4.0f * s);
-
-    ImVec2 body_size = ImVec2(28.0f * s, 14.0f * s);
-    ImVec2 body_min = pos + ImVec2(220.0f * s, 9.0f * s);
-    ImVec2 body_max = body_min + body_size;
-    draw_list->AddRectFilled(body_min, body_max, c_color(5, 8, 14, (int)(255.0f * alpha)).as_imcolor(), 8.0f * s);
-
+    const c_color back_clr(8 + hover_lift, 18 + hover_lift, 32 + hover_lift, (int)(255.0f * alpha));
     c_color accent = g_cfg.accent.to_color();
-    ImVec2 circle_offset = ImVec2(14.0f * s * mod.alpha, 0);
-    ImVec2 circle_pos = body_min + ImVec2(body_size.y * 0.5f, body_size.y * 0.5f) + circle_offset;
-    c_color circle_clr = c_color().multiply(accent, mod.alpha).new_alpha((int)(255 * alpha));
-    draw_list->AddCircleFilled(circle_pos, 4.0f * s, circle_clr.as_imcolor());
+    draw_list->AddRectFilled(pos, pos + back_size, back_clr.as_imcolor(), 5.0f * s);
+    draw_list->AddRect(pos, pos + back_size,
+        (*value ? accent.new_alpha((int)(120.0f * alpha)) : c_color(25, 54, 85, (int)(205.0f * alpha))).as_imcolor(),
+        5.0f * s);
+    if (*value || mod.alpha > 0.01f)
+    {
+        draw_list->AddRectFilled(pos, pos + ImVec2(3.0f * s, 32.0f * s),
+            accent.new_alpha((int)(235.0f * mod.alpha * alpha)).as_imcolor(), 2.0f * s);
+    }
+
+    const ImVec2 body_size(30.0f * s, 16.0f * s);
+    const ImVec2 body_min = pos + ImVec2(216.0f * s, 8.0f * s);
+    const ImVec2 body_max = body_min + body_size;
+    draw_list->AddRectFilled(body_min, body_max, c_color(3, 9, 18, (int)(255.0f * alpha)).as_imcolor(), 8.0f * s);
+    draw_list->AddRect(body_min, body_max, accent.new_alpha((int)((45.0f + 100.0f * mod.alpha) * alpha)).as_imcolor(), 8.0f * s);
+
+    const ImVec2 circle_offset(14.0f * s * mod.alpha, 0.0f);
+    const ImVec2 circle_pos = body_min + ImVec2(8.0f * s, 8.0f * s) + circle_offset;
+    const c_color circle_clr = c_color().multiply(accent, mod.alpha).new_alpha((int)(255.0f * alpha));
+    draw_list->AddCircleFilled(circle_pos, 5.0f * s, circle_clr.as_imcolor(), 16);
 
     if (label_size.x > 0.0f)
     {
