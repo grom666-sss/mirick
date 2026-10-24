@@ -1,32 +1,59 @@
-# Mirick Menu
+# mirick
 
-Чистое визуальное меню для **GTA San Andreas (DirectX 9, 32-bit)** в стиле указанного пользователем интерфейса. В проекте нет читов, игровых модификаций, сетевого обхода или обращения к памяти GTA: меню рисует только собственный UI.
+mirick — internal cheat for MTA:SA FORKS like NEXTRP, MTA PROVINCE for offcial MTA you need update bypass.cpp/hpp.
 
-## Возможности
+Made as a base for your own projects and easy to understand for beginners. Everything is split into separate files, so features, hooks and menu are easy to find and edit.
 
-- открытие/закрытие клавишей **Insert**;
-- пять вкладок и анимированный тёмный интерфейс;
-- демонстрационные локальные настройки HUD и оформления;
-- перетаскивание окна за верхнюю панель средствами ImGui;
-- корректная обработка `Reset` Direct3D 9.
+## Features
 
-## Сборка
+* Rage
+* Legit
+* Visuals
+* Misc
+* Custom ImGui menu
+* Binds
+* Configs
 
-Требуются Windows, Visual Studio 2022 с компонентом **Desktop development with C++**, CMake и Git.
+## Build
 
-```bat
-cmake -S . -B build -A Win32
-cmake --build build --config Release
-```
+**Release | Win32**
 
-Результат сборки — только `build/Release/MirickMenu.dll`.
+Requirements:
 
-## Установка
+* Visual Studio 2022 with the **Desktop development with C++** workload and the **MSVC v143** toolset;
+* an internet connection during the first build.
 
-Загрузите `MirickMenu.dll` с помощью совместимого легального DLL-загрузчика модов, следуя его инструкции. После запуска игры нажмите **Insert**.
+The first build runs `setup_dependencies.bat` automatically. The script downloads [Plugin-SDK](https://github.com/DK22Pac/plugin-sdk) using Git, or a PowerShell ZIP fallback when Git is unavailable. It then generates a Visual Studio 2022/v143 project and builds the required `plugin.lib`. The dependency uses a repository-local path under `thirdparty`; no user-specific absolute paths are required.
 
-Проект рассчитан на классическую 32-битную DirectX 9 версию игры. Настройки в текущей версии демонстрационные и не изменяют игровой процесс.
+Then open `mirick.sln` (the traditional solution format with the widest Visual Studio compatibility), select **Release | Win32**, and build the project. `mirick.slnx` is also provided for Visual Studio versions that support the newer solution format.
 
-## Зависимости
+## Safe launcher
 
-CMake автоматически загружает Dear ImGui 1.91.9b и MinHook 1.3.4. Их лицензии находятся в соответствующих исходных репозиториях.
+The solution also contains `mirick-launcher`, a standalone Win32 launcher/updater. It does not inject DLLs, map processes, collect HWIDs, or bypass security software. It can:
+
+* check this repository's latest GitHub Release without a token;
+* download a normal Windows executable over HTTPS;
+* verify its SHA-256 checksum before installation;
+* remember the selected installation directory;
+* install atomically and launch the installed application.
+
+For an update to be installable, the GitHub Release must contain both assets below:
+
+* `mirick-client.exe` — the regular application to install;
+* `mirick-client.exe.sha256` — a text file beginning with the executable's 64-character SHA-256 hash.
+
+Build **Release | Win32** and use `Release\mirick-launcher.exe`. Launcher settings are stored in `%LOCALAPPDATA%\mirick\launcher.ini`.
+
+## Capture protection
+
+ESP, skeletons, snaplines, binds and the menu are rendered in a separate top-level overlay protected with `WDA_EXCLUDEFROMCAPTURE`. OBS Game Capture receives only the GTA render device, while Windows display/window capture excludes the protected overlay. Use **borderless/windowed mode**: Windows cannot place a separate overlay above an exclusive-fullscreen DirectX 9 surface. Capture exclusion requires Windows 10 version 2004 or newer. If protected overlay creation fails, visuals are disabled rather than rendered into the captured game frame.
+
+If Visual Studio was already open when the dependencies were installed, close and reopen the solution so IntelliSense refreshes its include paths.
+
+## Author
+
+**m1racl**
+
+## Special Thanks
+
+* **ThatRuxe**

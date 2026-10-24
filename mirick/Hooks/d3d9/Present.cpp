@@ -1,0 +1,276 @@
+#include <d3d9.h>
+
+#include <algorithm>
+
+#include "imgui.h"
+#include "imgui_impl_dx9.h"
+#include "imgui_impl_win32.h"
+
+#include "minhook.hpp"
+
+#include "Utils/xorstr.h"
+#include "Utils/D3D9.hpp"
+
+#include "Gfx/Blur.hpp"
+#include "Gfx/Fonts.hpp"
+#include "Gfx/CharacterPreview.hpp"
+#include "Menu/Menu.hpp"
+#include "Core/Config.hpp"
+#include "Game/Features.h"
+
+#include "Present.hpp"
+#include "ProtectedOverlay.hpp"
+
+#include "../core/ForceCursorVisible.hpp"
+
+using tPresent = HRESULT(__stdcall*)(IDirect3DDevice9*, const RECT*, const RECT*, HWND, const RGNDATA*);
+tPresent oPresent = nullptr;
+
+static LPVOID sPresentTarget = nullptr;
+
+static WNDPROC oWndProc = nullptr;
+static bool imgui_initialized = false;
+static bool protectedOverlayActive = false;
+static HWND hGameWindow = nullptr;
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
+
+
+LRESULT WINAPI WndProcHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    // GTA can stop presenting as soon as it loses focus. Hide synchronously
+    // here so the topmost overlay cannot remain over another application.
+    if (message == WM_KILLFOCUS
+        || (message == WM_ACTIVATEAPP && wParam == FALSE)
+        || (message == WM_SHOWWINDOW && wParam == FALSE)
+        || (message == WM_SIZE && wParam == SIZE_MINIMIZED))
+    {
+        ProtectedOverlay::SetVisible(false);
+    }
+
+    const bool is_open = (menu && menu->GetState());
+
+    if (is_open && ImGui::GetCurrentContext())
+    {
+        // Input is received by GTA because the overlay is click-through. Pass
+        // GTA's HWND so ImGui captures/releases the actual input window rather
+        // than the WS_EX_NOACTIVATE overlay.
+        ImGui_ImplWin32_WndProcHandler(window, message, wParam, lParam);
+    }
+
+    if (is_open)
+    {
+        if ((message >= WM_MOUSEFIRST && message <= WM_MOUSELAST)
+            || (message >= WM_KEYFIRST && message <= WM_KEYLAST)
+            || message == WM_INPUT)
+        {
+            return 1;
+        }
+    }
+
+    return oWndProc
+        ? CallWindowProcW(oWndProc, window, message, wParam, lParam)
+        : DefWindowProcW(window, message, wParam, lParam);
+}
+
+static void InitImGui(IDirect3DDevice9* device)
+{
+    D3DDEVICE_CREATION_PARAMETERS deviceParameters;
+    device->GetCreationParameters(&deviceParameters);
+
+    oWndProc = (WNDPROC)SetWindowLongPtrW(deviceParameters.hFocusWindow, GWLP_WNDPROC, (LONG_PTR)WndProcHandler);
+    hGameWindow = deviceParameters.hFocusWindow;
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.LogFilename = nullptr;
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
+
+    ImGui::StyleColorsDark();
+    Fonts::InitStyle();
+    ImGui::GetStyle().AntiAliasedLines = false;
+    ImGui::GetStyle().AntiAliasedFill = false;
+    g_fonts.Init();
+
+    // Draw ImGui on a separate capture-protected HWND. OBS Game Capture only
+    // receives the GTA device; display/window capture is blocked by the HWND's
+    // display affinity. If protection cannot be created, fail closed: initialize
+    // ImGui for feature updates, but never submit its draw data to the game.
+    protectedOverlayActive = ProtectedOverlay::Initialize(hGameWindow, device);
+    // Keep the Win32 backend attached to GTA: the protected overlay is
+    // WS_EX_NOACTIVATE, so it is never the foreground window. Initializing the
+    // backend with the overlay HWND makes NewFrame reset MousePos to -FLT_MAX.
+    HWND inputWindow = hGameWindow;
+    IDirect3DDevice9* renderDevice = protectedOverlayActive ? ProtectedOverlay::GetDevice() : device;
+
+    if (!protectedOverlayActive)
+    {
+        MessageBoxW(
+            hGameWindow,
+            L"Capture-protected overlay could not be created. Visuals were disabled so they cannot leak into a recording. Use Windows 10 2004+ and borderless/windowed mode.",
+            L"mirick capture protection",
+            MB_OK | MB_ICONWARNING);
+    }
+
+    ImGui_ImplWin32_Init(inputWindow);
+    ImGui_ImplDX9_Init(renderDevice);
+    Blur::SetDevice(renderDevice);
+}
+
+HRESULT __stdcall hkPresent(IDirect3DDevice9* self, const RECT* sourceRect, const RECT* destRect, HWND destWindowOverride, const RGNDATA* dirtyRegion)
+{
+    if (!imgui_initialized)
+    {
+        InitImGui(self);
+        imgui_initialized = true;
+    }
+
+    const bool renderProtectedFrame = g_cfg.antiobs && protectedOverlayActive;
+    const bool renderFrame = !g_cfg.antiobs || (renderProtectedFrame && ProtectedOverlay::BeginFrame());
+
+    if (!g_cfg.antiobs)
+    {
+        // Remove the last protected frame before drawing directly into GTA.
+        ProtectedOverlay::SetVisible(false);
+    }
+
+    ImGui_ImplDX9_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+    ImGui::GetIO().FontGlobalScale = g_cfg.ui_scale / 100.0f;
+
+    KeyBinds::Update();
+    World::Update();
+    RapidFire::Update();
+    InfAmmo::Update();
+    Aspect::Update();
+    Fov::Update();
+    FastCrosshair::Update();
+    NoRecoil::Update();
+    NoSpread::Update();
+    Triggerbot::Update();
+
+    Esp::Update();
+
+    GodMode::Update();
+    NoFall::Update();
+
+    Blur::NewFrame();
+
+    if (GetAsyncKeyState(VK_DELETE) & 1)
+    {
+        menu->ToggleState();
+
+        if (Cself)
+        {
+            if (menu->GetState())
+            {
+                callForceCursorVisible(Cself, true, true);
+            }
+            else
+            {
+                callForceCursorVisible(Cself, false, false);
+            }
+        }
+    }
+
+    menu->Draw();
+    menu->DrawBinds();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+
+    const bool is_open = menu->GetState();
+
+    if (is_open && hGameWindow)
+    {
+        POINT p;
+        GetCursorPos(&p);
+        ScreenToClient(hGameWindow, &p);
+        ImGui::GetForegroundDrawList()->AddTriangleFilled(ImVec2(p.x - 10, p.y), ImVec2(p.x, p.y + 10), ImVec2(p.x + 10, p.y), g_cfg.accent.to_color().as_imcolor());
+    }
+
+    ImGui::EndFrame();
+
+    if (renderFrame)
+    {
+        ImGui::Render();
+        ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+
+        if (renderProtectedFrame)
+        {
+            ProtectedOverlay::EndFrame();
+        }
+    }
+
+    return oPresent(self, sourceRect, destRect, destWindowOverride, dirtyRegion);
+}
+
+void Present::InstallHook()
+{
+    MH_STATUS status;
+
+    sPresentTarget = Utils::get_function_address(17);
+
+    if (!sPresentTarget)
+    {
+        MessageBoxA(NULL, "Failed to find device for d3d9/present", "mirick", MB_OK | MB_ICONERROR);
+        return;
+    }
+
+    status = MH_CreateHook(sPresentTarget, &hkPresent, reinterpret_cast<LPVOID*>(&oPresent));
+    if (status != MH_OK)
+    {
+        MessageBoxA(NULL, "Failed to create hook on function d3d9/present", "mirick", MB_OK | MB_ICONERROR);
+    }
+
+    status = MH_EnableHook(sPresentTarget);
+    if (status != MH_OK)
+    {
+        MessageBoxA(NULL, "Failed to enable hook on function d3d9/present", "mirick", MB_OK | MB_ICONERROR);
+    }
+}
+
+void Present::RemoveHook()
+{
+    MH_STATUS status;
+
+    if (sPresentTarget == nullptr)
+    {
+        return;
+    }
+
+    CharacterPreview::Shutdown();
+
+    if (imgui_initialized)
+    {
+        ImGui_ImplDX9_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+        imgui_initialized = false;
+    }
+
+    ProtectedOverlay::Shutdown();
+    protectedOverlayActive = false;
+
+    if (hGameWindow && oWndProc)
+    {
+        SetWindowLongPtrW(hGameWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(oWndProc));
+        oWndProc = nullptr;
+    }
+
+    status = MH_DisableHook(sPresentTarget);
+    if (status != MH_OK)
+    {
+        MessageBoxA(NULL, "Failed to disable hook on function d3d9/present", "mirick", MB_OK | MB_ICONERROR);
+    }
+
+    status = MH_RemoveHook(sPresentTarget);
+    if (status != MH_OK)
+    {
+        MessageBoxA(NULL, "Failed to remove hook on function d3d9/present", "mirick", MB_OK | MB_ICONERROR);
+    }
+}

@@ -1,0 +1,225 @@
+#include "Menu/Menu.hpp"
+
+#include "Game/Features.h"
+
+#include "Gfx/Fonts.hpp"
+
+#include <cmath>
+
+void Menu::DrawBinds()
+{
+    if (!g_cfg.showbinds)
+    {
+        return;
+    }
+
+    struct bind_ref_t
+    {
+        keybind_t* bind;
+        bool* value;
+        const char* ru;
+        const char* en;
+        bool vehicle;
+    };
+
+    static const bind_ref_t kBinds[] = {
+        { &g_cfg.godmode_bind, &g_cfg.godmode, "Годмод", "Godmode", false },
+        { &g_cfg.wh_bind, &g_cfg.wh, "Валлхак", "Wallhack", false },
+        { &g_cfg.airbreake_bind, &g_cfg.airbreake, "Аирбрейк", "Airbreak", false },
+        { &g_cfg.nightmode_bind, &g_cfg.nightmode, "Найтмод", "Nightmode", false },
+        { &g_cfg.customtime_bind, &g_cfg.customtime, "Своё время", "Custom time", false },
+        { &g_cfg.customcolor_bind, &g_cfg.customcolor, "Свет и вода", "Light & water", false },
+        { &g_cfg.skychange_bind, &g_cfg.skychange, "Небо", "Sky", false },
+        { &g_cfg.rapidfire_bind, &g_cfg.rapidfire, "Рапид", "Rapid fire", false },
+        { &g_cfg.removals_bind, &g_cfg.removals, "Чистка мира", "World removals", false },
+        { &g_cfg.infammo_bind, &g_cfg.infammo, "Бесконечные патроны", "Infinite ammo", false },
+        { &g_cfg.fullbright_bind, &g_cfg.fullbright, "Фулбрайт", "Fullbright", false },
+        { &g_cfg.aspect_bind, &g_cfg.aspect, "Аспект", "Aspect", false },
+        { &g_cfg.fastcross_bind, &g_cfg.fastcross, "Быстрый прицел", "Fast crosshair", false },
+        { &g_cfg.norecoil_bind, &g_cfg.norecoil, "Без отдачи", "No recoil", false },
+        { &g_cfg.nospread_bind, &g_cfg.nospread, "Без разброса", "No spread", false },
+        { &g_cfg.fov_bind, &g_cfg.fov, "Фов", "Fov", false },
+        { &g_cfg.freezetime_bind, &g_cfg.freezetime, "Заморозить время", "Freeze time", false },
+        { &g_cfg.fogchange_bind, &g_cfg.fogchange, "Туман", "Fog", false },
+        { &g_cfg.suncolor_bind, &g_cfg.suncolor, "Солнце", "Sun", false },
+        { &g_cfg.trigger_bind, &g_cfg.trigger, "Триггербот", "Triggerbot", false },
+        { &g_cfg.nofall_bind, &g_cfg.nofall, "Без урона от падения", "No fall damage", false },
+    };
+
+    static const int kBindCount = sizeof(kBinds) / sizeof(kBinds[0]);
+
+    CPed* pBindLocal = FindPlayerPed();
+    bool inVehicle = pBindLocal && pBindLocal->m_pVehicle != nullptr;
+
+    int vis[64];
+    int nvis = 0;
+
+    for (int i = 0; i < kBindCount && nvis < 64; i++)
+    {
+        if (kBinds[i].bind->key < 0)
+        {
+            continue;
+        }
+
+        if (kBinds[i].vehicle && !inVehicle)
+        {
+            continue;
+        }
+
+        bool on = kBinds[i].bind->mode == 1 ? ((GetAsyncKeyState(kBinds[i].bind->key) & 0x8000) != 0) : *kBinds[i].value;
+
+        if (on)
+        {
+            vis[nvis++] = i;
+        }
+    }
+
+    static float bind_alpha = 0.0f;
+    CreateAnimation(bind_alpha, g_cfg.menu_open || nvis > 0, 1.0f, AnimLerp);
+
+    if (bind_alpha <= 0.0f)
+    {
+        return;
+    }
+
+    const float s = GetScale();
+    const float row_h = 25.0f * s;
+    const float head_h = 32.0f * s;
+    const float rows_top = 40.0f * s;
+    const float pad_l = 16.0f * s;
+    const float pad_r = 8.0f * s;
+    const float gap = 10.0f * s;
+
+    ImGui::PushFont(g_fonts.main);
+
+    float max_name = 0.0f, max_mode = 0.0f;
+
+    for (int vi = 0; vi < nvis; vi++)
+    {
+        int i = vis[vi];
+        max_name = ImMax(max_name, ImGui::CalcTextSize(tr(kBinds[i].ru, kBinds[i].en)).x);
+        std::string m = kBinds[i].bind->mode == 1 ? tr("[ холд ]", "[ hold ]") : tr("[ тогл ]", "[ toggled ]");
+        max_mode = ImMax(max_mode, ImGui::CalcTextSize(m.c_str()).x);
+    }
+
+    const float content_w = ImMax(pad_l + max_name + gap + max_mode + pad_r, 150.0f * s);
+    const float win_w = content_w + 8.0f * s;
+
+    static float win_h_anim = 40.0f;
+    float win_h_target = rows_top + row_h * nvis + 6.0f * s;
+    float win_t = ImGui::GetIO().DeltaTime * 10.0f;
+
+    if (win_t > 1.0f)
+    {
+        win_t = 1.0f;
+    }
+
+    win_h_anim += (win_h_target - win_h_anim) * win_t;
+
+    static bool opened = true;
+    static bool pos_set = false;
+
+    if (!pos_set)
+    {
+        float y = g_cfg.binds_y < 0.0f ? ImGui::GetIO().DisplaySize.y * 0.5f : g_cfg.binds_y;
+        ImGui::SetNextWindowPos(ImVec2(g_cfg.binds_x, y));
+        pos_set = true;
+    }
+
+    ImGui::SetNextWindowSize(ImVec2(win_w, win_h_anim));
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::Begin("##binds_window", &opened, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoFocusOnAppearing);
+
+    ImDrawList* list = ImGui::GetWindowDrawList();
+    list->Flags |= ImDrawListFlags_AntiAliasedFill | ImDrawListFlags_AntiAliasedLines;
+
+    ImVec2 window_pos = ImGui::GetWindowPos() + ImVec2(4.0f * s, 1.0f * s);
+    float window_alpha = 255.0f * bind_alpha;
+    float win_h = win_h_anim;
+
+    static float save_cd = 0.0f;
+    ImVec2 cur_pos = ImGui::GetWindowPos();
+
+    if (fabsf(cur_pos.x - g_cfg.binds_x) > 0.5f || fabsf(cur_pos.y - g_cfg.binds_y) > 0.5f)
+    {
+        g_cfg.binds_x = cur_pos.x;
+        g_cfg.binds_y = cur_pos.y;
+        save_cd = 2.0f;
+    }
+
+    if (save_cd > 0.0f)
+    {
+        save_cd -= ImGui::GetIO().DeltaTime;
+
+        if (save_cd <= 0.0f)
+        {
+            SaveGeneralConfig();
+        }
+    }
+
+    const c_color accent = g_cfg.accent.to_color();
+    const ImVec2 window_max = window_pos + ImVec2(content_w, win_h);
+
+    // Match the main menu's opaque navy shell instead of the old grey blur.
+    list->AddRectFilled(window_pos + ImVec2(3.0f * s, 4.0f * s), window_max + ImVec2(3.0f * s, 4.0f * s), IM_COL32(0, 0, 0, (int)(90.0f * bind_alpha)), 6.0f * s);
+    list->AddRectFilled(window_pos, window_max, IM_COL32(7, 10, 17, (int)(255.0f * bind_alpha)), 6.0f * s);
+    list->AddRectFilled(window_pos, window_pos + ImVec2(content_w, head_h), IM_COL32(15, 21, 33, (int)window_alpha), 6.0f * s, ImDrawCornerFlags_Top);
+    list->AddRectFilledMultiColor(
+        window_pos + ImVec2(0.0f, head_h - 2.0f * s),
+        window_pos + ImVec2(content_w, head_h),
+        accent.new_alpha(0).as_imcolor(),
+        accent.new_alpha((int)(220.0f * bind_alpha)).as_imcolor(),
+        accent.new_alpha((int)(220.0f * bind_alpha)).as_imcolor(),
+        accent.new_alpha(0).as_imcolor());
+
+    const std::string title = tr("Кейбинды", "Keybinds");
+    ImVec2 title_size = ImGui::CalcTextSize(title.c_str());
+    float head_x = window_pos.x + (content_w - (16.0f * s + 6.0f * s + title_size.x)) * 0.5f;
+
+    if (kb_texture)
+    {
+        list->AddImage((void*)kb_texture, ImVec2(head_x, window_pos.y + 8.0f * s), ImVec2(head_x + 16.0f * s, window_pos.y + 24.0f * s), ImVec2(0, 0), ImVec2(1, 1), accent.new_alpha((int)window_alpha).as_imcolor());
+    }
+
+    list->AddText(ImVec2(head_x + 22.0f * s, window_pos.y + 8.0f * s), IM_COL32(242, 245, 255, (int)window_alpha), title.c_str());
+    list->AddRect(window_pos, window_max, IM_COL32(40, 49, 67, (int)(220.0f * bind_alpha)), 6.0f * s);
+
+    ImVec2 prev_pos = ImGui::GetCursorPos();
+    float max_pos = 0.0f;
+
+    for (int vi = 0; vi < nvis; vi++)
+    {
+        int i = vis[vi];
+        std::string name = tr(kBinds[i].ru, kBinds[i].en);
+        ImGui::SetCursorPos(ImVec2(pad_l, rows_top + max_pos));
+
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, bind_alpha));
+        ImGui::Text(name.c_str());
+        ImGui::PopStyleColor();
+
+        std::string bind_type = kBinds[i].bind->mode == 1 ? tr("[ холд ]", "[ hold ]") : tr("[ тогл ]", "[ toggled ]");
+        float textsize = ImGui::CalcTextSize(bind_type.c_str()).x;
+        float row_y = ImGui::GetItemRectMin().y;
+
+        list->AddRectFilled(
+            ImVec2(window_pos.x + 7.0f * s, row_y + 4.0f * s),
+            ImVec2(window_pos.x + 9.0f * s, row_y + 14.0f * s),
+            accent.new_alpha((int)(190.0f * bind_alpha)).as_imcolor(),
+            1.0f * s);
+        list->AddText(
+            ImVec2(window_pos.x + content_w - pad_r - textsize, row_y),
+            accent.new_alpha((int)(205.0f * bind_alpha)).as_imcolor(),
+            bind_type.c_str());
+
+        max_pos += row_h;
+    }
+
+    ImGui::SetCursorPos(prev_pos);
+
+    list->Flags &= ~(ImDrawListFlags_AntiAliasedFill | ImDrawListFlags_AntiAliasedLines);
+
+    ImGui::End(false);
+    ImGui::PopStyleColor();
+    ImGui::PopFont();
+}
