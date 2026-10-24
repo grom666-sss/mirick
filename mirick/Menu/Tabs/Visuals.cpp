@@ -2,6 +2,13 @@
 
 #include "Game/Features.h"
 
+#include "CPools.h"
+#include "ePedType.h"
+
+#include <algorithm>
+#include <cstdio>
+#include <vector>
+
 void Menu::DrawVisuals()
 {
         static int sub2 = 0;
@@ -34,6 +41,78 @@ void Menu::DrawVisuals()
                 widget_alpha_mul = prev_mul;
             }
             GroupEnd();
+
+            GroupBegin(tr("Игроки онлайн", "Online players"));
+            if (Checkbox(tr("Показывать список", "Show player list"), &g_cfg.show_player_list))
+            {
+                SaveGeneralConfig();
+            }
+            if (g_cfg.show_player_list)
+            {
+                struct player_row_t
+                {
+                    int pool_slot;
+                    float distance;
+                    float health;
+                };
+
+                std::vector<player_row_t> players;
+                CPed* local = FindPlayerPed();
+                if (local && CPools::ms_pPedPool)
+                {
+                    const CVector local_pos = local->GetPosition();
+                    for (int slot = 0; slot < CPools::ms_pPedPool->m_nSize; ++slot)
+                    {
+                        CPed* ped = CPools::ms_pPedPool->GetAt(slot);
+                        if (!ped || ped == local || ped->m_fHealth <= 0.0f)
+                        {
+                            continue;
+                        }
+
+                        // GTA exposes no Next RP nickname/server-ID API here.
+                        // Restrict the list to peds explicitly marked as network
+                        // players and label them by the local pool slot only.
+                        if (ped->m_nPedType < PED_TYPE_PLAYER2
+                            || ped->m_nPedType > PED_TYPE_PLAYER_UNUSED)
+                        {
+                            continue;
+                        }
+
+                        const CVector pos = ped->GetPosition();
+                        const float distance = VecLength(CVector(
+                            pos.x - local_pos.x, pos.y - local_pos.y, pos.z - local_pos.z));
+                        players.push_back({ slot, distance, ped->m_fHealth });
+                    }
+                }
+
+                std::sort(players.begin(), players.end(), [](const player_row_t& a, const player_row_t& b)
+                {
+                    return a.distance < b.distance;
+                });
+
+                const float list_height = 138.0f * GetScale();
+                ImGui::BeginChild("##online_player_list", ImVec2(256.0f * GetScale(), list_height), true,
+                    ImGuiWindowFlags_AlwaysVerticalScrollbar);
+                if (players.empty())
+                {
+                    ImGui::TextDisabled("%s", tr("Сетевые игроки не обнаружены", "No network players detected"));
+                }
+                else
+                {
+                    for (const player_row_t& player : players)
+                    {
+                        char label[96]{};
+                        std::snprintf(label, sizeof(label),
+                            tr("Игрок (слот %d)  %.1f м  HP %.0f", "Player (slot %d)  %.1f m  HP %.0f"),
+                            player.pool_slot, player.distance, player.health);
+                        ImGui::TextUnformatted(label);
+                    }
+                }
+                ImGui::EndChild();
+                ImGui::TextDisabled("%s", tr("Ники и server ID недоступны", "Names and server IDs are unavailable"));
+            }
+            GroupEnd();
+
             ImGui::NextColumn();
             if (g_cfg.wh || wh_fade > 0.02f)
             {

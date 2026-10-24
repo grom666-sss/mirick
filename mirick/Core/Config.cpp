@@ -205,6 +205,7 @@ bool config_t::Save(const std::string& name)
     WriteInt(body, "language", language);
     WriteBool(body, "showbinds", showbinds);
     WriteBool(body, "show_character_model", show_character_model);
+    WriteBool(body, "show_player_list", show_player_list);
     WriteBool(body, "antiobs", antiobs);
     WriteFloat(body, "binds_x", binds_x);
     WriteFloat(body, "binds_y", binds_y);
@@ -483,6 +484,7 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "language") { ReadInt(value, language); }
     else if (key == "showbinds") { ReadBool(value, showbinds); }
     else if (key == "show_character_model") { ReadBool(value, show_character_model); }
+    else if (key == "show_player_list") { ReadBool(value, show_player_list); }
     else if (key == "antiobs") { ReadBool(value, antiobs); }
     else if (key == "binds_x") { ReadFloat(value, binds_x); }
     else if (key == "binds_y") { ReadFloat(value, binds_y); }
