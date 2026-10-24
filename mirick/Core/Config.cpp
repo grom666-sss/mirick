@@ -225,6 +225,7 @@ bool config_t::Save(const std::string& name)
     WriteBool(body, "airbreake", airbreake);
     WriteInt(body, "airbreake_key", airbreake_bind.key);
     WriteInt(body, "airbreake_mode", airbreake_bind.mode);
+    WriteFloat(body, "airbreake_speed", airbreake_speed);
     WriteBool(body, "nightmode", nightmode);
     WriteInt(body, "nightmode_key", nightmode_bind.key);
     WriteInt(body, "nightmode_mode", nightmode_bind.mode);
@@ -372,6 +373,7 @@ bool config_t::Load(const std::string& name)
         else if (key == "airbreake") { ReadBool(value, airbreake); }
         else if (key == "airbreake_key") { ReadInt(value, airbreake_bind.key); }
         else if (key == "airbreake_mode") { ReadInt(value, airbreake_bind.mode); }
+        else if (key == "airbreake_speed") { ReadFloat(value, airbreake_speed); airbreake_speed = std::clamp(airbreake_speed, 0.05f, 2.0f); }
         else if (key == "nightmode") { ReadBool(value, nightmode); }
         else if (key == "nightmode_key") { ReadInt(value, nightmode_bind.key); }
         else if (key == "nightmode_mode") { ReadInt(value, nightmode_bind.mode); }

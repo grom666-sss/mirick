@@ -11,6 +11,15 @@ void Menu::DrawMisc()
 
         GroupBegin(tr("Игрок", "Player"));
         BindableCheckbox("airbreak", tr("Аирбрейк", "Airbreak"), &g_cfg.airbreake, &g_cfg.airbreake_bind);
+        if (g_cfg.airbreake)
+        {
+            if (SliderFloat(tr("Скорость полёта", "Flight speed"), &g_cfg.airbreake_speed, 0.05f, 2.0f, "%.2f"))
+            {
+                SaveGeneralConfig();
+            }
+            ImGui::TextDisabled("%s", tr("W/S вперёд-назад, A/D влево-вправо", "W/S forward-back, A/D left-right"));
+            ImGui::TextDisabled("%s", tr("SPACE вверх, SHIFT вниз", "SPACE up, SHIFT down"));
+        }
         GroupEnd();
 
         ImGui::NextColumn();

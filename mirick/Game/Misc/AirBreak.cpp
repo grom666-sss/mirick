@@ -32,7 +32,6 @@ void AirBreak::Run()
         static float coordsXforCar = 0.0f;
         static float coordsYforCar = 0.0f;
         static float coordsZforCar = 0.0f;
-        static float airSpeed = 0.05f;
         static bool airBrakeWasEnabled = false;
 
         if (g_cfg.airbreake && !airBrakeWasEnabled)
@@ -58,31 +57,38 @@ void AirBreak::Run()
         airBrake = g_cfg.airbreake;
         airBrakeWasEnabled = g_cfg.airbreake;
 
-        if (airBrake && g_cfg.airbreake && (GetAsyncKeyState('D') & 1))
-        {
-            airSpeed = std::min(airSpeed + 0.02f, 2.0f);
-        }
-
-        if (airBrake && g_cfg.airbreake && (GetAsyncKeyState('A') & 1))
-        {
-            airSpeed = std::max(airSpeed - 0.02f, 0.05f);
-        }
-
         if (airBrake && g_cfg.airbreake)
         {
-            float angle = *(float*)(0xB6F258);
+            const float angle = *(float*)(0xB6F258);
+            const float airSpeed = std::clamp(g_cfg.airbreake_speed, 0.05f, 2.0f);
+            const float forwardX = -sinf(-(angle - 1.5708f));
+            const float forwardY = -cosf(-(angle - 1.5708f));
+            const float rightX = forwardY;
+            const float rightY = -forwardX;
             float airBrkX = 0.0f, airBrkY = 0.0f, airBrkZ = 0.0f;
 
-            if (GetAsyncKeyState(0x57))
+            if (GetAsyncKeyState('W') & 0x8000)
             {
-                airBrkX = airBrkX - airSpeed * sin(-(angle - 1.5708));
-                airBrkY = airBrkY - airSpeed * cos(-(angle - 1.5708));
+                airBrkX += forwardX * airSpeed;
+                airBrkY += forwardY * airSpeed;
             }
 
-            if (GetAsyncKeyState(0x53))
+            if (GetAsyncKeyState('S') & 0x8000)
             {
-                airBrkX = airBrkX + airSpeed * sin(-(angle - 1.5708));
-                airBrkY = airBrkY + airSpeed * cos(-(angle - 1.5708));
+                airBrkX -= forwardX * airSpeed;
+                airBrkY -= forwardY * airSpeed;
+            }
+
+            if (GetAsyncKeyState('D') & 0x8000)
+            {
+                airBrkX += rightX * airSpeed;
+                airBrkY += rightY * airSpeed;
+            }
+
+            if (GetAsyncKeyState('A') & 0x8000)
+            {
+                airBrkX -= rightX * airSpeed;
+                airBrkY -= rightY * airSpeed;
             }
 
             if (GetAsyncKeyState(VK_SPACE) & 0x8000)

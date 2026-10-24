@@ -36,6 +36,7 @@ struct config_t
     float whDistance = 100.0f;
     bool airbreake = false;
     keybind_t airbreake_bind{};
+    float airbreake_speed = 0.25f;
     bool nightmode = false;
     keybind_t nightmode_bind{};
     bool customtime = false;
