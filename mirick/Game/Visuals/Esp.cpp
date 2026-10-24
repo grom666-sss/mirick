@@ -210,7 +210,7 @@ void Esp::Update()
         }
         if (showArmor)
         {
-            const int armor = static_cast<int>(std::max(ped->m_fArmour, 0.0f) + 0.5f);
+            const int armor = static_cast<int>(std::clamp(ped->m_fArmour, 0.0f, 450.0f) + 0.5f);
             snprintf(armorText, sizeof(armorText), "ARMOR %d", armor);
             armorTextSize = ImGui::CalcTextSize(armorText);
             vitalsHeight = std::max(vitalsHeight, armorTextSize.y + vitalsPadY * 2.0f);
@@ -223,14 +223,8 @@ void Esp::Update()
             draw->AddRect(min + ImVec2(1.0f, 1.0f), max - ImVec2(1.0f, 1.0f), backCol, 0.0f, 0, 1.0f);
         }
 
-        // Stack labels in a stable order: localized player label, HP/armor,
-        // then weapon and current magazine. Next RP does not expose nicknames
-        // through the available CPed API, so the local network-pool slot is
-        // shown instead of inventing a name.
-        char playerLabel[40]{};
-        snprintf(playerLabel, sizeof(playerLabel), "ИГРОК #%d", i);
-        const ImVec2 playerLabelSize = ImGui::CalcTextSize(playerLabel);
-
+        // Stack only values available from CPed. Do not fabricate a nickname:
+        // Next RP does not expose its player-name mapping through this API.
         const bool showWeapon = (g_cfg.wh_flags & WH_WEAPON) != 0;
         const char* weaponName = nullptr;
         char ammoLabel[40]{};
@@ -259,14 +253,14 @@ void Esp::Update()
         }
 
         const float labelGap = 3.0f * s;
-        float labelsHeight = playerLabelSize.y;
-        if (showVitals)
-        {
-            labelsHeight += labelGap + vitalsHeight;
-        }
+        float labelsHeight = showVitals ? vitalsHeight : 0.0f;
         if (weaponName)
         {
-            labelsHeight += labelGap + weaponNameSize.y;
+            if (labelsHeight > 0.0f)
+            {
+                labelsHeight += labelGap;
+            }
+            labelsHeight += weaponNameSize.y;
             if (showAmmo)
             {
                 labelsHeight += 2.0f * s + ammoSize.y;
@@ -274,18 +268,8 @@ void Esp::Update()
         }
 
         float labelY = min.y - labelsHeight - 5.0f * s;
-        const ImVec2 playerLabelPos(boxCenterX - playerLabelSize.x * 0.5f, labelY);
-        draw->AddText(playerLabelPos + ImVec2(1.0f, 1.0f), IM_COL32(0, 0, 0, 220), playerLabel);
-        draw->AddText(playerLabelPos, IM_COL32(242, 245, 255, 255), playerLabel);
-        draw->AddLine(
-            ImVec2(boxCenterX - playerLabelSize.x * 0.35f, labelY + playerLabelSize.y + 1.0f * s),
-            ImVec2(boxCenterX + playerLabelSize.x * 0.35f, labelY + playerLabelSize.y + 1.0f * s),
-            boxCol, 1.0f * s);
-        labelY += playerLabelSize.y;
-
         if (showVitals)
         {
-            labelY += labelGap;
             const float separatorWidth = showHealth && showArmor ? separatorSize.x : 0.0f;
             const float textWidth = hpTextSize.x + separatorWidth + armorTextSize.x;
             float textX = boxCenterX - textWidth * 0.5f;
