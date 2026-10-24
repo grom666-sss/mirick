@@ -46,7 +46,17 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build mirick plugin
-        run: msbuild mirick.sln /t:mirick /m /nologo /p:Configuration=Release /p:Platform=Win32
+        shell: pwsh
+        run: |
+          msbuild mirick.sln /t:mirick /m /nologo /p:Configuration=Release /p:Platform=Win32 2>&1 | Tee-Object -FilePath msbuild.log
+          $buildExit = $LASTEXITCODE
+          if ($buildExit -ne 0) {
+            Get-Content msbuild.log | Select-String -Pattern ': error [A-Z]+[0-9]+:' | ForEach-Object {
+              $message = $_.Line.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error::$message"
+            }
+            exit $buildExit
+          }
 
       - name: Upload plugin
         uses: actions/upload-artifact@v4
