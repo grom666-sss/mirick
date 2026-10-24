@@ -90,7 +90,15 @@ void AirBreak::Run()
                 airBrkZ += airSpeed;
             }
 
-            if (GetAsyncKeyState(VK_SHIFT) & 0x8000)
+            // If Shift is also the AirBreak activation bind, reserve this key
+            // for toggling/holding the feature. Otherwise the same press moves
+            // the player down before the bind handler can disable AirBreak.
+            const int activationKey = g_cfg.airbreake_bind.key;
+            const bool activationUsesShift = activationKey == VK_SHIFT
+                || activationKey == VK_LSHIFT || activationKey == VK_RSHIFT;
+            const bool activationBindDown = activationUsesShift
+                && (GetAsyncKeyState(activationKey) & 0x8000) != 0;
+            if ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0 && !activationBindDown)
             {
                 airBrkZ -= airSpeed;
             }

@@ -8,29 +8,32 @@ namespace
 {
     void ProcessBind(keybind_t& bind, bool& value)
     {
-    if (bind.key < 0 || bind.manual)
-    {
-        return;
+        if (bind.key < 0)
+        {
+            return;
+        }
+
+        const bool down = (GetAsyncKeyState(bind.key) & 0x8000) != 0;
+
+        if (bind.mode == 1)
+        {
+            value = down;
+            return;
+        }
+
+        // Track each bind separately. Two features are allowed to use the same
+        // key without the first processed bind consuming the edge for all the
+        // others.
+        static std::map<keybind_t*, bool> previousState;
+        const bool wasDown = previousState[&bind];
+
+        if (down && !wasDown)
+        {
+            value = !value;
+        }
+
+        previousState[&bind] = down;
     }
-
-    bool down = (GetAsyncKeyState(bind.key) & 0x8000) != 0;
-
-    if (bind.mode == 1)
-    {
-        value = down;
-        return;
-    }
-
-    static std::map<int, bool> prev;
-    bool was = prev[bind.key];
-
-    if (down && !was)
-    {
-        value = !value;
-    }
-
-    prev[bind.key] = down;
-}
 }
 
 void KeyBinds::Update()

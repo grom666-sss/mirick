@@ -90,11 +90,6 @@ bool Menu::BindableCheckbox(const char* id, const char* label, bool* v, keybind_
 {
     bool pressed = Checkbox(label, v);
 
-    if (pressed && bind != nullptr)
-    {
-        bind->manual = *v;
-    }
-
     if (bind != nullptr)
     {
         if (IsItemHovered() && IsMouseClicked(1))
