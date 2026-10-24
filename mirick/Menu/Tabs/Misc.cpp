@@ -16,6 +16,17 @@ void Menu::DrawMisc()
         ImGui::NextColumn();
         GroupBegin(tr("Защита", "Protection"));
         BindableCheckbox("godmode", tr("Годмод", "Godmode"), &g_cfg.godmode, &g_cfg.godmode_bind);
+        if (Checkbox(tr("Случайный годмод", "Random godmode"), &g_cfg.godmode_random))
+        {
+            SaveGeneralConfig();
+        }
+        if (g_cfg.godmode_random)
+        {
+            if (SliderInt(tr("Шанс защиты", "Protection chance"), &g_cfg.godmode_chance, 0, 100, "%d%%"))
+            {
+                SaveGeneralConfig();
+            }
+        }
         BindableCheckbox("nofall", tr("Без урона от падения", "No fall damage"), &g_cfg.nofall, &g_cfg.nofall_bind);
         GroupEnd();
 

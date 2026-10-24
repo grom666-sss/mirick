@@ -349,9 +349,18 @@ namespace
         std::vector<unsigned char> next(static_cast<size_t>(kPreviewWidth) * kPreviewHeight * 4);
         for (int y = 0; y < kPreviewHeight; ++y)
         {
-            std::memcpy(next.data() + static_cast<size_t>(y) * kPreviewWidth * 4,
+            unsigned char* destination = next.data() + static_cast<size_t>(y) * kPreviewWidth * 4;
+            std::memcpy(destination,
                 pixels + static_cast<size_t>(y) * colorRaster->stride,
                 static_cast<size_t>(kPreviewWidth) * 4);
+
+            // Camera rasters on Next RP are copied back with an undefined/zero
+            // alpha channel even though RGB contains the rendered ped. ImGui
+            // multiplies by that alpha and previously made the model invisible.
+            for (int x = 0; x < kPreviewWidth; ++x)
+            {
+                destination[x * 4 + 3] = 255;
+            }
         }
         RwRasterUnlock(colorRaster);
 
@@ -375,7 +384,7 @@ namespace
 
         PositionClump();
         CVisibilityPlugins::SetRenderWareCamera(camera);
-        RwRGBA clear{ 7, 10, 17, 0 };
+        RwRGBA clear{ 7, 10, 17, 255 };
         const bool began = RwCameraClear(camera, &clear, rwCAMERACLEARIMAGE | rwCAMERACLEARZ)
             && RwCameraBeginUpdate(camera);
         bool captured = false;

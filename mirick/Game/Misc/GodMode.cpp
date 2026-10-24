@@ -2,53 +2,60 @@
 
 #include "Game/Misc/GodMode.hpp"
 
+#include <algorithm>
+#include <random>
+
+namespace
+{
+    template <typename T>
+    void SetProofFlags(T* entity, bool enabled)
+    {
+        if (!entity)
+        {
+            return;
+        }
+
+        entity->bBulletProof = enabled;
+        entity->bFireProof = enabled;
+        entity->bCollisionProof = enabled;
+        entity->bMeleeProof = enabled;
+        entity->bExplosionProof = enabled;
+        entity->bInvulnerable = enabled;
+    }
+}
+
 void GodMode::Update()
 {
     CPed* ped = FindPlayerPed(-1);
-
     if (!ped)
     {
         return;
     }
 
     CVehicle* veh = FindPlayerVehicle(0, false);
+    static bool protectedNow = true;
+    static DWORD nextRoll = 0;
+    static std::mt19937 random{ static_cast<unsigned int>(GetTickCount()) };
 
-    if (!g_cfg.godmode)
+    bool enableProtection = g_cfg.godmode;
+    if (enableProtection && g_cfg.godmode_random)
     {
-        ped->bBulletProof = false;
-        ped->bFireProof = false;
-        ped->bCollisionProof = false;
-        ped->bMeleeProof = false;
-        ped->bExplosionProof = false;
-        ped->bInvulnerable = false;
-
-        if (veh)
+        const DWORD now = GetTickCount();
+        if (now >= nextRoll)
         {
-            veh->bBulletProof = false;
-            veh->bFireProof = false;
-            veh->bCollisionProof = false;
-            veh->bMeleeProof = false;
-            veh->bExplosionProof = false;
-            veh->bInvulnerable = false;
+            const int chance = std::clamp(g_cfg.godmode_chance, 0, 100);
+            protectedNow = chance >= 100
+                || (chance > 0 && std::uniform_int_distribution<int>(1, 100)(random) <= chance);
+            nextRoll = now + 250;
         }
-
-        return;
+        enableProtection = protectedNow;
     }
-
-    ped->bBulletProof = true;
-    ped->bFireProof = true;
-    ped->bCollisionProof = true;
-    ped->bMeleeProof = true;
-    ped->bExplosionProof = true;
-    ped->bInvulnerable = true;
-
-    if (veh)
+    else
     {
-        veh->bBulletProof = true;
-        veh->bFireProof = true;
-        veh->bCollisionProof = true;
-        veh->bMeleeProof = true;
-        veh->bExplosionProof = true;
-        veh->bInvulnerable = true;
+        protectedNow = true;
+        nextRoll = 0;
     }
+
+    SetProofFlags(ped, enableProtection);
+    SetProofFlags(veh, enableProtection);
 }

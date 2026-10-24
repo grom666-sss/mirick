@@ -223,58 +223,73 @@ void Esp::Update()
             draw->AddRect(min + ImVec2(1.0f, 1.0f), max - ImVec2(1.0f, 1.0f), backCol, 0.0f, 0, 1.0f);
         }
 
-        if (g_cfg.wh_flags & WH_WEAPON)
+        // Stack labels in a stable order: localized player label, HP/armor,
+        // then weapon and current magazine. Next RP does not expose nicknames
+        // through the available CPed API, so the local network-pool slot is
+        // shown instead of inventing a name.
+        char playerLabel[40]{};
+        snprintf(playerLabel, sizeof(playerLabel), "ИГРОК #%d", i);
+        const ImVec2 playerLabelSize = ImGui::CalcTextSize(playerLabel);
+
+        const bool showWeapon = (g_cfg.wh_flags & WH_WEAPON) != 0;
+        const char* weaponName = nullptr;
+        char ammoLabel[40]{};
+        ImVec2 weaponNameSize{};
+        ImVec2 ammoSize{};
+        bool showAmmo = false;
+        if (showWeapon)
         {
             if (CWeapon* weapon = ped->GetWeapon())
             {
                 const eWeaponType type = weapon->m_eWeaponType;
-                const char* weaponName = WeaponName(type);
-                char ammoText[16]{};
-                bool showAmmo = WeaponUsesAmmo(type);
-
+                weaponName = WeaponName(type);
+                showAmmo = WeaponUsesAmmo(type);
                 if (showAmmo)
                 {
                     unsigned int clip = weapon->m_nAmmoInClip;
-                    // Match GTA's HUD: the internal value includes the round
-                    // currently prepared for the next firearm shot.
                     if (type >= WEAPONTYPE_PISTOL && type <= WEAPONTYPE_MINIGUN && clip > 0)
                     {
                         --clip;
                     }
-                    snprintf(ammoText, sizeof(ammoText), "%u", clip);
+                    snprintf(ammoLabel, sizeof(ammoLabel), "МАГАЗИН  %u", clip);
+                    ammoSize = ImGui::CalcTextSize(ammoLabel);
                 }
-
-                char ammoLabel[40]{};
-                if (showAmmo)
-                {
-                    snprintf(ammoLabel, sizeof(ammoLabel), "МАГАЗИН  %s", ammoText);
-                }
-
-                const ImVec2 nameSize = ImGui::CalcTextSize(weaponName);
-                const ImVec2 ammoSize = showAmmo ? ImGui::CalcTextSize(ammoLabel) : ImVec2(0.0f, 0.0f);
-                const float rowGap = showAmmo ? 3.0f * s : 0.0f;
-                const float blockHeight = nameSize.y + (showAmmo ? ammoSize.y + rowGap : 0.0f);
-                const float vitalsStack = showVitals ? vitalsHeight + 4.0f * s : 0.0f;
-                const float blockTop = min.y - blockHeight - 5.0f * s - vitalsStack;
-                const ImVec2 namePos(boxCenterX - nameSize.x * 0.5f, blockTop);
-                draw->AddText(namePos, IM_COL32(242, 245, 251, 255), weaponName);
-
-                if (showAmmo)
-                {
-                    const ImVec2 ammoPos(
-                        boxCenterX - ammoSize.x * 0.5f,
-                        namePos.y + nameSize.y + rowGap);
-                    draw->AddText(ammoPos, weaponCol, ammoLabel);
-                }
+                weaponNameSize = ImGui::CalcTextSize(weaponName);
             }
         }
 
+        const float labelGap = 3.0f * s;
+        float labelsHeight = playerLabelSize.y;
         if (showVitals)
         {
+            labelsHeight += labelGap + vitalsHeight;
+        }
+        if (weaponName)
+        {
+            labelsHeight += labelGap + weaponNameSize.y;
+            if (showAmmo)
+            {
+                labelsHeight += 2.0f * s + ammoSize.y;
+            }
+        }
+
+        float labelY = min.y - labelsHeight - 5.0f * s;
+        const ImVec2 playerLabelPos(boxCenterX - playerLabelSize.x * 0.5f, labelY);
+        draw->AddText(playerLabelPos + ImVec2(1.0f, 1.0f), IM_COL32(0, 0, 0, 220), playerLabel);
+        draw->AddText(playerLabelPos, IM_COL32(242, 245, 255, 255), playerLabel);
+        draw->AddLine(
+            ImVec2(boxCenterX - playerLabelSize.x * 0.35f, labelY + playerLabelSize.y + 1.0f * s),
+            ImVec2(boxCenterX + playerLabelSize.x * 0.35f, labelY + playerLabelSize.y + 1.0f * s),
+            boxCol, 1.0f * s);
+        labelY += playerLabelSize.y;
+
+        if (showVitals)
+        {
+            labelY += labelGap;
             const float separatorWidth = showHealth && showArmor ? separatorSize.x : 0.0f;
             const float textWidth = hpTextSize.x + separatorWidth + armorTextSize.x;
             float textX = boxCenterX - textWidth * 0.5f;
-            const float textY = min.y - vitalsHeight - 3.0f * s + vitalsPadY;
+            const float textY = labelY + vitalsPadY;
             if (showHealth)
             {
                 draw->AddText(ImVec2(textX, textY), hpCol, hpText);
@@ -288,6 +303,23 @@ void Esp::Update()
             if (showArmor)
             {
                 draw->AddText(ImVec2(textX, textY), armorCol, armorText);
+            }
+            labelY += vitalsHeight;
+        }
+
+        if (weaponName)
+        {
+            labelY += labelGap;
+            const ImVec2 weaponPos(boxCenterX - weaponNameSize.x * 0.5f, labelY);
+            draw->AddText(weaponPos + ImVec2(1.0f, 1.0f), IM_COL32(0, 0, 0, 210), weaponName);
+            draw->AddText(weaponPos, IM_COL32(242, 245, 251, 255), weaponName);
+            labelY += weaponNameSize.y;
+            if (showAmmo)
+            {
+                labelY += 2.0f * s;
+                const ImVec2 ammoPos(boxCenterX - ammoSize.x * 0.5f, labelY);
+                draw->AddText(ammoPos + ImVec2(1.0f, 1.0f), IM_COL32(0, 0, 0, 210), ammoLabel);
+                draw->AddText(ammoPos, weaponCol, ammoLabel);
             }
         }
 

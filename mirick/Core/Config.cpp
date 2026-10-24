@@ -213,6 +213,8 @@ bool config_t::Save(const std::string& name)
     WriteBool(body, "godmode", godmode);
     WriteInt(body, "godmode_key", godmode_bind.key);
     WriteInt(body, "godmode_mode", godmode_bind.mode);
+    WriteBool(body, "godmode_random", godmode_random);
+    WriteInt(body, "godmode_chance", godmode_chance);
     WriteBool(body, "nofall", nofall);
     WriteInt(body, "nofall_key", nofall_bind.key);
     WriteInt(body, "nofall_mode", nofall_bind.mode);
@@ -358,6 +360,8 @@ bool config_t::Load(const std::string& name)
         else if (key == "godmode") { ReadBool(value, godmode); }
         else if (key == "godmode_key") { ReadInt(value, godmode_bind.key); }
         else if (key == "godmode_mode") { ReadInt(value, godmode_bind.mode); }
+        else if (key == "godmode_random") { ReadBool(value, godmode_random); }
+        else if (key == "godmode_chance") { ReadInt(value, godmode_chance); godmode_chance = std::clamp(godmode_chance, 0, 100); }
         else if (key == "nofall") { ReadBool(value, nofall); }
         else if (key == "nofall_key") { ReadInt(value, nofall_bind.key); }
         else if (key == "nofall_mode") { ReadInt(value, nofall_bind.mode); }

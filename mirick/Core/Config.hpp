@@ -27,6 +27,8 @@ struct config_t
     int player_skin_id = 39;
     bool godmode = false;
     keybind_t godmode_bind{};
+    bool godmode_random = false;
+    int godmode_chance = 100;
     bool nofall = false;
     keybind_t nofall_bind{};
     bool wh = false;
