@@ -108,7 +108,7 @@ void Menu::DrawVisuals()
                         ImGui::TextUnformatted(label);
                     }
                 }
-                ImGui::EndChild();
+                ImGui::EndChild(false);
                 ImGui::TextDisabled("%s", tr("Ники и server ID недоступны", "Names and server IDs are unavailable"));
             }
             GroupEnd();
