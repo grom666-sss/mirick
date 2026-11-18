@@ -101,12 +101,13 @@ bool Menu::SliderScalar(const char* label, ImGuiDataType data_type, void* data, 
         }
     }
 
-    float back_alpha = (20 + (30 * mod_frame.hovered_alpha)) * alpha;
-    c_color back_clr = c_color(217, 217, 217).increase((int)(38 * mod_frame.hovered_alpha)).new_alpha((int)back_alpha);
-    draw_list->AddRectFilled(frame_bb.Min, frame_bb.Max, back_clr.as_imcolor(), 4.0f * s);
+    const int hover_lift = (int)(10.0f * mod_frame.hovered_alpha);
+    c_color back_clr(112 + hover_lift, 88 + hover_lift, 100 + hover_lift, (int)(112.0f * alpha));
+    draw_list->AddRectFilled(frame_bb.Min, frame_bb.Max, back_clr.as_imcolor(), 7.0f * s);
+    draw_list->AddRect(frame_bb.Min, frame_bb.Max, c_color(220, 197, 208, (int)(70.0f * alpha)).as_imcolor(), 7.0f * s);
 
     ImRect render_bounds = ImRect(slider_bounds.Min + ImVec2(0.0f, 9.0f * s), slider_bounds.Max - ImVec2(0.0f, 9.0f * s));
-    draw_list->AddRectFilled(render_bounds.Min, render_bounds.Max, c_color(0, 0, 0, (int)(80 * alpha)).as_imcolor(), 3.0f * s);
+    draw_list->AddRectFilled(render_bounds.Min, render_bounds.Max, c_color(78, 61, 70, (int)(185.0f * alpha)).as_imcolor(), 3.0f * s);
 
     ImRect grab_bb;
     bool value_changed = SliderBehavior(slider_bounds, id, data_type, data, min, max, format, power, ImGuiSliderFlags_IgnoreGrabCalc, &grab_bb);
@@ -133,8 +134,8 @@ bool Menu::SliderScalar(const char* label, ImGuiDataType data_type, void* data, 
         float circle_nomove = (render_grab_bb.Min.x + ((render_grab_bb.Max.x - render_grab_bb.Min.x) / 2.0f)) - 20.0f * s;
         float circle_offset = std::clamp(circle_nomove + bb_movepart, render_bounds.Min.x, render_grab_bb.Max.x);
         ImVec2 circle_pos = ImVec2(circle_offset, render_grab_bb.Min.y + 1.0f * s);
-        draw_list->AddCircleFilled(circle_pos, circle_radius, c_color(75, 75, 75, (int)(255 * alpha)).as_imcolor());
-        draw_list->AddCircleFilled(circle_pos, circle_radius - 3.0f * s, c_color(255, 255, 255, (int)(255 * alpha)).as_imcolor());
+        draw_list->AddCircleFilled(circle_pos, circle_radius, clr.new_alpha((int)(255.0f * alpha)).as_imcolor());
+        draw_list->AddCircleFilled(circle_pos, circle_radius - 3.0f * s, c_color(255, 246, 250, (int)(255.0f * alpha)).as_imcolor());
     }
 
     static std::map<uint32_t, int> input_values;

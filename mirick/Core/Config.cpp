@@ -200,7 +200,7 @@ bool config_t::Save(const std::string& name)
 
     std::ostringstream body;
 
-    WriteInt(body, "ui_design_version", 1);
+    WriteInt(body, "ui_design_version", 2);
     WriteColor(body, "accent", accent);
     WriteInt(body, "ui_scale", ui_scale);
     WriteInt(body, "language", language);
@@ -402,11 +402,11 @@ bool config_t::Load(const std::string& name)
         else { LoadTail(key, value); }
     }
 
-    // One-time migration from the previous purple layout. Once the redesigned
-    // config is saved, user-selected accent colors are preserved normally.
-    if (loadedDesignVersion < 1)
+    // One-time migration to the imported Grape-style rose palette. Once the
+    // redesigned config is saved, user-selected accent colors are preserved.
+    if (loadedDesignVersion < 2)
     {
-        accent = c_float_color(52, 148, 255);
+        accent = c_float_color(234, 179, 200);
     }
 
     if (ui_scale < 50)

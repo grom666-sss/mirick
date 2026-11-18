@@ -207,9 +207,10 @@ bool Menu::BeginCombo(const char* label, const char* preview_value, ImGuiComboFl
     item_animation_t& mod = item_animations[Hash_Label(label)];
     CreateAnimation(mod.hovered_alpha, hovered, 1.0f, AnimLerp);
 
-    float back_alpha = (20 + (30 * mod.hovered_alpha)) * alpha;
-    c_color back_clr = c_color(217, 217, 217).increase((int)(38 * mod.hovered_alpha)).new_alpha((int)back_alpha);
-    draw_list->AddRectFilled(frame_bb.Min, frame_bb.Max, back_clr.u32(), 4.0f * s);
+    const int hover_lift = (int)(10.0f * mod.hovered_alpha);
+    c_color back_clr(112 + hover_lift, 88 + hover_lift, 100 + hover_lift, (int)(112.0f * alpha));
+    draw_list->AddRectFilled(frame_bb.Min, frame_bb.Max, back_clr.u32(), 7.0f * s);
+    draw_list->AddRect(frame_bb.Min, frame_bb.Max, c_color(220, 197, 208, (int)(70.0f * alpha)).u32(), 7.0f * s);
 
     if (label_size.x > 0)
     {
@@ -247,7 +248,7 @@ bool Menu::BeginCombo(const char* label, const char* preview_value, ImGuiComboFl
 
     if (popup_open)
     {
-        draw_list->AddRectFilled(combo_bg_min, combo_bg_max, c_color(5, 5, 5, (int)(alpha * mod.alpha)).as_imcolor(), 4.0f * s, ImDrawCornerFlags_Top);
+        draw_list->AddRectFilled(combo_bg_min, combo_bg_max, c_color(76, 55, 66, (int)(245.0f * alpha * mod.alpha)).as_imcolor(), 7.0f * s, ImDrawCornerFlags_Top);
     }
 
     if (popup_open)

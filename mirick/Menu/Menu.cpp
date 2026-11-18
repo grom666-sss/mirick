@@ -351,60 +351,80 @@ void Menu::DrawBackground()
     const ImVec2 window_max = window_pos + ImVec2(720.0f * s, 520.0f * s);
     const ImVec2 header_size(720.0f * s, 52.0f * s);
     const float rail_width = 76.0f * s;
-    const c_color blue(52, 148, 255, 255);
+    const c_color rose(234, 179, 200, 255);
+    const c_color panel(90, 65, 78, 255);
 
-    // Gaming shell: deep navy layers, a compact icon rail, and electric-blue
-    // edge lighting. The content remains opaque and readable over the game.
-    list->AddRectFilled(window_pos + ImVec2(7.0f * s, 9.0f * s), window_max + ImVec2(7.0f * s, 9.0f * s),
-        IM_COL32(0, 3, 10, (int)(125.0f * alpha)), 12.0f * s);
-    list->AddRectFilled(window_pos, window_max, IM_COL32(5, 10, 20, (int)(255.0f * alpha)), 12.0f * s);
-    list->AddRectFilled(window_pos, window_pos + header_size, IM_COL32(10, 20, 36, (int)(255.0f * alpha)),
-        12.0f * s, ImDrawCornerFlags_Top);
-    list->AddRectFilled(window_pos + ImVec2(0.0f, 52.0f * s),
-        window_pos + ImVec2(rail_width, 520.0f * s), IM_COL32(7, 15, 28, (int)(255.0f * alpha)), 0.0f);
+    // Adapted from the supplied Grape ImGui reference. Keep the native Win32 /
+    // D3D9 backend, but reproduce its rounded rose shell and soft lighting.
+    list->AddRectFilled(window_pos + ImVec2(0.0f, 7.0f * s),
+        window_max + ImVec2(0.0f, 9.0f * s), IM_COL32(0, 0, 0, (int)(90.0f * alpha)), 13.0f * s);
+    list->AddRectFilled(window_pos, window_max, panel.new_alpha((int)(247.0f * alpha)).as_imcolor(), 13.0f * s);
 
-    list->AddRectFilledMultiColor(
-        window_pos + ImVec2(0.0f, 50.0f * s), window_pos + ImVec2(720.0f * s, 53.0f * s),
-        blue.new_alpha(0).as_imcolor(), blue.new_alpha((int)(245.0f * alpha)).as_imcolor(),
-        blue.new_alpha((int)(245.0f * alpha)).as_imcolor(), blue.new_alpha(0).as_imcolor());
-    list->AddRectFilledMultiColor(
-        window_pos + ImVec2(75.0f * s, 65.0f * s), window_pos + ImVec2(77.0f * s, 505.0f * s),
-        blue.new_alpha((int)(25.0f * alpha)).as_imcolor(), blue.new_alpha((int)(175.0f * alpha)).as_imcolor(),
-        blue.new_alpha((int)(175.0f * alpha)).as_imcolor(), blue.new_alpha((int)(25.0f * alpha)).as_imcolor());
+    // A soft animated lightning ribbon replaces the Android/OpenGL-only
+    // procedural mesh while retaining the look on the existing D3D9 renderer.
+    const float time = (float)ImGui::GetTime();
+    ImVec2 previous{};
+    for (int i = 0; i <= 52; ++i)
+    {
+        const float v = (float)i / 52.0f;
+        const float wave = 0.53f
+            + 0.040f * std::sin(v * 18.5f - time * 1.2f)
+            + 0.026f * std::sin(v * 39.0f + time * 0.8f);
+        const ImVec2 point(window_pos.x + wave * 720.0f * s, window_pos.y + v * 520.0f * s);
+        if (i > 0)
+        {
+            list->AddLine(previous, point, rose.new_alpha((int)(22.0f * alpha)).as_imcolor(), 24.0f * s);
+            list->AddLine(previous, point, rose.new_alpha((int)(42.0f * alpha)).as_imcolor(), 11.0f * s);
+            list->AddLine(previous, point, IM_COL32(255, 239, 247, (int)(115.0f * alpha)), 2.0f * s);
+        }
+        previous = point;
+    }
 
-    const ImVec2 logo_min = window_pos + ImVec2(18.0f * s, 14.0f * s);
-    const ImVec2 logo_max = logo_min + ImVec2(24.0f * s, 24.0f * s);
-    list->AddCircleFilled((logo_min + logo_max) * 0.5f, 17.0f * s, blue.new_alpha((int)(28.0f * alpha)).as_imcolor(), 24);
+    list->AddRectFilled(window_pos + ImVec2(8.0f * s, 9.0f * s),
+        window_pos + ImVec2(rail_width - 7.0f * s, 511.0f * s),
+        IM_COL32(67, 48, 59, (int)(118.0f * alpha)), 9.0f * s);
+    list->AddLine(window_pos + ImVec2(86.0f * s, 52.0f * s),
+        window_pos + ImVec2(700.0f * s, 52.0f * s), IM_COL32(228, 209, 218, (int)(45.0f * alpha)), 1.0f * s);
+
+    const ImVec2 logo_min = window_pos + ImVec2(18.0f * s, 15.0f * s);
+    const ImVec2 logo_max = logo_min + ImVec2(23.0f * s, 23.0f * s);
     if (logo_texture)
     {
         list->AddImage((void*)logo_texture, logo_min, logo_max, ImVec2(0, 0), ImVec2(1, 1),
-            blue.new_alpha((int)(255.0f * alpha)).as_imcolor());
+            IM_COL32(250, 220, 232, (int)(255.0f * alpha)));
     }
 
     ImGui::PushFont(g_fonts.dmg);
-    list->AddText(window_pos + ImVec2(55.0f * s, 11.0f * s),
-        IM_COL32(239, 247, 255, (int)(255.0f * alpha)), "mirick menu");
+    list->AddText(window_pos + ImVec2(91.0f * s, 15.0f * s),
+        IM_COL32(250, 245, 249, (int)(255.0f * alpha)), "mirick menu");
     ImGui::PopFont();
-    list->AddText(window_pos + ImVec2(56.0f * s, 32.0f * s),
-        IM_COL32(72, 118, 165, (int)(220.0f * alpha)), "NEXT RP  /  CONTROL CENTER");
 
     static const char* author = "m1racl";
     const ImVec2 author_size = ImGui::CalcTextSize(author);
-    const ImVec2 badge_max = window_pos + ImVec2(700.0f * s, 38.0f * s);
-    const ImVec2 badge_min = badge_max - ImVec2(author_size.x + 31.0f * s, 25.0f * s);
-    list->AddRectFilled(badge_min, badge_max, IM_COL32(12, 34, 59, (int)(245.0f * alpha)), 5.0f * s);
-    list->AddRect(badge_min, badge_max, blue.new_alpha((int)(145.0f * alpha)).as_imcolor(), 5.0f * s);
-    list->AddCircleFilled(badge_min + ImVec2(12.0f * s, 12.5f * s), 3.5f * s,
-        blue.new_alpha((int)(255.0f * alpha)).as_imcolor());
+    const ImVec2 badge_max = window_pos + ImVec2(675.0f * s, 39.0f * s);
+    const ImVec2 badge_min = badge_max - ImVec2(author_size.x + 30.0f * s, 25.0f * s);
+    list->AddRectFilled(badge_min, badge_max, IM_COL32(125, 94, 109, (int)(178.0f * alpha)), 7.0f * s);
+    list->AddRect(badge_min, badge_max, IM_COL32(230, 199, 212, (int)(95.0f * alpha)), 7.0f * s);
+    list->AddCircleFilled(badge_min + ImVec2(12.0f * s, 12.5f * s), 3.2f * s,
+        rose.new_alpha((int)(255.0f * alpha)).as_imcolor());
     list->AddText(badge_min + ImVec2(22.0f * s, 5.0f * s),
-        IM_COL32(220, 234, 250, (int)(255.0f * alpha)), author);
+        IM_COL32(249, 240, 246, (int)(255.0f * alpha)), author);
 
-    // Decorative HUD corners.
-    list->AddLine(window_pos + ImVec2(10.0f * s, 0.0f), window_pos + ImVec2(52.0f * s, 0.0f),
-        blue.new_alpha((int)(230.0f * alpha)).as_imcolor(), 2.0f * s);
-    list->AddLine(window_max - ImVec2(52.0f * s, 0.0f), window_max - ImVec2(10.0f * s, 0.0f),
-        blue.new_alpha((int)(230.0f * alpha)).as_imcolor(), 2.0f * s);
-    list->AddRect(window_pos, window_max, IM_COL32(29, 66, 105, (int)(225.0f * alpha)), 12.0f * s);
+    const ImVec2 close_center = window_pos + ImVec2(700.0f * s, 26.0f * s);
+    const ImVec2 close_min = close_center - ImVec2(12.0f * s, 12.0f * s);
+    const ImVec2 close_max = close_center + ImVec2(12.0f * s, 12.0f * s);
+    const bool close_hovered = ImGui::IsMouseHoveringRect(close_min, close_max);
+    const ImU32 close_color = close_hovered
+        ? IM_COL32(255, 255, 255, (int)(255.0f * alpha))
+        : IM_COL32(237, 218, 227, (int)(220.0f * alpha));
+    list->AddLine(close_center - ImVec2(4.5f * s, 4.5f * s), close_center + ImVec2(4.5f * s, 4.5f * s), close_color, 1.7f * s);
+    list->AddLine(close_center + ImVec2(4.5f * s, -4.5f * s), close_center + ImVec2(-4.5f * s, 4.5f * s), close_color, 1.7f * s);
+    if (close_hovered && ImGui::IsMouseClicked(0))
+    {
+        g_cfg.menu_open = false;
+    }
+
+    list->AddRect(window_pos, window_max, IM_COL32(242, 220, 230, (int)(62.0f * alpha)), 13.0f * s);
 
     ImGuiIO& io = ImGui::GetIO();
     const ImVec2 header_max(window_pos.x + header_size.x, window_pos.y + header_size.y);
@@ -414,7 +434,8 @@ void Menu::DrawBackground()
         author_panel_open = !author_panel_open;
     }
 
-    if (!s_dragging && !author_hovered && ImGui::IsMouseHoveringRect(window_pos, header_max) && ImGui::IsMouseClicked(0))
+    if (!s_dragging && !author_hovered && !close_hovered
+        && ImGui::IsMouseHoveringRect(window_pos, header_max) && ImGui::IsMouseClicked(0))
     {
         s_dragging = true;
         s_drag_offset = ImVec2(io.MousePos.x - window_pos.x, io.MousePos.y - window_pos.y);
@@ -465,23 +486,23 @@ void Menu::DrawCharacterPanel()
     ImDrawList* panel_draw = ImGui::GetWindowDrawList();
     const ImVec2 panel_max = panel_pos + panel_size;
     panel_draw->AddRectFilled(panel_pos + ImVec2(4.0f * s, 6.0f * s), panel_max + ImVec2(4.0f * s, 6.0f * s), IM_COL32(0, 0, 0, (int)(95.0f * panel_alpha)), 9.0f * s);
-    panel_draw->AddRectFilled(panel_pos, panel_max, IM_COL32(7, 10, 17, (int)(255.0f * panel_alpha)), 9.0f * s);
-    panel_draw->AddRectFilled(panel_pos, panel_pos + ImVec2(panel_size.x, 43.0f * s), IM_COL32(15, 21, 33, (int)(255.0f * panel_alpha)), 9.0f * s, ImDrawCornerFlags_Top);
+    panel_draw->AddRectFilled(panel_pos, panel_max, IM_COL32(82, 59, 71, (int)(250.0f * panel_alpha)), 9.0f * s);
+    panel_draw->AddRectFilled(panel_pos, panel_pos + ImVec2(panel_size.x, 43.0f * s), IM_COL32(105, 77, 91, (int)(245.0f * panel_alpha)), 9.0f * s, ImDrawCornerFlags_Top);
     panel_draw->AddRectFilledMultiColor(
         panel_pos + ImVec2(0, 42.0f * s), panel_pos + ImVec2(panel_size.x, 44.0f * s),
         accent.new_alpha(0).as_imcolor(), accent.new_alpha((int)(220.0f * panel_alpha)).as_imcolor(),
         accent.new_alpha((int)(220.0f * panel_alpha)).as_imcolor(), accent.new_alpha(0).as_imcolor());
-    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 13.0f * s), IM_COL32(242, 245, 255, (int)(255.0f * panel_alpha)), tr("МОДЕЛЬ ПЕРСОНАЖА", "CHARACTER MODEL"));
+    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 13.0f * s), IM_COL32(250, 243, 247, (int)(255.0f * panel_alpha)), tr("МОДЕЛЬ ПЕРСОНАЖА", "CHARACTER MODEL"));
 
     char preview_model[64]{};
     ImFormatString(preview_model, IM_ARRAYSIZE(preview_model), "%s: %d", tr("Скин в превью", "Preview skin"), preview_skin_id);
-    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 54.0f * s), IM_COL32(124, 137, 160, (int)(235.0f * panel_alpha)), preview_model);
+    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 54.0f * s), IM_COL32(211, 187, 199, (int)(235.0f * panel_alpha)), preview_model);
 
     CharacterPreview::SelectModel(preview_skin_id);
     IDirect3DTexture9* preview_texture = CharacterPreview::GetTexture();
     const ImVec2 preview_min = panel_pos + ImVec2(15.0f * s, 76.0f * s);
     const ImVec2 preview_max = panel_pos + ImVec2(197.0f * s, 358.0f * s);
-    panel_draw->AddRectFilled(preview_min, preview_max, IM_COL32(5, 8, 14, (int)(245.0f * panel_alpha)), 6.0f * s);
+    panel_draw->AddRectFilled(preview_min, preview_max, IM_COL32(55, 39, 47, (int)(245.0f * panel_alpha)), 6.0f * s);
     if (preview_texture)
     {
         panel_draw->AddImage(
@@ -527,20 +548,20 @@ void Menu::DrawCharacterPanel()
     ImGui::PopStyleVar();
 
     panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 395.0f * s),
-        IM_COL32(124, 137, 160, (int)(220.0f * panel_alpha)),
+        IM_COL32(211, 187, 199, (int)(220.0f * panel_alpha)),
         tr("ЛКМ: обзор, ПКМ: поза", "LMB: rotate, RMB: pose"));
 
     ImGui::SetCursorPos(ImVec2(15.0f * s, 417.0f * s));
     ImGui::PushItemWidth(182.0f * s);
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.055f, 0.075f, 0.115f, panel_alpha));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.075f, 0.10f, 0.15f, panel_alpha));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.42f, 0.32f, 0.37f, panel_alpha));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.52f, 0.40f, 0.46f, panel_alpha));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.94f, 0.96f, 1.0f, panel_alpha));
     ImGui::InputInt("##next_rp_skin_id", &g_cfg.player_skin_id, 0, 0, ImGuiInputTextFlags_CharsDecimal);
     ImGui::PopStyleColor(3);
     ImGui::PopItemWidth();
 
     ImGui::SetCursorPos(ImVec2(15.0f * s, 452.0f * s));
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.06f, 0.08f, 0.125f, panel_alpha));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.34f, 0.40f, panel_alpha));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(accent.r() / 255.0f, accent.g() / 255.0f, accent.b() / 255.0f, 0.28f * panel_alpha));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(accent.r() / 255.0f, accent.g() / 255.0f, accent.b() / 255.0f, 0.42f * panel_alpha));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.94f, 0.96f, 1.0f, panel_alpha));
@@ -597,7 +618,7 @@ void Menu::DrawCharacterPanel()
         ? accent.new_alpha((int)(220.0f * panel_alpha)).u32()
         : IM_COL32(225, 160, 112, (int)(220.0f * panel_alpha));
     panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 489.0f * s), status_color, status_text);
-    panel_draw->AddRect(panel_pos, panel_max, IM_COL32(40, 49, 67, (int)(220.0f * panel_alpha)), 9.0f * s);
+    panel_draw->AddRect(panel_pos, panel_max, IM_COL32(224, 197, 210, (int)(92.0f * panel_alpha)), 9.0f * s);
 
     ImGui::End(false);
     ImGui::PopStyleColor();
@@ -648,15 +669,15 @@ void Menu::DrawAuthorPanel()
     const ImVec2 panel_max(panel_min.x + panel_width, panel_min.y + panel_height);
 
     panel_draw->AddRectFilled(panel_min + ImVec2(4.0f * s, 6.0f * s), panel_max + ImVec2(4.0f * s, 6.0f * s), IM_COL32(0, 0, 0, static_cast<int>(80.0f * panel_alpha)), 9.0f * s);
-    panel_draw->AddRectFilled(panel_min, panel_max, IM_COL32(11, 16, 26, static_cast<int>(255.0f * panel_alpha)), 9.0f * s);
+    panel_draw->AddRectFilled(panel_min, panel_max, IM_COL32(82, 59, 71, static_cast<int>(250.0f * panel_alpha)), 9.0f * s);
     panel_draw->AddRectFilled(panel_min, ImVec2(panel_min.x + 3.0f * s, panel_max.y), accent.new_alpha(static_cast<int>(210.0f * panel_alpha)).as_imcolor(), 2.0f * s);
 
     const ImVec2 avatar_center(panel_min.x + 34.0f * s, panel_min.y + 38.0f * s);
     panel_draw->AddCircleFilled(avatar_center, 17.0f * s, accent.new_alpha(static_cast<int>(45.0f * panel_alpha)).as_imcolor());
     panel_draw->AddText(avatar_center - ImVec2(5.0f * s, 8.0f * s), accent.new_alpha(static_cast<int>(255.0f * panel_alpha)).as_imcolor(), "M");
-    panel_draw->AddText(panel_min + ImVec2(61.0f * s, 22.0f * s), IM_COL32(244, 247, 253, static_cast<int>(255.0f * panel_alpha)), "m1racl");
-    panel_draw->AddText(panel_min + ImVec2(61.0f * s, 43.0f * s), IM_COL32(116, 128, 151, static_cast<int>(245.0f * panel_alpha)), tr("Автор mirick", "mirick author"));
-    panel_draw->AddLine(panel_min + ImVec2(18.0f * s, 75.0f * s), panel_min + ImVec2(248.0f * s, 75.0f * s), IM_COL32(45, 54, 72, static_cast<int>(190.0f * panel_alpha)));
+    panel_draw->AddText(panel_min + ImVec2(61.0f * s, 22.0f * s), IM_COL32(250, 243, 247, static_cast<int>(255.0f * panel_alpha)), "m1racl");
+    panel_draw->AddText(panel_min + ImVec2(61.0f * s, 43.0f * s), IM_COL32(210, 186, 198, static_cast<int>(245.0f * panel_alpha)), tr("Автор mirick", "mirick author"));
+    panel_draw->AddLine(panel_min + ImVec2(18.0f * s, 75.0f * s), panel_min + ImVec2(248.0f * s, 75.0f * s), IM_COL32(220, 194, 207, static_cast<int>(100.0f * panel_alpha)));
 
     auto contact_card = [&](const char* id, const char* service, const char* value, float y, const ImU32 service_color)
     {
@@ -670,11 +691,11 @@ void Menu::DrawAuthorPanel()
             clicked = ImGui::InvisibleButton(id, card_max - card_min);
             hovered = ImGui::IsItemHovered();
         }
-        panel_draw->AddRectFilled(card_min, card_max, hovered ? IM_COL32(28, 36, 53, static_cast<int>(245.0f * panel_alpha)) : IM_COL32(19, 26, 39, static_cast<int>(235.0f * panel_alpha)), 7.0f * s);
+        panel_draw->AddRectFilled(card_min, card_max, hovered ? IM_COL32(126, 95, 110, static_cast<int>(235.0f * panel_alpha)) : IM_COL32(104, 77, 90, static_cast<int>(225.0f * panel_alpha)), 7.0f * s);
         panel_draw->AddRectFilled(card_min + ImVec2(10.0f * s, 13.0f * s), card_min + ImVec2(14.0f * s, 45.0f * s), service_color, 2.0f * s);
-        panel_draw->AddText(card_min + ImVec2(25.0f * s, 10.0f * s), IM_COL32(235, 239, 248, static_cast<int>(255.0f * panel_alpha)), service);
-        panel_draw->AddText(card_min + ImVec2(25.0f * s, 32.0f * s), IM_COL32(125, 137, 159, static_cast<int>(255.0f * panel_alpha)), value);
-        panel_draw->AddText(card_max - ImVec2(18.0f * s, 41.0f * s), IM_COL32(148, 158, 178, static_cast<int>(220.0f * panel_alpha)), ">");
+        panel_draw->AddText(card_min + ImVec2(25.0f * s, 10.0f * s), IM_COL32(250, 243, 247, static_cast<int>(255.0f * panel_alpha)), service);
+        panel_draw->AddText(card_min + ImVec2(25.0f * s, 32.0f * s), IM_COL32(215, 192, 203, static_cast<int>(255.0f * panel_alpha)), value);
+        panel_draw->AddText(card_max - ImVec2(18.0f * s, 41.0f * s), IM_COL32(231, 209, 219, static_cast<int>(220.0f * panel_alpha)), ">");
         return clicked;
     };
 
@@ -696,10 +717,10 @@ void Menu::DrawAuthorPanel()
     }
     else
     {
-        panel_draw->AddText(panel_min + ImVec2(18.0f * s, 231.0f * s), IM_COL32(105, 116, 137, static_cast<int>(230.0f * panel_alpha)), tr("Нажмите, чтобы скопировать Discord", "Click to copy Discord"));
+        panel_draw->AddText(panel_min + ImVec2(18.0f * s, 231.0f * s), IM_COL32(203, 177, 190, static_cast<int>(230.0f * panel_alpha)), tr("Нажмите, чтобы скопировать Discord", "Click to copy Discord"));
     }
 
-    panel_draw->AddText(panel_min + ImVec2(18.0f * s, 416.0f * s), IM_COL32(79, 90, 110, static_cast<int>(210.0f * panel_alpha)), "mirick  /  m1racl");
+    panel_draw->AddText(panel_min + ImVec2(18.0f * s, 416.0f * s), IM_COL32(181, 153, 167, static_cast<int>(210.0f * panel_alpha)), "mirick  /  m1racl");
     ImGui::End(false);
     ImGui::PopStyleColor();
     ImGui::PopStyleVar(2);
@@ -736,14 +757,17 @@ void Menu::DrawTabs()
 
         ImVec2 tmin = child_pos + ImVec2(8.0f * s, (5.0f + 58.0f * i) * s);
         ImVec2 tmax = tmin + ImVec2(58.0f * s, 48.0f * s);
-        float rgb = tab_selector == i ? 255 : 150 + 105 * info.hovered_alpha;
-        c_color text_clr = c_color((int)rgb, (int)rgb, (int)rgb, (int)(rgb * GetAlpha()));
+        const int hover_add = (int)(18.0f * info.hovered_alpha);
+        c_color text_clr = tab_selector == i
+            ? c_color(250, 224, 235, (int)(255.0f * GetAlpha()))
+            : c_color(222 + hover_add, 205 + hover_add, 215 + hover_add, (int)(225.0f * GetAlpha()));
 
         if (tab_selector == i)
         {
-            list->AddRectFilled(tmin, tmax, IM_COL32(13, 42, 72, (int)(245.0f * info.alpha * GetAlpha())), 7.0f * s);
-            list->AddRect(tmin, tmax, accent.new_alpha((int)(210.0f * info.alpha * GetAlpha())).as_imcolor(), 7.0f * s, 0, 1.0f * s);
-            list->AddRectFilled(tmin + ImVec2(0.0f, 11.0f * s), tmin + ImVec2(3.0f * s, 37.0f * s), accent.new_alpha((int)(255.0f * info.alpha * GetAlpha())).as_imcolor(), 2.0f * s);
+            list->AddRectFilled(tmin + ImVec2(6.0f * s, 3.0f * s), tmax - ImVec2(6.0f * s, 3.0f * s),
+                IM_COL32(145, 112, 123, (int)(225.0f * info.alpha * GetAlpha())), 9.0f * s);
+            list->AddRect(tmin + ImVec2(6.0f * s, 3.0f * s), tmax - ImVec2(6.0f * s, 3.0f * s),
+                accent.new_alpha((int)(105.0f * info.alpha * GetAlpha())).as_imcolor(), 9.0f * s);
         }
 
         const ImU32 icon_color = text_clr.as_imcolor();
@@ -826,8 +850,8 @@ void Menu::DrawSubTabs(int& selector, const std::vector<std::string>& tabs)
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, a));
-    draw_list->AddRectFilled(child_pos, child_pos + ImVec2(612.0f * s, 58.0f * s), IM_COL32(9, 24, 42, (int)(245.0f * a)), 7.0f * s);
-    draw_list->AddRect(child_pos, child_pos + ImVec2(612.0f * s, 58.0f * s), IM_COL32(24, 57, 92, (int)(210.0f * a)), 7.0f * s);
+    draw_list->AddRectFilled(child_pos, child_pos + ImVec2(612.0f * s, 58.0f * s), IM_COL32(104, 79, 92, (int)(150.0f * a)), 8.0f * s);
+    draw_list->AddRect(child_pos, child_pos + ImVec2(612.0f * s, 58.0f * s), IM_COL32(224, 199, 211, (int)(78.0f * a)), 8.0f * s);
 
     c_color accent = g_cfg.accent.to_color();
 
@@ -905,12 +929,12 @@ void Menu::GroupBegin(const char* label)
         screen + ImVec2(3.0f * s, 17.0f * s),
         accent.new_alpha((int)(245.0f * a)).as_imcolor(), 2.0f * s);
     ImGui::SetCursorPosX(cursor_x + 11.0f * s);
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.82f, 0.91f, 1.0f, a));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.98f, 0.91f, 0.95f, a));
     ImGui::TextUnformatted(label);
     ImGui::PopStyleColor();
     draw_list->AddLine(screen + ImVec2(11.0f * s, 21.0f * s),
         screen + ImVec2(256.0f * s, 21.0f * s),
-        IM_COL32(25, 56, 88, (int)(185.0f * a)), 1.0f * s);
+        IM_COL32(218, 190, 203, (int)(92.0f * a)), 1.0f * s);
     ImGui::SetCursorPosX(cursor_x);
     ImGui::ItemSize(ImVec2(0, 5.0f * s));
     ImGui::BeginGroup();

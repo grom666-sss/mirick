@@ -59,33 +59,30 @@ bool Menu::Checkbox(const char* label, bool* value)
     CreateAnimation(mod.alpha, *value, 0.4f, AnimLerp);
 
     const ImVec2 back_size(256.0f * s, 32.0f * s);
-    const int hover_lift = (int)(7.0f * mod.hovered_alpha);
-    const c_color back_clr(8 + hover_lift, 18 + hover_lift, 32 + hover_lift, (int)(255.0f * alpha));
+    const int hover_lift = (int)(8.0f * mod.hovered_alpha);
+    const c_color back_clr(112 + hover_lift, 88 + hover_lift, 100 + hover_lift, (int)(112.0f * alpha));
     c_color accent = g_cfg.accent.to_color();
-    draw_list->AddRectFilled(pos, pos + back_size, back_clr.as_imcolor(), 5.0f * s);
-    draw_list->AddRect(pos, pos + back_size,
-        (*value ? accent.new_alpha((int)(120.0f * alpha)) : c_color(25, 54, 85, (int)(205.0f * alpha))).as_imcolor(),
-        5.0f * s);
-    if (*value || mod.alpha > 0.01f)
+    draw_list->AddRectFilled(pos, pos + back_size, back_clr.as_imcolor(), 7.0f * s);
+    draw_list->AddRect(pos, pos + back_size, c_color(220, 197, 208, (int)(74.0f * alpha)).as_imcolor(), 7.0f * s);
+
+    const ImVec2 body_min = pos + ImVec2(10.0f * s, 7.0f * s);
+    const ImVec2 body_max = body_min + ImVec2(18.0f * s, 18.0f * s);
+    const c_color unchecked(125, 105, 116, (int)(210.0f * alpha));
+    const c_color fill = c_color().multiply(accent, mod.alpha).new_alpha((int)(255.0f * alpha));
+    draw_list->AddRectFilled(body_min, body_max,
+        (*value || mod.alpha > 0.01f ? fill : unchecked).as_imcolor(), 5.0f * s);
+    draw_list->AddRect(body_min, body_max, c_color(230, 211, 220, (int)((105.0f - 65.0f * mod.alpha) * alpha)).as_imcolor(), 5.0f * s);
+
+    if (mod.alpha > 0.05f)
     {
-        draw_list->AddRectFilled(pos, pos + ImVec2(3.0f * s, 32.0f * s),
-            accent.new_alpha((int)(235.0f * mod.alpha * alpha)).as_imcolor(), 2.0f * s);
+        const ImU32 check = IM_COL32(255, 255, 255, (int)(250.0f * mod.alpha * alpha));
+        draw_list->AddLine(body_min + ImVec2(4.0f * s, 9.0f * s), body_min + ImVec2(7.5f * s, 12.5f * s), check, 1.8f * s);
+        draw_list->AddLine(body_min + ImVec2(7.5f * s, 12.5f * s), body_min + ImVec2(14.0f * s, 5.5f * s), check, 1.8f * s);
     }
-
-    const ImVec2 body_size(30.0f * s, 16.0f * s);
-    const ImVec2 body_min = pos + ImVec2(216.0f * s, 8.0f * s);
-    const ImVec2 body_max = body_min + body_size;
-    draw_list->AddRectFilled(body_min, body_max, c_color(3, 9, 18, (int)(255.0f * alpha)).as_imcolor(), 8.0f * s);
-    draw_list->AddRect(body_min, body_max, accent.new_alpha((int)((45.0f + 100.0f * mod.alpha) * alpha)).as_imcolor(), 8.0f * s);
-
-    const ImVec2 circle_offset(14.0f * s * mod.alpha, 0.0f);
-    const ImVec2 circle_pos = body_min + ImVec2(8.0f * s, 8.0f * s) + circle_offset;
-    const c_color circle_clr = c_color().multiply(accent, mod.alpha).new_alpha((int)(255.0f * alpha));
-    draw_list->AddCircleFilled(circle_pos, 5.0f * s, circle_clr.as_imcolor(), 16);
 
     if (label_size.x > 0.0f)
     {
-        RenderText(ImVec2(pos.x + 12.0f * s, pos.y + 7.0f * s), label);
+        RenderText(ImVec2(pos.x + 39.0f * s, pos.y + 7.0f * s), label);
     }
 
     PopStyleColor();
@@ -115,8 +112,8 @@ bool Menu::BindableCheckbox(const char* id, const char* label, bool* v, keybind_
             ImDrawList* plist = GetWindowDrawList();
             ImVec2 card_min = ImGui::GetWindowPos();
             ImVec2 card_max = card_min + ImVec2(216.0f * s, 110.0f * s);
-            plist->AddRectFilled(card_min, card_max, c_color(105, 105, 110, (int)(255.0f * pop_alpha)).as_imcolor(), 6.0f * s);
-            Blur::Create(plist, card_min, card_max, ImColor(80, 80, 80, (int)(255.0f * pop_alpha)), 6.0f * s);
+            plist->AddRectFilled(card_min, card_max, c_color(82, 59, 71, (int)(250.0f * pop_alpha)).as_imcolor(), 8.0f * s);
+            Blur::Create(plist, card_min, card_max, ImColor(90, 65, 78, (int)(225.0f * pop_alpha)), 8.0f * s);
             ImGuiWindow* window = GetCurrentWindow();
 
             PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, pop_alpha));
