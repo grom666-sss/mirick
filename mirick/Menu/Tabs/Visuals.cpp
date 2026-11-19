@@ -24,7 +24,7 @@ void Menu::DrawVisuals()
         ImGui::SetCursorPosX(0);
         ImGui::BeginChild("subtab_vis", ImVec2(), false);
         ImGui::Columns(2, NULL, false);
-        ImGui::SetColumnOffset(1, 270.0f * GetScale());
+        ImGui::SetColumnOffset(1, 300.0f * GetScale());
         if (sub2 == 0)
         {
             GroupBegin(tr("Валлхак", "Wallhack"));

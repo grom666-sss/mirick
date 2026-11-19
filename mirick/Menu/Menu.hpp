@@ -97,6 +97,7 @@ public:
     bool GetState();
     bool ToggleState();
     void PlaySoundFeedback(unsigned int eventFlag, bool enabled = true);
+    void PlaySoundPreset(int style, bool enabled = true);
     void PushNotification(const char* label, bool enabled);
     void DrawNotifications();
     void DrawFunctionDescription(const char* label, bool hovered);

@@ -10,7 +10,7 @@ void Menu::DrawSettings()
     ImGui::SetCursorPosX(0);
     ImGui::BeginChild("settings_tab", ImVec2(), false);
     ImGui::Columns(2, NULL, false);
-    ImGui::SetColumnOffset(1, 270.0f * GetScale());
+    ImGui::SetColumnOffset(1, 300.0f * GetScale());
 
     if (sub == 0)
     {
@@ -65,21 +65,37 @@ void Menu::DrawSettings()
         GroupEnd();
 
         ImGui::NextColumn();
-        GroupBegin(tr("Оформление звука", "Sound preset"));
+        GroupBegin(tr("Звук для события", "Sound per event"));
         static const std::string presets[] = {
             tr("Мягкий", "Soft"),
             tr("Контрастный", "Contrast"),
-            tr("Системный", "System")
+            tr("Системный", "System"),
+            "iOS 27"
         };
-        const char* preset_items[] = { presets[0].c_str(), presets[1].c_str(), presets[2].c_str() };
-        if (Combo(tr("Стиль звука", "Sound style"), &g_cfg.sound_style, preset_items, 3))
+        const char* preset_items[] = {
+            presets[0].c_str(), presets[1].c_str(), presets[2].c_str(), presets[3].c_str()
+        };
+        auto soundCombo = [&](unsigned int flag, const char* label, int& style, bool enabledSound)
         {
-            SaveGeneralConfig();
-            PlaySoundFeedback(1, true);
-        }
+            if ((g_cfg.sound_flags & flag) == 0)
+            {
+                return;
+            }
+            if (Combo(label, &style, preset_items, 4))
+            {
+                SaveGeneralConfig();
+                PlaySoundPreset(style, enabledSound);
+            }
+        };
+
+        soundCombo(1, tr("Включение функций", "Functions enabled"), g_cfg.sound_enable_style, true);
+        soundCombo(2, tr("Выключение функций", "Functions disabled"), g_cfg.sound_disable_style, false);
+        soundCombo(4, tr("Открытие меню", "Menu open"), g_cfg.sound_menu_style, true);
+        soundCombo(8, tr("Переключение модулей", "Module switching"), g_cfg.sound_tab_style, true);
+
         if (Button(tr("Проверить звук", "Test sound")))
         {
-            PlaySoundFeedback(1, true);
+            PlaySoundPreset(g_cfg.sound_enable_style, true);
         }
         GroupEnd();
     }

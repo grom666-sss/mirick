@@ -7,7 +7,7 @@ void Menu::DrawMisc()
         ImGui::SetCursorPosX(0);
         ImGui::BeginChild("misc_player", ImVec2(), false);
         ImGui::Columns(2, NULL, false);
-        ImGui::SetColumnOffset(1, 270.0f * GetScale());
+        ImGui::SetColumnOffset(1, 300.0f * GetScale());
 
         GroupBegin(tr("Игрок", "Player"));
         BindableCheckbox("airbreak", tr("Аирбрейк", "Airbreak"), &g_cfg.airbreake, &g_cfg.airbreake_bind);

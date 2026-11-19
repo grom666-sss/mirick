@@ -7,7 +7,7 @@ void Menu::DrawRage()
         ImGui::SetCursorPosX(0);
         ImGui::BeginChild("subtab_rage", ImVec2(), false);
         ImGui::Columns(2, NULL, false);
-        ImGui::SetColumnOffset(1, 270.0f * GetScale());
+        ImGui::SetColumnOffset(1, 300.0f * GetScale());
         GroupBegin(tr("Оружие", "Weapon"));
         BindableCheckbox("rapidfire", tr("Рапид", "Rapid fire"), &g_cfg.rapidfire, &g_cfg.rapidfire_bind);
         BindableCheckbox("infammo", tr("Бесконечные патроны", "Infinite ammo"), &g_cfg.infammo, &g_cfg.infammo_bind);

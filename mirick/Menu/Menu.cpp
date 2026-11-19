@@ -6,7 +6,10 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <mmsystem.h>
 #include <shellapi.h>
+
+#pragma comment(lib, "winmm.lib")
 
 #include "Assets/Assets.hpp"
 #include "Gfx/Blur.hpp"
@@ -87,6 +90,67 @@ namespace
 
         return kNextRpSkinRanges[IM_ARRAYSIZE(kNextRpSkinRanges) - 1].last;
     }
+
+    const std::vector<unsigned char>& Ios27NotificationWav()
+    {
+        static const std::vector<unsigned char> wav = []
+        {
+            constexpr unsigned int sampleRate = 22050;
+            constexpr float duration = 0.72f;
+            constexpr unsigned int sampleCount = static_cast<unsigned int>(sampleRate * duration);
+            std::vector<short> samples(sampleCount);
+
+            for (unsigned int i = 0; i < sampleCount; ++i)
+            {
+                const float t = static_cast<float>(i) / sampleRate;
+                auto pulse = [t](float start, float frequency, float decay)
+                {
+                    const float local = t - start;
+                    if (local < 0.0f) return 0.0f;
+                    const float attack = std::min(local / 0.012f, 1.0f);
+                    return attack * std::exp(-local * decay) * std::sin(6.2831853f * frequency * local);
+                };
+
+                // A clean three-note mobile notification chime inspired by the
+                // requested iOS 27 sound, synthesized locally without telemetry.
+                float value = pulse(0.00f, 1318.51f, 7.2f) * 0.42f;
+                value += pulse(0.15f, 1760.00f, 8.0f) * 0.34f;
+                value += pulse(0.29f, 2093.00f, 9.0f) * 0.28f;
+                value = std::clamp(value, -1.0f, 1.0f);
+                samples[i] = static_cast<short>(value * 24500.0f);
+            }
+
+            std::vector<unsigned char> data(44 + samples.size() * sizeof(short));
+            auto write16 = [&data](std::size_t offset, unsigned int value)
+            {
+                data[offset] = static_cast<unsigned char>(value & 0xFF);
+                data[offset + 1] = static_cast<unsigned char>((value >> 8) & 0xFF);
+            };
+            auto write32 = [&data](std::size_t offset, unsigned int value)
+            {
+                data[offset] = static_cast<unsigned char>(value & 0xFF);
+                data[offset + 1] = static_cast<unsigned char>((value >> 8) & 0xFF);
+                data[offset + 2] = static_cast<unsigned char>((value >> 16) & 0xFF);
+                data[offset + 3] = static_cast<unsigned char>((value >> 24) & 0xFF);
+            };
+
+            std::memcpy(data.data(), "RIFF", 4);
+            write32(4, static_cast<unsigned int>(data.size() - 8));
+            std::memcpy(data.data() + 8, "WAVEfmt ", 8);
+            write32(16, 16);
+            write16(20, 1);
+            write16(22, 1);
+            write32(24, sampleRate);
+            write32(28, sampleRate * sizeof(short));
+            write16(32, sizeof(short));
+            write16(34, 16);
+            std::memcpy(data.data() + 36, "data", 4);
+            write32(40, static_cast<unsigned int>(samples.size() * sizeof(short)));
+            std::memcpy(data.data() + 44, samples.data(), samples.size() * sizeof(short));
+            return data;
+        }();
+        return wav;
+    }
 }
 
 uint32_t Menu::Hash_Label(const char* text)
@@ -115,6 +179,29 @@ bool Menu::ToggleState()
     return g_cfg.menu_open;
 }
 
+void Menu::PlaySoundPreset(int style, bool enabled)
+{
+    style = std::clamp(style, 0, 3);
+    if (style == 3)
+    {
+        const std::vector<unsigned char>& wav = Ios27NotificationWav();
+        PlaySoundA(reinterpret_cast<LPCSTR>(wav.data()), nullptr,
+            SND_ASYNC | SND_MEMORY | SND_NODEFAULT);
+        return;
+    }
+
+    UINT sound = MB_OK;
+    if (style == 0)
+    {
+        sound = enabled ? MB_ICONASTERISK : MB_ICONHAND;
+    }
+    else if (style == 1)
+    {
+        sound = enabled ? MB_ICONEXCLAMATION : MB_ICONQUESTION;
+    }
+    MessageBeep(sound);
+}
+
 void Menu::PlaySoundFeedback(unsigned int eventFlag, bool enabled)
 {
     if (!g_cfg.ui_sounds || (g_cfg.sound_flags & eventFlag) == 0)
@@ -122,16 +209,12 @@ void Menu::PlaySoundFeedback(unsigned int eventFlag, bool enabled)
         return;
     }
 
-    UINT sound = MB_OK;
-    if (g_cfg.sound_style == 0)
-    {
-        sound = enabled ? MB_ICONASTERISK : MB_ICONHAND;
-    }
-    else if (g_cfg.sound_style == 1)
-    {
-        sound = enabled ? MB_ICONEXCLAMATION : MB_ICONQUESTION;
-    }
-    MessageBeep(sound);
+    int style = g_cfg.sound_style;
+    if (eventFlag == 1) style = g_cfg.sound_enable_style;
+    else if (eventFlag == 2) style = g_cfg.sound_disable_style;
+    else if (eventFlag == 4) style = g_cfg.sound_menu_style;
+    else if (eventFlag == 8) style = g_cfg.sound_tab_style;
+    PlaySoundPreset(style, enabled);
 }
 
 void Menu::PushNotification(const char* label, bool enabled)
@@ -453,7 +536,7 @@ void Menu::InitTextures()
 void Menu::WindowBegin()
 {
     const float s = GetScale();
-    ImVec2 window_size = ImVec2(800.0f * s, 550.0f * s);
+    ImVec2 window_size = ImVec2(880.0f * s, 550.0f * s);
     ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
 
     static int centered_scale = 0;
@@ -484,8 +567,8 @@ void Menu::WindowBegin()
     list->Flags |= ImDrawListFlags_AntiAliasedFill | ImDrawListFlags_AntiAliasedLines;
 
     ImVec2 wp = GetWindowPos();
-    list->PushClipRect(wp, ImVec2(wp.x + 720.0f * s, wp.y + 520.0f * s));
-    ImGui::PushClipRect(wp, ImVec2(wp.x + 720.0f * s, wp.y + 520.0f * s), false);
+    list->PushClipRect(wp, ImVec2(wp.x + 800.0f * s, wp.y + 520.0f * s));
+    ImGui::PushClipRect(wp, ImVec2(wp.x + 800.0f * s, wp.y + 520.0f * s), false);
 }
 
 void Menu::WindowEnd()
@@ -508,8 +591,8 @@ void Menu::DrawBackground()
     ImDrawList* list = draw_list;
     const float alpha = GetAlpha();
     const ImVec2 window_pos = GetWindowPos();
-    const ImVec2 window_max = window_pos + ImVec2(720.0f * s, 520.0f * s);
-    const ImVec2 header_size(720.0f * s, 52.0f * s);
+    const ImVec2 window_max = window_pos + ImVec2(800.0f * s, 520.0f * s);
+    const ImVec2 header_size(800.0f * s, 52.0f * s);
     const float rail_width = 76.0f * s;
     const c_color rose(234, 179, 200, 255);
     const c_color panel(90, 65, 78, 255);
@@ -530,7 +613,7 @@ void Menu::DrawBackground()
         const float wave = 0.53f
             + 0.040f * std::sin(v * 18.5f - time * 1.2f)
             + 0.026f * std::sin(v * 39.0f + time * 0.8f);
-        const ImVec2 point(window_pos.x + wave * 720.0f * s, window_pos.y + v * 520.0f * s);
+        const ImVec2 point(window_pos.x + wave * 800.0f * s, window_pos.y + v * 520.0f * s);
         if (i > 0)
         {
             list->AddLine(previous, point, rose.new_alpha((int)(22.0f * alpha)).as_imcolor(), 24.0f * s);
@@ -544,7 +627,7 @@ void Menu::DrawBackground()
         window_pos + ImVec2(rail_width - 7.0f * s, 511.0f * s),
         IM_COL32(67, 48, 59, (int)(118.0f * alpha)), 9.0f * s);
     list->AddLine(window_pos + ImVec2(86.0f * s, 52.0f * s),
-        window_pos + ImVec2(700.0f * s, 52.0f * s), IM_COL32(228, 209, 218, (int)(45.0f * alpha)), 1.0f * s);
+        window_pos + ImVec2(780.0f * s, 52.0f * s), IM_COL32(228, 209, 218, (int)(45.0f * alpha)), 1.0f * s);
 
     // Keep the logo centered over the module rail and render it without a
     // tint so the cleaned high-resolution pink artwork stays crisp.
@@ -558,16 +641,16 @@ void Menu::DrawBackground()
 
     ImGui::PushFont(g_fonts.title);
     const ImVec2 title_size = ImGui::CalcTextSize("OSINT");
-    list->AddText(window_pos + ImVec2((720.0f * s - title_size.x) * 0.5f, 4.0f * s),
+    list->AddText(window_pos + ImVec2((800.0f * s - title_size.x) * 0.5f, 4.0f * s),
         IM_COL32(255, 247, 251, (int)(255.0f * alpha)), "OSINT");
     ImGui::PopFont();
 
     static const char* build_text = "build 1.0";
     const ImVec2 build_size = ImGui::CalcTextSize(build_text);
-    list->AddText(window_pos + ImVec2((720.0f * s - build_size.x) * 0.5f, 34.0f * s),
+    list->AddText(window_pos + ImVec2((800.0f * s - build_size.x) * 0.5f, 34.0f * s),
         IM_COL32(225, 198, 211, (int)(220.0f * alpha)), build_text);
 
-    const ImVec2 close_center = window_pos + ImVec2(700.0f * s, 26.0f * s);
+    const ImVec2 close_center = window_pos + ImVec2(780.0f * s, 26.0f * s);
     const ImVec2 close_min = close_center - ImVec2(12.0f * s, 12.0f * s);
     const ImVec2 close_max = close_center + ImVec2(12.0f * s, 12.0f * s);
     const bool close_hovered = ImGui::IsMouseHoveringRect(close_min, close_max);
@@ -1011,8 +1094,8 @@ void Menu::DrawSubTabs(int& selector, const std::vector<std::string>& tabs)
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, a));
-    draw_list->AddRectFilled(child_pos, child_pos + ImVec2(612.0f * s, 58.0f * s), IM_COL32(104, 79, 92, (int)(150.0f * a)), 8.0f * s);
-    draw_list->AddRect(child_pos, child_pos + ImVec2(612.0f * s, 58.0f * s), IM_COL32(224, 199, 211, (int)(78.0f * a)), 8.0f * s);
+    draw_list->AddRectFilled(child_pos, child_pos + ImVec2(692.0f * s, 58.0f * s), IM_COL32(104, 79, 92, (int)(150.0f * a)), 8.0f * s);
+    draw_list->AddRect(child_pos, child_pos + ImVec2(692.0f * s, 58.0f * s), IM_COL32(224, 199, 211, (int)(78.0f * a)), 8.0f * s);
 
     c_color accent = g_cfg.accent.to_color();
 
@@ -1058,8 +1141,8 @@ void Menu::DrawSubTabs(int& selector, const std::vector<std::string>& tabs)
     ImGui::PopStyleColor(4);
     ImGui::SetCursorPos(prev);
     ImGui::ItemSize(ImVec2(0, 62.0f * s));
-    ImGui::PushClipRect(child_pos + ImVec2(0.0f, 62.0f * s), child_pos + ImVec2(620.0f * s, 457.0f * s), false);
-    draw_list->PushClipRect(child_pos + ImVec2(0.0f, 62.0f * s), child_pos + ImVec2(620.0f * s, 457.0f * s));
+    ImGui::PushClipRect(child_pos + ImVec2(0.0f, 62.0f * s), child_pos + ImVec2(700.0f * s, 457.0f * s), false);
+    draw_list->PushClipRect(child_pos + ImVec2(0.0f, 62.0f * s), child_pos + ImVec2(700.0f * s, 457.0f * s));
 }
 
 void Menu::UpdateSubFade(int tab, int& sub)
@@ -1130,7 +1213,7 @@ void Menu::DrawContent()
 
     const float s = GetScale();
     ImGui::SetCursorPos(ImVec2(131.0f * s, 79.0f * s));
-    ImRect window_bb = ImRect(window_pos + ImVec2(76.0f * s, 52.0f * s), window_pos + ImVec2(725.0f * s, 520.0f * s));
+    ImRect window_bb = ImRect(window_pos + ImVec2(76.0f * s, 52.0f * s), window_pos + ImVec2(805.0f * s, 520.0f * s));
     ImGui::PushClipRect(window_bb.Min, window_bb.Max, false);
     ImGui::BeginChild("##tab_child", ImVec2(), true);
 

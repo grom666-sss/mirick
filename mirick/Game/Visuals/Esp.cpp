@@ -245,7 +245,7 @@ void Esp::Update()
                     {
                         --clip;
                     }
-                    snprintf(ammoLabel, sizeof(ammoLabel), "МАГАЗИН  %u", clip);
+                    snprintf(ammoLabel, sizeof(ammoLabel), "%u", clip);
                     ammoSize = ImGui::CalcTextSize(ammoLabel);
                 }
                 weaponNameSize = ImGui::CalcTextSize(weaponName);

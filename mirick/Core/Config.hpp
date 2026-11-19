@@ -23,7 +23,11 @@ struct config_t
     bool ui_notifications = true;
     bool ui_sounds = true;
     unsigned int sound_flags = 15;
-    int sound_style = 0;
+    int sound_style = 0; // Legacy fallback for configs before per-event sounds.
+    int sound_enable_style = 0;
+    int sound_disable_style = 1;
+    int sound_menu_style = 3;
+    int sound_tab_style = 0;
     bool show_player_list = false;
     bool antiobs = true;
     float binds_x = 10.0f;

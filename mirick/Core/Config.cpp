@@ -210,6 +210,10 @@ bool config_t::Save(const std::string& name)
     WriteBool(body, "ui_sounds", ui_sounds);
     WriteInt(body, "sound_flags", (int)sound_flags);
     WriteInt(body, "sound_style", sound_style);
+    WriteInt(body, "sound_enable_style", sound_enable_style);
+    WriteInt(body, "sound_disable_style", sound_disable_style);
+    WriteInt(body, "sound_menu_style", sound_menu_style);
+    WriteInt(body, "sound_tab_style", sound_tab_style);
     WriteBool(body, "show_player_list", show_player_list);
     WriteBool(body, "antiobs", antiobs);
     WriteFloat(body, "binds_x", binds_x);
@@ -507,7 +511,11 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "ui_notifications") { ReadBool(value, ui_notifications); }
     else if (key == "ui_sounds") { ReadBool(value, ui_sounds); }
     else if (key == "sound_flags") { int t = 15; if (ReadInt(value, t)) { sound_flags = (unsigned int)(t & 15); } }
-    else if (key == "sound_style") { ReadInt(value, sound_style); sound_style = std::clamp(sound_style, 0, 2); }
+    else if (key == "sound_style") { ReadInt(value, sound_style); sound_style = std::clamp(sound_style, 0, 3); }
+    else if (key == "sound_enable_style") { ReadInt(value, sound_enable_style); sound_enable_style = std::clamp(sound_enable_style, 0, 3); }
+    else if (key == "sound_disable_style") { ReadInt(value, sound_disable_style); sound_disable_style = std::clamp(sound_disable_style, 0, 3); }
+    else if (key == "sound_menu_style") { ReadInt(value, sound_menu_style); sound_menu_style = std::clamp(sound_menu_style, 0, 3); }
+    else if (key == "sound_tab_style") { ReadInt(value, sound_tab_style); sound_tab_style = std::clamp(sound_tab_style, 0, 3); }
     else if (key == "show_player_list") { ReadBool(value, show_player_list); }
     else if (key == "antiobs") { ReadBool(value, antiobs); }
     else if (key == "binds_x") { ReadFloat(value, binds_x); }
