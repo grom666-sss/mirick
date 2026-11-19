@@ -100,6 +100,7 @@ public:
     void PlaySoundPreset(int style, bool enabled = true);
     void PushNotification(const char* label, bool enabled);
     void DrawNotifications();
+    void DrawBackdrop();
     void DrawFunctionDescription(const char* label, bool hovered);
     void SetDrawList(ImDrawList* list);
     void SetWindowPos(const ImVec2& pos);
