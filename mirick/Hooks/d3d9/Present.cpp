@@ -111,7 +111,7 @@ static void InitImGui(IDirect3DDevice9* device)
         MessageBoxW(
             hGameWindow,
             L"Capture-protected overlay could not be created. Visuals were disabled so they cannot leak into a recording. Use Windows 10 2004+ and borderless/windowed mode.",
-            L"mirick capture protection",
+            L"OSINT capture protection",
             MB_OK | MB_ICONWARNING);
     }
 
@@ -217,20 +217,20 @@ void Present::InstallHook()
 
     if (!sPresentTarget)
     {
-        MessageBoxA(NULL, "Failed to find device for d3d9/present", "mirick", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to find device for d3d9/present", "OSINT", MB_OK | MB_ICONERROR);
         return;
     }
 
     status = MH_CreateHook(sPresentTarget, &hkPresent, reinterpret_cast<LPVOID*>(&oPresent));
     if (status != MH_OK)
     {
-        MessageBoxA(NULL, "Failed to create hook on function d3d9/present", "mirick", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to create hook on function d3d9/present", "OSINT", MB_OK | MB_ICONERROR);
     }
 
     status = MH_EnableHook(sPresentTarget);
     if (status != MH_OK)
     {
-        MessageBoxA(NULL, "Failed to enable hook on function d3d9/present", "mirick", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to enable hook on function d3d9/present", "OSINT", MB_OK | MB_ICONERROR);
     }
 }
 
@@ -265,12 +265,12 @@ void Present::RemoveHook()
     status = MH_DisableHook(sPresentTarget);
     if (status != MH_OK)
     {
-        MessageBoxA(NULL, "Failed to disable hook on function d3d9/present", "mirick", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to disable hook on function d3d9/present", "OSINT", MB_OK | MB_ICONERROR);
     }
 
     status = MH_RemoveHook(sPresentTarget);
     if (status != MH_OK)
     {
-        MessageBoxA(NULL, "Failed to remove hook on function d3d9/present", "mirick", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to remove hook on function d3d9/present", "OSINT", MB_OK | MB_ICONERROR);
     }
 }

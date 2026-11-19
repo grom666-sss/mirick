@@ -29,12 +29,12 @@
 
 namespace
 {
-    constexpr wchar_t kWindowClass[] = L"MirickLauncherWindow";
-    constexpr wchar_t kProductName[] = L"mirick launcher";
+    constexpr wchar_t kWindowClass[] = L"OSINTLauncherWindow";
+    constexpr wchar_t kProductName[] = L"OSINT launcher";
     constexpr wchar_t kApiHost[] = L"api.github.com";
     constexpr wchar_t kReleasePath[] = L"/repos/grom666-sss/mirick/releases/latest";
-    constexpr char kProgramAsset[] = "mirick-client.exe";
-    constexpr char kChecksumAsset[] = "mirick-client.exe.sha256";
+    constexpr char kProgramAsset[] = "OSINT-client.exe";
+    constexpr char kChecksumAsset[] = "OSINT-client.exe.sha256";
     constexpr UINT WM_APP_RESULT = WM_APP + 1;
     constexpr UINT WM_APP_PROGRESS = WM_APP + 2;
 
@@ -102,7 +102,7 @@ namespace
         wchar_t path[MAX_PATH]{};
         if (FAILED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, SHGFP_TYPE_CURRENT, path)))
             return std::filesystem::current_path();
-        return std::filesystem::path(path) / L"mirick";
+        return std::filesystem::path(path) / L"OSINT";
     }
 
     std::filesystem::path SettingsPath() { return SettingsDirectory() / L"launcher.ini"; }
@@ -159,7 +159,7 @@ namespace
 
     bool HttpGet(const std::wstring& host, const std::wstring& path, std::vector<unsigned char>& output, std::wstring& error, bool report_progress = false)
     {
-        internet_handle session(WinHttpOpen(L"mirick-launcher/1.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+        internet_handle session(WinHttpOpen(L"OSINT-launcher/1.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
             WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0));
         if (!session.value) { error = L"Не удалось открыть WinHTTP"; return false; }
         WinHttpSetTimeouts(session, 10000, 10000, 20000, 30000);
@@ -288,7 +288,7 @@ namespace
         if (info.version.empty()) { error = L"В последнем релизе отсутствует tag_name"; return false; }
         if (program.empty() || checksum.empty())
         {
-            error = L"Релиз должен содержать mirick-client.exe и mirick-client.exe.sha256";
+            error = L"Релиз должен содержать OSINT-client.exe и OSINT-client.exe.sha256";
             return false;
         }
         info.program_url = Utf8ToWide(program);
@@ -373,8 +373,8 @@ namespace
         std::error_code ec;
         std::filesystem::create_directories(directory, ec);
         if (ec) { FinishJob(false, L"Не удалось создать папку установки"); return; }
-        std::filesystem::path temporary = directory / L"mirick-client.exe.download";
-        std::filesystem::path destination = directory / L"mirick-client.exe";
+        std::filesystem::path temporary = directory / L"OSINT-client.exe.download";
+        std::filesystem::path destination = directory / L"OSINT-client.exe";
         {
             std::ofstream file(temporary, std::ios::binary | std::ios::trunc);
             if (!file) { FinishJob(false, L"Не удалось открыть временный файл"); return; }
@@ -424,7 +424,7 @@ namespace
 
     void LaunchInstalled()
     {
-        std::filesystem::path executable = std::filesystem::path(GetInstallPath()) / L"mirick-client.exe";
+        std::filesystem::path executable = std::filesystem::path(GetInstallPath()) / L"OSINT-client.exe";
         if (!std::filesystem::exists(executable))
         {
             g_app.status = L"Приложение ещё не установлено";
@@ -454,6 +454,30 @@ namespace
         DrawTextW(dc, text.c_str(), -1, &rect, format);
     }
 
+    void DrawOsintLogo(HDC dc, int x, int y)
+    {
+        const COLORREF pink = RGB(240, 30, 125);
+        HPEN outer = CreatePen(PS_SOLID, 6, pink);
+        HPEN inner = CreatePen(PS_SOLID, 4, pink);
+        HBRUSH dot = CreateSolidBrush(pink);
+        HGDIOBJ old_pen = SelectObject(dc, outer);
+        HGDIOBJ old_brush = SelectObject(dc, GetStockObject(NULL_BRUSH));
+
+        Arc(dc, x, y, x + 34, y + 34, x + 29, y + 6, x + 29, y + 28);
+        SelectObject(dc, inner);
+        Arc(dc, x + 15, y + 9, x + 31, y + 25, x + 25, y + 11, x + 25, y + 23);
+        Arc(dc, x + 21, y + 6, x + 39, y + 28, x + 31, y + 8, x + 31, y + 26);
+        SelectObject(dc, GetStockObject(NULL_PEN));
+        SelectObject(dc, dot);
+        Ellipse(dc, x + 14, y + 14, x + 21, y + 21);
+
+        SelectObject(dc, old_brush);
+        SelectObject(dc, old_pen);
+        DeleteObject(dot);
+        DeleteObject(inner);
+        DeleteObject(outer);
+    }
+
     void PaintWindow(HWND window)
     {
         PAINTSTRUCT paint{};
@@ -469,8 +493,8 @@ namespace
         Fill(dc, RECT{ 222, 328, client.right - 26, 423 }, Color(13, 18, 29));
         Fill(dc, RECT{ 222, 179, client.right - 26, 181 }, Color(113, 105, 255));
 
-        DrawTextAt(dc, L"M", RECT{ 20, 10, 51, 48 }, Color(168, 168, 255), g_app.title_font, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-        DrawTextAt(dc, L"MIRICK LAUNCHER", RECT{ 58, 8, 300, 50 }, Color(242, 245, 255), g_app.title_font);
+        DrawOsintLogo(dc, 17, 11);
+        DrawTextAt(dc, L"OSINT LAUNCHER", RECT{ 62, 8, 300, 50 }, Color(242, 245, 255), g_app.title_font);
         DrawTextAt(dc, L"БЕЗОПАСНЫЙ ЗАПУСК", RECT{ 18, 84, 178, 112 }, Color(112, 124, 148), g_app.font);
         DrawTextAt(dc, L"•  ОБНОВЛЕНИЯ", RECT{ 18, 128, 178, 158 }, Color(220, 224, 238), g_app.font);
         DrawTextAt(dc, L"•  УСТАНОВКА", RECT{ 18, 166, 178, 196 }, Color(150, 158, 178), g_app.font);

@@ -260,7 +260,7 @@ void Menu::InitTextures()
 
     if (!logo_texture)
     {
-        Texture::FromMemory(device, mirickLogo, sizeof(mirickLogo), &logo_texture);
+        Texture::FromMemory(device, osintLogo, sizeof(osintLogo), &logo_texture);
     }
 
     if (!kb_texture)
@@ -396,7 +396,7 @@ void Menu::DrawBackground()
 
     ImGui::PushFont(g_fonts.dmg);
     list->AddText(window_pos + ImVec2(91.0f * s, 15.0f * s),
-        IM_COL32(250, 245, 249, (int)(255.0f * alpha)), "mirick menu");
+        IM_COL32(250, 245, 249, (int)(255.0f * alpha)), "OSINT");
     ImGui::PopFont();
 
     static const char* author = "m1racl";
@@ -478,7 +478,7 @@ void Menu::DrawCharacterPanel()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 9.0f * s);
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-    ImGui::Begin("##mirick_character_panel", nullptr,
+    ImGui::Begin("##osint_character_panel", nullptr,
         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar |
         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove);
@@ -656,7 +656,7 @@ void Menu::DrawAuthorPanel()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 9.0f * s);
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
     ImGui::Begin(
-        "##mirick_author_drawer",
+        "##osint_author_drawer",
         nullptr,
         ImGuiWindowFlags_NoDecoration |
         ImGuiWindowFlags_NoSavedSettings |
@@ -676,7 +676,7 @@ void Menu::DrawAuthorPanel()
     panel_draw->AddCircleFilled(avatar_center, 17.0f * s, accent.new_alpha(static_cast<int>(45.0f * panel_alpha)).as_imcolor());
     panel_draw->AddText(avatar_center - ImVec2(5.0f * s, 8.0f * s), accent.new_alpha(static_cast<int>(255.0f * panel_alpha)).as_imcolor(), "M");
     panel_draw->AddText(panel_min + ImVec2(61.0f * s, 22.0f * s), IM_COL32(250, 243, 247, static_cast<int>(255.0f * panel_alpha)), "m1racl");
-    panel_draw->AddText(panel_min + ImVec2(61.0f * s, 43.0f * s), IM_COL32(210, 186, 198, static_cast<int>(245.0f * panel_alpha)), tr("Автор mirick", "mirick author"));
+    panel_draw->AddText(panel_min + ImVec2(61.0f * s, 43.0f * s), IM_COL32(210, 186, 198, static_cast<int>(245.0f * panel_alpha)), tr("Автор OSINT", "OSINT author"));
     panel_draw->AddLine(panel_min + ImVec2(18.0f * s, 75.0f * s), panel_min + ImVec2(248.0f * s, 75.0f * s), IM_COL32(220, 194, 207, static_cast<int>(100.0f * panel_alpha)));
 
     auto contact_card = [&](const char* id, const char* service, const char* value, float y, const ImU32 service_color)
@@ -720,7 +720,7 @@ void Menu::DrawAuthorPanel()
         panel_draw->AddText(panel_min + ImVec2(18.0f * s, 231.0f * s), IM_COL32(203, 177, 190, static_cast<int>(230.0f * panel_alpha)), tr("Нажмите, чтобы скопировать Discord", "Click to copy Discord"));
     }
 
-    panel_draw->AddText(panel_min + ImVec2(18.0f * s, 416.0f * s), IM_COL32(181, 153, 167, static_cast<int>(210.0f * panel_alpha)), "mirick  /  m1racl");
+    panel_draw->AddText(panel_min + ImVec2(18.0f * s, 416.0f * s), IM_COL32(181, 153, 167, static_cast<int>(210.0f * panel_alpha)), "OSINT  /  m1racl");
     ImGui::End(false);
     ImGui::PopStyleColor();
     ImGui::PopStyleVar(2);

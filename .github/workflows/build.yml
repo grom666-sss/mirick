@@ -1,4 +1,4 @@
-name: Build Windows launcher
+name: Build OSINT for Windows
 
 on:
   push:
@@ -32,8 +32,8 @@ jobs:
       - name: Upload launcher
         uses: actions/upload-artifact@v4
         with:
-          name: mirick-launcher-Win32
-          path: Release/mirick-launcher.exe
+          name: OSINT-launcher-Win32
+          path: Release/OSINT-launcher.exe
           if-no-files-found: error
 
   plugin:
@@ -45,10 +45,10 @@ jobs:
       - name: Configure MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Build mirick plugin
+      - name: Build OSINT plugin
         shell: pwsh
         run: |
-          msbuild mirick.sln /t:mirick /m /nologo /p:Configuration=Release /p:Platform=Win32 2>&1 | Tee-Object -FilePath msbuild.log
+          msbuild mirick.sln /t:OSINT /m /nologo /p:Configuration=Release /p:Platform=Win32 2>&1 | Tee-Object -FilePath msbuild.log
           $buildExit = $LASTEXITCODE
           if ($buildExit -ne 0) {
             Get-Content msbuild.log | Select-String -Pattern ': error [A-Z]+[0-9]+:' | ForEach-Object {
@@ -61,8 +61,8 @@ jobs:
       - name: Upload plugin
         uses: actions/upload-artifact@v4
         with:
-          name: mirick-plugin-Win32
-          path: Release/mirick.dll
+          name: OSINT-plugin-Win32
+          path: Release/OSINT.dll
           if-no-files-found: error
 
   release:
@@ -75,13 +75,13 @@ jobs:
       - name: Download launcher artifact
         uses: actions/download-artifact@v4
         with:
-          name: mirick-launcher-Win32
+          name: OSINT-launcher-Win32
           path: release
 
       - name: Download plugin artifact
         uses: actions/download-artifact@v4
         with:
-          name: mirick-plugin-Win32
+          name: OSINT-plugin-Win32
           path: release
 
       - name: Create checksums
@@ -101,8 +101,8 @@ jobs:
           gh release create $env:RELEASE_TAG `
             --repo $env:GITHUB_REPOSITORY `
             --target $env:GITHUB_SHA `
-            --title "Mirick Menu $env:RELEASE_TAG" `
+            --title "OSINT $env:RELEASE_TAG" `
             --generate-notes `
-            'release\mirick.dll#mirick.dll' `
-            'release\mirick-launcher.exe#mirick-launcher.exe' `
+            'release\OSINT.dll#OSINT.dll' `
+            'release\OSINT-launcher.exe#OSINT-launcher.exe' `
             'release\SHA256SUMS.txt#SHA256SUMS.txt'

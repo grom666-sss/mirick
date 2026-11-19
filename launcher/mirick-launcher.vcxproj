@@ -14,8 +14,8 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{A6E9C90D-0C2F-47DA-B9BE-59D30B93D5D1}</ProjectGuid>
-    <RootNamespace>mirick_launcher</RootNamespace>
-    <ProjectName>mirick-launcher</ProjectName>
+    <RootNamespace>OSINT_launcher</RootNamespace>
+    <ProjectName>OSINT-launcher</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -46,12 +46,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)..\Release\</OutDir>
     <IntDir>$(ProjectDir)obj\Release\</IntDir>
-    <TargetName>mirick-launcher</TargetName>
+    <TargetName>OSINT-launcher</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Beta|Win32'">
     <OutDir>$(ProjectDir)..\Beta\</OutDir>
     <IntDir>$(ProjectDir)obj\Beta\</IntDir>
-    <TargetName>mirick-launcher-beta</TargetName>
+    <TargetName>OSINT-launcher-beta</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

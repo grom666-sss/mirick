@@ -1,6 +1,6 @@
-# mirick
+# OSINT
 
-mirick — internal cheat for MTA:SA FORKS like NEXTRP, MTA PROVINCE for offcial MTA you need update bypass.cpp/hpp.
+OSINT — internal cheat for MTA:SA FORKS like NEXTRP, MTA PROVINCE for offcial MTA you need update bypass.cpp/hpp.
 
 Made as a base for your own projects and easy to understand for beginners. Everything is split into separate files, so features, hooks and menu are easy to find and edit.
 
@@ -29,7 +29,7 @@ Then open `mirick.sln` (the traditional solution format with the widest Visual S
 
 ## Safe launcher
 
-The solution also contains `mirick-launcher`, a standalone Win32 launcher/updater. It does not inject DLLs, map processes, collect HWIDs, or bypass security software. It can:
+The solution also contains the `OSINT launcher`, a standalone Win32 launcher/updater. It does not inject DLLs, map processes, collect HWIDs, or bypass security software. It can:
 
 * check this repository's latest GitHub Release without a token;
 * download a normal Windows executable over HTTPS;
@@ -39,10 +39,10 @@ The solution also contains `mirick-launcher`, a standalone Win32 launcher/update
 
 For an update to be installable, the GitHub Release must contain both assets below:
 
-* `mirick-client.exe` — the regular application to install;
-* `mirick-client.exe.sha256` — a text file beginning with the executable's 64-character SHA-256 hash.
+* `OSINT-client.exe` — the regular application to install;
+* `OSINT-client.exe.sha256` — a text file beginning with the executable's 64-character SHA-256 hash.
 
-Build **Release | Win32** and use `Release\mirick-launcher.exe`. Launcher settings are stored in `%LOCALAPPDATA%\mirick\launcher.ini`.
+Build **Release | Win32** and use `Release\OSINT-launcher.exe`. Launcher settings are stored in `%LOCALAPPDATA%\OSINT\launcher.ini`.
 
 ## Capture protection
 
