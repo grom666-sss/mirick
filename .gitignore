@@ -1,6 +1,32 @@
-/build/
-/.vs/
+# Visual Studio / MSBuild
+.vs/
 *.user
 *.suo
-*.dll
+*.VC.db
+*.VC.VC.opendb
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Bb]eta/
+x64/
+x86/
+mirick/Release/
+
+# Build artifacts
+*.obj
 *.pdb
+*.idb
+*.iobj
+*.ipdb
+*.ilk
+*.exp
+*.lib
+*.dll
+*.recipe
+*.tlog
+*.lastbuildstate
+*.log
+
+# Downloaded by setup_dependencies.bat
+thirdparty/plugin-sdk/
