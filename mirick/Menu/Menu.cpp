@@ -96,6 +96,87 @@ namespace
         }();
         return wav;
     }
+
+    const std::array<std::vector<unsigned char>, 5>& Ios17StyleWavs()
+    {
+        static const std::array<std::vector<unsigned char>, 5> sounds = []
+        {
+            std::array<std::vector<unsigned char>, 5> result;
+            constexpr unsigned int sampleRate = 22050;
+            constexpr float duration = 0.82f;
+            constexpr unsigned int sampleCount = static_cast<unsigned int>(sampleRate * duration);
+            const float frequencies[5][4] = {
+                { 1046.50f, 1567.98f, 2093.00f, 0.0f },
+                { 880.00f, 1318.51f, 1760.00f, 0.0f },
+                { 1760.00f, 1396.91f, 2093.00f, 0.0f },
+                { 659.25f, 987.77f, 1318.51f, 1975.53f },
+                { 1174.66f, 2349.32f, 1760.00f, 0.0f }
+            };
+            const float starts[5][4] = {
+                { 0.00f, 0.12f, 0.24f, 0.0f },
+                { 0.00f, 0.18f, 0.36f, 0.0f },
+                { 0.00f, 0.14f, 0.29f, 0.0f },
+                { 0.00f, 0.10f, 0.20f, 0.30f },
+                { 0.00f, 0.08f, 0.27f, 0.0f }
+            };
+            const int noteCounts[5] = { 3, 3, 3, 4, 3 };
+
+            for (int variant = 0; variant < 5; ++variant)
+            {
+                std::vector<short> samples(sampleCount);
+                for (unsigned int i = 0; i < sampleCount; ++i)
+                {
+                    const float t = static_cast<float>(i) / sampleRate;
+                    float value = 0.0f;
+                    for (int note = 0; note < noteCounts[variant]; ++note)
+                    {
+                        const float local = t - starts[variant][note];
+                        if (local < 0.0f)
+                        {
+                            continue;
+                        }
+                        const float attack = std::min(local / 0.010f, 1.0f);
+                        const float decay = std::exp(-local * (6.8f + variant * 0.45f));
+                        const float fundamental = std::sin(6.2831853f * frequencies[variant][note] * local);
+                        const float shimmer = std::sin(6.2831853f * frequencies[variant][note] * 2.01f * local) * 0.16f;
+                        value += attack * decay * (fundamental + shimmer) * (0.34f - note * 0.035f);
+                    }
+                    value = std::clamp(value, -1.0f, 1.0f);
+                    samples[i] = static_cast<short>(value * 23500.0f);
+                }
+
+                std::vector<unsigned char>& data = result[variant];
+                data.resize(44 + samples.size() * sizeof(short));
+                auto write16 = [&data](std::size_t offset, unsigned int value)
+                {
+                    data[offset] = static_cast<unsigned char>(value & 0xFF);
+                    data[offset + 1] = static_cast<unsigned char>((value >> 8) & 0xFF);
+                };
+                auto write32 = [&data](std::size_t offset, unsigned int value)
+                {
+                    data[offset] = static_cast<unsigned char>(value & 0xFF);
+                    data[offset + 1] = static_cast<unsigned char>((value >> 8) & 0xFF);
+                    data[offset + 2] = static_cast<unsigned char>((value >> 16) & 0xFF);
+                    data[offset + 3] = static_cast<unsigned char>((value >> 24) & 0xFF);
+                };
+                std::memcpy(data.data(), "RIFF", 4);
+                write32(4, static_cast<unsigned int>(data.size() - 8));
+                std::memcpy(data.data() + 8, "WAVEfmt ", 8);
+                write32(16, 16);
+                write16(20, 1);
+                write16(22, 1);
+                write32(24, sampleRate);
+                write32(28, sampleRate * sizeof(short));
+                write16(32, sizeof(short));
+                write16(34, 16);
+                std::memcpy(data.data() + 36, "data", 4);
+                write32(40, static_cast<unsigned int>(samples.size() * sizeof(short)));
+                std::memcpy(data.data() + 44, samples.data(), samples.size() * sizeof(short));
+            }
+            return result;
+        }();
+        return sounds;
+    }
 }
 
 uint32_t Menu::Hash_Label(const char* text)
@@ -126,11 +207,19 @@ bool Menu::ToggleState()
 
 void Menu::PlaySoundPreset(int style, bool enabled)
 {
-    style = std::clamp(style, 0, 3);
-    if (style == 3)
+    style = std::clamp(style, 0, 8);
+    if (style >= 3)
     {
-        const std::vector<unsigned char>& wav = Ios27NotificationWav();
-        PlaySoundA(reinterpret_cast<LPCSTR>(wav.data()), nullptr,
+        const std::vector<unsigned char>* wav = nullptr;
+        if (style == 3)
+        {
+            wav = &Ios27NotificationWav();
+        }
+        else
+        {
+            wav = &Ios17StyleWavs()[style - 4];
+        }
+        PlaySoundA(reinterpret_cast<LPCSTR>(wav->data()), nullptr,
             SND_ASYNC | SND_MEMORY | SND_NODEFAULT);
         return;
     }

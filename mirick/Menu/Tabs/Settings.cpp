@@ -83,14 +83,16 @@ void Menu::DrawSettings()
 
         ImGui::NextColumn();
         GroupBegin(tr("Звук для события", "Sound for event"));
-        static const std::string presets[] = {
+        const char* preset_items[] = {
             tr("Мягкий", "Soft"),
             tr("Контрастный", "Contrast"),
             tr("Системный", "System"),
-            "iOS 27"
-        };
-        const char* preset_items[] = {
-            presets[0].c_str(), presets[1].c_str(), presets[2].c_str(), presets[3].c_str()
+            "iOS 27",
+            tr("iOS 17 стиль 1", "iOS 17 style 1"),
+            tr("iOS 17 стиль 2", "iOS 17 style 2"),
+            tr("iOS 17 стиль 3", "iOS 17 style 3"),
+            tr("iOS 17 стиль 4", "iOS 17 style 4"),
+            tr("iOS 17 стиль 5", "iOS 17 style 5")
         };
         int* styles[] = {
             &g_cfg.sound_enable_style,
@@ -99,7 +101,7 @@ void Menu::DrawSettings()
             &g_cfg.sound_tab_style
         };
         const bool enabled_preview[] = { true, false, true, true };
-        if (Combo("##event_sound", styles[selected_event], preset_items, 4))
+        if (Combo("##event_sound", styles[selected_event], preset_items, IM_ARRAYSIZE(preset_items)))
         {
             SaveGeneralConfig();
             PlaySoundPreset(*styles[selected_event], enabled_preview[selected_event]);
