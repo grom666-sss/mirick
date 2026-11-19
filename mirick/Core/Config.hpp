@@ -20,6 +20,9 @@ struct config_t
     int language = 0;
     bool showbinds = false;
     bool show_character_model = true;
+    bool ui_sounds = true;
+    unsigned int sound_flags = 15;
+    int sound_style = 0;
     bool show_player_list = false;
     bool antiobs = true;
     float binds_x = 10.0f;

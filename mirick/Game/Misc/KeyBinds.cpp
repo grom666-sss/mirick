@@ -1,6 +1,7 @@
 #include "Game/Features.h"
 
 #include "Game/Misc/KeyBinds.hpp"
+#include "Menu/Menu.hpp"
 
 #include <map>
 
@@ -17,7 +18,11 @@ namespace
 
         if (bind.mode == 1)
         {
-            value = down;
+            if (value != down)
+            {
+                value = down;
+                menu->PlaySoundFeedback(value ? 1u : 2u, value);
+            }
             return;
         }
 
@@ -30,6 +35,7 @@ namespace
         if (down && !wasDown)
         {
             value = !value;
+            menu->PlaySoundFeedback(value ? 1u : 2u, value);
         }
 
         previousState[&bind] = down;

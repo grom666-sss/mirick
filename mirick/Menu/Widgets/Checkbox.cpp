@@ -53,6 +53,7 @@ bool Menu::Checkbox(const char* label, bool* value)
     {
         *value = !(*value);
         MarkItemEdited(id);
+        PlaySoundFeedback(*value ? 1u : 2u, *value);
     }
 
     CreateAnimation(mod.hovered_alpha, hovered, 1.0f, AnimLerp);
@@ -86,6 +87,7 @@ bool Menu::Checkbox(const char* label, bool* value)
     }
 
     PopStyleColor();
+    DrawFunctionDescription(label, hovered);
     IMGUI_TEST_ENGINE_ITEM_INFO(id, label, window->DC.ItemFlags | ImGuiItemStatusFlags_Checkable | (*value ? ImGuiItemStatusFlags_Checked : 0));
 
     return pressed;

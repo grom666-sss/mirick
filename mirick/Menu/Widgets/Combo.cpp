@@ -261,6 +261,7 @@ bool Menu::BeginCombo(const char* label, const char* preview_value, ImGuiComboFl
     draw_list->AddLine(left_line_min, left_line_max, c_color(255, 255, 255, (int)(255 * alpha)).u32(), 1.5f * s);
     draw_list->AddLine(left_line_min + ImVec2(9.0f * s, -1.0f * s), left_line_max, c_color(255, 255, 255, (int)(255 * alpha)).u32(), 1.5f * s);
 
+    DrawFunctionDescription(label, hovered);
     if (!popup_open)
     {
         return false;

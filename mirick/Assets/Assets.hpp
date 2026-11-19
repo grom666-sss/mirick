@@ -1,6 +1,6 @@
 #pragma once
 extern unsigned char SFUIDisplay_SemiBold[193080];
-extern unsigned char osintLogo[18644];
+extern unsigned char osintLogo[14312];
 extern unsigned char rage_icon[366];
 extern unsigned char legit_icon[1924];
 extern unsigned char antihit_icon[434];

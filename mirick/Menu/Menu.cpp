@@ -110,8 +110,84 @@ bool Menu::GetState()
 bool Menu::ToggleState()
 {
     g_cfg.menu_open = !g_cfg.menu_open;
-
+    PlaySoundFeedback(4, g_cfg.menu_open);
     return g_cfg.menu_open;
+}
+
+void Menu::PlaySoundFeedback(unsigned int eventFlag, bool enabled)
+{
+    if (!g_cfg.ui_sounds || (g_cfg.sound_flags & eventFlag) == 0)
+    {
+        return;
+    }
+
+    UINT sound = MB_OK;
+    if (g_cfg.sound_style == 0)
+    {
+        sound = enabled ? MB_ICONASTERISK : MB_ICONHAND;
+    }
+    else if (g_cfg.sound_style == 1)
+    {
+        sound = enabled ? MB_ICONEXCLAMATION : MB_ICONQUESTION;
+    }
+    MessageBeep(sound);
+}
+
+void Menu::DrawFunctionDescription(const char* label, bool hovered)
+{
+    if (!hovered || !label || !*label)
+    {
+        return;
+    }
+
+    const bool english = g_cfg.language == 1;
+    auto contains = [label](const char* text) { return std::strstr(label, text) != nullptr; };
+    const char* description = nullptr;
+
+    if (contains("Валлхак") || contains("Wallhack")) description = english ? "Shows selected information for visible network player entities." : "Показывает выбранную информацию о сетевых игроках.";
+    else if (contains("Дальность") || contains("Range")) description = english ? "Maximum distance at which the feature is rendered." : "Максимальная дистанция отображения функции.";
+    else if (contains("Аирбрейк") || contains("Airbreak")) description = english ? "Free movement: W/S forward-back, A/D left-right, Space/Shift up-down." : "Свободный полёт: W/S вперёд-назад, A/D влево-вправо, Space/Shift вверх-вниз.";
+    else if (contains("Годмод") || contains("Godmode")) description = english ? "Temporarily applies damage-protection flags to the player and current vehicle." : "Применяет защиту от урона к игроку и текущему транспорту.";
+    else if (contains("Случайный") || contains("Random")) description = english ? "Enables protection only after a timed probability roll." : "Включает защиту по периодической проверке выбранного шанса.";
+    else if (contains("падения") || contains("fall damage")) description = english ? "Prevents fall damage when landing." : "Предотвращает урон при падении и приземлении.";
+    else if (contains("Рапид") || contains("Rapid fire")) description = english ? "Reduces the delay between weapon shots." : "Уменьшает задержку между выстрелами оружия.";
+    else if (contains("Бесконечные") || contains("Infinite ammo")) description = english ? "Keeps ammunition available for the equipped weapon." : "Сохраняет патроны текущего оружия.";
+    else if (contains("Быстрый прицел") || contains("Fast crosshair")) description = english ? "Speeds up weapon aiming and crosshair readiness." : "Ускоряет готовность оружия и прицела.";
+    else if (contains("Без отдачи") || contains("No recoil")) description = english ? "Removes camera and weapon recoil." : "Убирает отдачу оружия и камеры.";
+    else if (contains("Без разброса") || contains("No spread")) description = english ? "Removes weapon bullet spread." : "Убирает разброс выстрелов оружия.";
+    else if (contains("Триггербот") || contains("Triggerbot")) description = english ? "Fires when the crosshair is over a valid target." : "Стреляет, когда прицел наведён на подходящую цель.";
+    else if (contains("Анти OBS") || contains("OBS protection")) description = english ? "Moves menu rendering to the protected overlay used by the existing capture setting." : "Переносит меню в защищённый оверлей штатной настройки захвата.";
+    else if (contains("Найтмод") || contains("Nightmode")) description = english ? "Applies a darker night environment preset." : "Применяет тёмный ночной пресет окружения.";
+    else if (contains("Своё время") || contains("Custom time")) description = english ? "Overrides the displayed game time." : "Задаёт собственное отображаемое игровое время.";
+    else if (contains("Заморозить") || contains("Freeze time")) description = english ? "Stops custom time from advancing." : "Останавливает изменение выбранного времени.";
+    else if (contains("Чистка мира") || contains("World Removals")) description = english ? "Hides selected world effects such as shadows, sun, or clouds." : "Скрывает выбранные эффекты мира: тени, солнце или облака.";
+    else if (contains("Небо") || contains("Sky")) description = english ? "Overrides the upper and lower sky colors." : "Заменяет цвета верхней и нижней части неба.";
+    else if (contains("Свет и вода") || contains("Light & water")) description = english ? "Overrides ambient lighting and water colors." : "Заменяет цвета освещения и воды.";
+    else if (contains("Фулбрайт") || contains("Fullbright")) description = english ? "Raises scene brightness for improved visibility." : "Повышает яркость сцены для лучшей видимости.";
+    else if (contains("Аспект") || contains("Aspect")) description = english ? "Changes the rendered screen aspect ratio." : "Изменяет соотношение сторон изображения.";
+    else if (contains("Фов") || contains("Field of view") || contains("Fov")) description = english ? "Changes the camera field of view." : "Изменяет угол обзора камеры.";
+    else if (contains("Кейбинды") || contains("Keybinds")) description = english ? "Shows the active keybind panel." : "Показывает панель активных клавиш.";
+    else if (contains("Модель персонажа") || contains("Character model")) description = english ? "Shows the off-screen character model preview beside the menu." : "Показывает 3D-превью модели персонажа рядом с меню.";
+    else if (contains("Звуки интерфейса") || contains("Interface sounds")) description = english ? "Enables sound feedback for selected interface events." : "Включает звуковые сигналы для выбранных событий интерфейса.";
+    else if (contains("Стиль звука") || contains("Sound style")) description = english ? "Selects the Windows sound set used for feedback." : "Выбирает набор системных звуков для уведомлений.";
+    else if (contains("Язык") || contains("Language")) description = english ? "Changes the menu language." : "Изменяет язык интерфейса меню.";
+    else if (contains("список") || contains("player list")) description = english ? "Shows detected network player entities sorted by distance." : "Показывает найденных сетевых игроков по дистанции.";
+    else description = english ? "Changes this function or its display setting." : "Изменяет работу функции или параметр её отображения.";
+
+    const float s = GetScale();
+    const float wrap = 300.0f * s;
+    const ImVec2 text_size = ImGui::CalcTextSize(description, nullptr, false, wrap);
+    ImVec2 pos = ImGui::GetIO().MousePos + ImVec2(16.0f * s, 18.0f * s);
+    const ImVec2 size = text_size + ImVec2(22.0f * s, 18.0f * s);
+    const ImVec2 display = ImGui::GetIO().DisplaySize;
+    pos.x = std::min(pos.x, display.x - size.x - 6.0f * s);
+    pos.y = std::min(pos.y, display.y - size.y - 6.0f * s);
+
+    ImDrawList* overlay = ImGui::GetForegroundDrawList();
+    overlay->AddRectFilled(pos + ImVec2(3.0f * s, 4.0f * s), pos + size + ImVec2(3.0f * s, 4.0f * s), IM_COL32(0, 0, 0, 90), 8.0f * s);
+    overlay->AddRectFilled(pos, pos + size, IM_COL32(73, 52, 63, 250), 8.0f * s);
+    overlay->AddRect(pos, pos + size, g_cfg.accent.to_color().new_alpha(150).as_imcolor(), 8.0f * s);
+    overlay->AddText(g_fonts.main, 14.0f * s, pos + ImVec2(11.0f * s, 9.0f * s), IM_COL32(250, 241, 246, 255), description, nullptr, wrap);
 }
 
 void Menu::SetDrawList(ImDrawList* list)
@@ -386,29 +462,21 @@ void Menu::DrawBackground()
     list->AddLine(window_pos + ImVec2(86.0f * s, 52.0f * s),
         window_pos + ImVec2(700.0f * s, 52.0f * s), IM_COL32(228, 209, 218, (int)(45.0f * alpha)), 1.0f * s);
 
-    const ImVec2 logo_min = window_pos + ImVec2(18.0f * s, 15.0f * s);
-    const ImVec2 logo_max = logo_min + ImVec2(23.0f * s, 23.0f * s);
+    // Keep the logo centered over the module rail and render it without a
+    // tint so the cleaned high-resolution pink artwork stays crisp.
+    const ImVec2 logo_min = window_pos + ImVec2(21.5f * s, 9.0f * s);
+    const ImVec2 logo_max = logo_min + ImVec2(33.0f * s, 33.0f * s);
     if (logo_texture)
     {
         list->AddImage((void*)logo_texture, logo_min, logo_max, ImVec2(0, 0), ImVec2(1, 1),
-            IM_COL32(250, 220, 232, (int)(255.0f * alpha)));
+            IM_COL32(255, 255, 255, (int)(255.0f * alpha)));
     }
 
-    ImGui::PushFont(g_fonts.dmg);
-    list->AddText(window_pos + ImVec2(91.0f * s, 15.0f * s),
-        IM_COL32(250, 245, 249, (int)(255.0f * alpha)), "OSINT");
+    ImGui::PushFont(g_fonts.title);
+    const ImVec2 title_size = ImGui::CalcTextSize("OSINT");
+    list->AddText(window_pos + ImVec2((720.0f * s - title_size.x) * 0.5f, (52.0f * s - title_size.y) * 0.5f),
+        IM_COL32(255, 247, 251, (int)(255.0f * alpha)), "OSINT");
     ImGui::PopFont();
-
-    static const char* author = "m1racl";
-    const ImVec2 author_size = ImGui::CalcTextSize(author);
-    const ImVec2 badge_max = window_pos + ImVec2(675.0f * s, 39.0f * s);
-    const ImVec2 badge_min = badge_max - ImVec2(author_size.x + 30.0f * s, 25.0f * s);
-    list->AddRectFilled(badge_min, badge_max, IM_COL32(125, 94, 109, (int)(178.0f * alpha)), 7.0f * s);
-    list->AddRect(badge_min, badge_max, IM_COL32(230, 199, 212, (int)(95.0f * alpha)), 7.0f * s);
-    list->AddCircleFilled(badge_min + ImVec2(12.0f * s, 12.5f * s), 3.2f * s,
-        rose.new_alpha((int)(255.0f * alpha)).as_imcolor());
-    list->AddText(badge_min + ImVec2(22.0f * s, 5.0f * s),
-        IM_COL32(249, 240, 246, (int)(255.0f * alpha)), author);
 
     const ImVec2 close_center = window_pos + ImVec2(700.0f * s, 26.0f * s);
     const ImVec2 close_min = close_center - ImVec2(12.0f * s, 12.0f * s);
@@ -421,20 +489,14 @@ void Menu::DrawBackground()
     list->AddLine(close_center + ImVec2(4.5f * s, -4.5f * s), close_center + ImVec2(-4.5f * s, 4.5f * s), close_color, 1.7f * s);
     if (close_hovered && ImGui::IsMouseClicked(0))
     {
-        g_cfg.menu_open = false;
+        ToggleState();
     }
 
     list->AddRect(window_pos, window_max, IM_COL32(242, 220, 230, (int)(62.0f * alpha)), 13.0f * s);
 
     ImGuiIO& io = ImGui::GetIO();
     const ImVec2 header_max(window_pos.x + header_size.x, window_pos.y + header_size.y);
-    const bool author_hovered = ImGui::IsMouseHoveringRect(badge_min, badge_max);
-    if (author_hovered && ImGui::IsMouseClicked(0))
-    {
-        author_panel_open = !author_panel_open;
-    }
-
-    if (!s_dragging && !author_hovered && !close_hovered
+    if (!s_dragging && !close_hovered
         && ImGui::IsMouseHoveringRect(window_pos, header_max) && ImGui::IsMouseClicked(0))
     {
         s_dragging = true;
@@ -750,6 +812,7 @@ void Menu::DrawTabs()
         if (clicked)
         {
             tab_selector = i;
+            PlaySoundFeedback(8, true);
         }
 
         CreateAnimation(info.hovered_alpha, info.hovered, 1.0f, AnimLerp);
@@ -816,13 +879,22 @@ void Menu::DrawTabs()
             list->AddCircleFilled(center + ImVec2(3.0f * s, 0.0f), 2.0f * s, icon_color, 10);
             list->AddCircleFilled(center + ImVec2(-1.0f * s, 4.5f * s), 2.0f * s, icon_color, 10);
             break;
-        default: // Settings gear.
-            list->AddCircle(center, 5.0f * s, icon_color, 16, stroke);
-            list->AddCircleFilled(center, 1.8f * s, icon_color, 10);
-            list->AddLine(center - ImVec2(0.0f, 8.0f * s), center - ImVec2(0.0f, 5.2f * s), icon_color, stroke);
-            list->AddLine(center + ImVec2(0.0f, 5.2f * s), center + ImVec2(0.0f, 8.0f * s), icon_color, stroke);
-            list->AddLine(center - ImVec2(8.0f * s, 0.0f), center - ImVec2(5.2f * s, 0.0f), icon_color, stroke);
-            list->AddLine(center + ImVec2(5.2f * s, 0.0f), center + ImVec2(8.0f * s, 0.0f), icon_color, stroke);
+        default: // Solid eight-tooth settings gear.
+            for (int tooth = 0; tooth < 8; ++tooth)
+            {
+                const float angle = tooth * 6.2831853f / 8.0f;
+                const float root = 5.3f * s;
+                const float tip = 8.2f * s;
+                const float rootHalf = 0.21f;
+                const float tipHalf = 0.13f;
+                const ImVec2 p0(center.x + std::cos(angle - rootHalf) * root, center.y + std::sin(angle - rootHalf) * root);
+                const ImVec2 p1(center.x + std::cos(angle - tipHalf) * tip, center.y + std::sin(angle - tipHalf) * tip);
+                const ImVec2 p2(center.x + std::cos(angle + tipHalf) * tip, center.y + std::sin(angle + tipHalf) * tip);
+                const ImVec2 p3(center.x + std::cos(angle + rootHalf) * root, center.y + std::sin(angle + rootHalf) * root);
+                list->AddQuadFilled(p0, p1, p2, p3, icon_color);
+            }
+            list->AddCircleFilled(center, 5.5f * s, icon_color, 20);
+            list->AddCircleFilled(center, 2.2f * s, IM_COL32(90, 65, 78, (int)(255.0f * GetAlpha())), 14);
             break;
         }
 
@@ -868,6 +940,7 @@ void Menu::DrawSubTabs(int& selector, const std::vector<std::string>& tabs)
         if (clicked)
         {
             selector = i;
+            PlaySoundFeedback(8, true);
         }
 
         CreateAnimation(info.hovered_alpha, info.hovered, 1.0f, AnimLerp);
@@ -1022,7 +1095,6 @@ void Menu::Draw()
     {
         DrawCharacterPanel();
     }
-    DrawAuthorPanel();
     draw_list->PopClipRect();
     ImGui::PopClipRect();
     WindowEnd();

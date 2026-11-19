@@ -206,6 +206,9 @@ bool config_t::Save(const std::string& name)
     WriteInt(body, "language", language);
     WriteBool(body, "showbinds", showbinds);
     WriteBool(body, "show_character_model", show_character_model);
+    WriteBool(body, "ui_sounds", ui_sounds);
+    WriteInt(body, "sound_flags", (int)sound_flags);
+    WriteInt(body, "sound_style", sound_style);
     WriteBool(body, "show_player_list", show_player_list);
     WriteBool(body, "antiobs", antiobs);
     WriteFloat(body, "binds_x", binds_x);
@@ -500,6 +503,9 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "language") { ReadInt(value, language); }
     else if (key == "showbinds") { ReadBool(value, showbinds); }
     else if (key == "show_character_model") { ReadBool(value, show_character_model); }
+    else if (key == "ui_sounds") { ReadBool(value, ui_sounds); }
+    else if (key == "sound_flags") { int t = 15; if (ReadInt(value, t)) { sound_flags = (unsigned int)(t & 15); } }
+    else if (key == "sound_style") { ReadInt(value, sound_style); sound_style = std::clamp(sound_style, 0, 2); }
     else if (key == "show_player_list") { ReadBool(value, show_player_list); }
     else if (key == "antiobs") { ReadBool(value, antiobs); }
     else if (key == "binds_x") { ReadFloat(value, binds_x); }

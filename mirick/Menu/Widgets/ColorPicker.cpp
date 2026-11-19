@@ -754,6 +754,7 @@ bool Menu::ColorPicker(const char* label, c_float_color& value, ImGuiColorEditFl
 
     PopID();
     EndGroup();
+    DrawFunctionDescription(label, ImGui::IsItemHovered());
 
     return value_changed;
 }

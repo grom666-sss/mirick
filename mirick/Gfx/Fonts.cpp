@@ -12,6 +12,7 @@ void Fonts::Init()
     cfg.OversampleV = 3;
     main = io.Fonts->AddFontFromMemoryTTF(SFUIDisplay_SemiBold, sizeof(SFUIDisplay_SemiBold), 14.0f, &cfg, io.Fonts->GetGlyphRangesCyrillic());
     dmg = io.Fonts->AddFontFromMemoryTTF(SFUIDisplay_SemiBold, sizeof(SFUIDisplay_SemiBold), 18.0f, &cfg, io.Fonts->GetGlyphRangesCyrillic());
+    title = io.Fonts->AddFontFromMemoryTTF(SFUIDisplay_SemiBold, sizeof(SFUIDisplay_SemiBold), 26.0f, &cfg, io.Fonts->GetGlyphRangesCyrillic());
 }
 
 void Fonts::InitStyle()

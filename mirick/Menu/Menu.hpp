@@ -88,6 +88,8 @@ public:
 
     bool GetState();
     bool ToggleState();
+    void PlaySoundFeedback(unsigned int eventFlag, bool enabled = true);
+    void DrawFunctionDescription(const char* label, bool hovered);
     void SetDrawList(ImDrawList* list);
     void SetWindowPos(const ImVec2& pos);
     ImVec2 GetWindowPos();

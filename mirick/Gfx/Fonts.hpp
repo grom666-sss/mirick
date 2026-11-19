@@ -6,6 +6,7 @@ struct Fonts
 {
     ImFont* main = nullptr;
     ImFont* dmg = nullptr;
+    ImFont* title = nullptr;
     void Init();
     static void InitStyle();
 };

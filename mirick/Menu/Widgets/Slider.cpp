@@ -217,6 +217,7 @@ bool Menu::SliderScalar(const char* label, ImGuiDataType data_type, void* data, 
     }
 
     PopStyleColor();
+    DrawFunctionDescription(label, hovered_frame);
     IMGUI_TEST_ENGINE_ITEM_INFO(id, label, window->DC.ItemFlags);
 
     return value_changed;

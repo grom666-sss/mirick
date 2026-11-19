@@ -57,6 +57,7 @@ bool Menu::Button(const char* label)
     draw_list->AddRect(rect.Min, rect.Max, g_cfg.accent.to_color().new_alpha((int)(105.0f * alpha)).as_imcolor(), 7.0f * s);
     RenderTextClipped(rect.Min, rect.Max, label, NULL, &label_size, style.ButtonTextAlign, &bb);
     PopStyleColor();
+    DrawFunctionDescription(label, hovered);
 
     return pressed;
 }
