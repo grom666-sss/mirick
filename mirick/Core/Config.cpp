@@ -202,10 +202,11 @@ bool config_t::Save(const std::string& name)
 
     WriteInt(body, "ui_design_version", 2);
     WriteColor(body, "accent", accent);
+    WriteColor(body, "menu_color", menu_color);
+    WriteInt(body, "backdrop_effect", backdrop_effect);
     WriteInt(body, "ui_scale", ui_scale);
     WriteInt(body, "language", language);
     WriteBool(body, "showbinds", showbinds);
-    WriteBool(body, "show_character_model", show_character_model);
     WriteBool(body, "ui_notifications", ui_notifications);
     WriteBool(body, "ui_sounds", ui_sounds);
     WriteInt(body, "sound_flags", (int)sound_flags);
@@ -218,7 +219,6 @@ bool config_t::Save(const std::string& name)
     WriteBool(body, "antiobs", antiobs);
     WriteFloat(body, "binds_x", binds_x);
     WriteFloat(body, "binds_y", binds_y);
-    WriteInt(body, "player_skin_id", player_skin_id);
     WriteBool(body, "godmode", godmode);
     WriteInt(body, "godmode_key", godmode_bind.key);
     WriteInt(body, "godmode_mode", godmode_bind.mode);
@@ -369,6 +369,8 @@ bool config_t::Load(const std::string& name)
 
         if (key == "ui_design_version") { ReadInt(value, loadedDesignVersion); }
         else if (key == "accent") { ReadColor(value, accent); }
+        else if (key == "menu_color") { ReadColor(value, menu_color); }
+        else if (key == "backdrop_effect") { ReadInt(value, backdrop_effect); backdrop_effect = std::clamp(backdrop_effect, 0, 2); }
         else if (key == "godmode") { ReadBool(value, godmode); }
         else if (key == "godmode_key") { ReadInt(value, godmode_bind.key); }
         else if (key == "godmode_mode") { ReadInt(value, godmode_bind.mode); }
@@ -507,7 +509,8 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "ui_scale") { ReadInt(value, ui_scale); }
     else if (key == "language") { ReadInt(value, language); }
     else if (key == "showbinds") { ReadBool(value, showbinds); }
-    else if (key == "show_character_model") { ReadBool(value, show_character_model); }
+    else if (key == "menu_color") { ReadColor(value, menu_color); }
+    else if (key == "backdrop_effect") { ReadInt(value, backdrop_effect); backdrop_effect = std::clamp(backdrop_effect, 0, 2); }
     else if (key == "ui_notifications") { ReadBool(value, ui_notifications); }
     else if (key == "ui_sounds") { ReadBool(value, ui_sounds); }
     else if (key == "sound_flags") { int t = 15; if (ReadInt(value, t)) { sound_flags = (unsigned int)(t & 15); } }
@@ -520,7 +523,6 @@ void config_t::LoadTail(const std::string& key, const std::string& value)
     else if (key == "antiobs") { ReadBool(value, antiobs); }
     else if (key == "binds_x") { ReadFloat(value, binds_x); }
     else if (key == "binds_y") { ReadFloat(value, binds_y); }
-    else if (key == "player_skin_id") { ReadInt(value, player_skin_id); }
 }
 
 bool config_t::Remove(const std::string& name)

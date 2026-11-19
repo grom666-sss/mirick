@@ -15,7 +15,6 @@
 #include "Gfx/Blur.hpp"
 #include "Gfx/Fonts.hpp"
 #include "Gfx/Texture.hpp"
-#include "Gfx/CharacterPreview.hpp"
 
 #include "Game/Features.h"
 
@@ -28,67 +27,13 @@ static ImVec2 s_drag_pending_pos{};
 
 namespace
 {
-    struct skin_range_t
+    c_color Shade(const c_color& color, float factor, int alpha = 255)
     {
-        int first;
-        int last;
-    };
-
-    // IDs transcribed from the Next RP catalogue supplied by the user.
-    constexpr skin_range_t kNextRpSkinRanges[] = {
-        { 39, 41 }, { 43, 64 }, { 66, 73 }, { 75, 85 }, { 87, 118 },
-        { 120, 148 }, { 150, 207 }, { 209, 224 }, { 226, 264 },
-        { 267, 272 }, { 274, 301 }, { 303, 309 }, { 312, 312 },
-        { 6712, 6726 }, { 6732, 6752 }, { 6809, 6855 }, { 6857, 6912 },
-        { 10861, 10959 }, { 13891, 13919 }
-    };
-
-    bool IsNextRpSkinId(int id)
-    {
-        for (const skin_range_t& range : kNextRpSkinRanges)
+        auto channel = [factor](int value)
         {
-            if (id >= range.first && id <= range.last)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    int StepNextRpSkinId(int id, int direction)
-    {
-        if (direction > 0)
-        {
-            for (const skin_range_t& range : kNextRpSkinRanges)
-            {
-                if (id < range.first)
-                {
-                    return range.first;
-                }
-                if (id >= range.first && id < range.last)
-                {
-                    return id + 1;
-                }
-            }
-
-            return kNextRpSkinRanges[0].first;
-        }
-
-        for (int i = IM_ARRAYSIZE(kNextRpSkinRanges) - 1; i >= 0; --i)
-        {
-            const skin_range_t& range = kNextRpSkinRanges[i];
-            if (id > range.last)
-            {
-                return range.last;
-            }
-            if (id > range.first && id <= range.last)
-            {
-                return id - 1;
-            }
-        }
-
-        return kNextRpSkinRanges[IM_ARRAYSIZE(kNextRpSkinRanges) - 1].last;
+            return std::clamp(static_cast<int>(value * factor), 0, 255);
+        };
+        return c_color(channel(color.r()), channel(color.g()), channel(color.b()), alpha);
     }
 
     const std::vector<unsigned char>& Ios27NotificationWav()
@@ -204,7 +149,7 @@ void Menu::PlaySoundPreset(int style, bool enabled)
 
 void Menu::PlaySoundFeedback(unsigned int eventFlag, bool enabled)
 {
-    if (!g_cfg.ui_sounds || (g_cfg.sound_flags & eventFlag) == 0)
+    if (!g_cfg.ui_sounds)
     {
         return;
     }
@@ -282,12 +227,12 @@ void Menu::DrawNotifications()
         const float slide = (1.0f - fadeIn) * 34.0f * s;
         const ImVec2 pos(
             ImGui::GetIO().DisplaySize.x - size.x - 18.0f * s + slide,
-            18.0f * s + visibleIndex * 55.0f * s);
+            ImGui::GetIO().DisplaySize.y - size.y - 18.0f * s - visibleIndex * 55.0f * s);
         const c_color accent = item.enabled ? c_color(115, 225, 155) : c_color(241, 126, 159);
         const int a = (int)(245.0f * opacity);
 
         overlay->AddRectFilled(pos + ImVec2(4.0f * s, 5.0f * s), pos + size + ImVec2(4.0f * s, 5.0f * s), IM_COL32(0, 0, 0, (int)(80.0f * opacity)), 9.0f * s);
-        overlay->AddRectFilled(pos, pos + size, IM_COL32(71, 51, 62, a), 9.0f * s);
+        overlay->AddRectFilled(pos, pos + size, Shade(g_cfg.menu_color.to_color(), 0.80f, a).as_imcolor(), 9.0f * s);
         overlay->AddRectFilled(pos, pos + ImVec2(4.0f * s, size.y), accent.new_alpha((int)(235.0f * opacity)).as_imcolor(), 3.0f * s);
         overlay->AddText(pos + ImVec2(14.0f * s, 7.0f * s), IM_COL32(253, 244, 249, (int)(255.0f * opacity)), item.label.c_str());
         overlay->AddText(pos + ImVec2(14.0f * s, 26.0f * s), accent.new_alpha((int)(245.0f * opacity)).as_imcolor(),
@@ -297,6 +242,73 @@ void Menu::DrawNotifications()
 
     notifications.erase(std::remove_if(notifications.begin(), notifications.end(),
         [lifetime](const ui_notification_t& item) { return item.age >= lifetime; }), notifications.end());
+}
+
+void Menu::DrawBackdrop()
+{
+    if (alpha <= 0.01f)
+    {
+        return;
+    }
+
+    ImDrawList* background = ImGui::GetBackgroundDrawList();
+    const ImVec2 display = ImGui::GetIO().DisplaySize;
+    const int backdrop_alpha = static_cast<int>(205.0f * alpha);
+    Blur::Create(background, ImVec2(0.0f, 0.0f), display,
+        ImColor(38, 28, 36, backdrop_alpha), 0.0f, 0);
+
+    // Decorative particles are generated procedurally, so the backdrop stays
+    // lightweight and does not require external textures or network access.
+    const float time = static_cast<float>(ImGui::GetTime());
+    const c_color accent = g_cfg.accent.to_color();
+    auto random01 = [](unsigned int value)
+    {
+        value ^= value >> 16;
+        value *= 0x7feb352du;
+        value ^= value >> 15;
+        value *= 0x846ca68bu;
+        value ^= value >> 16;
+        return static_cast<float>(value & 0xffffu) / 65535.0f;
+    };
+
+    for (unsigned int i = 0; i < 42; ++i)
+    {
+        const float x = random01(i * 37u + 11u) * display.x;
+        const float speed = 9.0f + random01(i * 71u + 3u) * 17.0f;
+        const float y_seed = random01(i * 101u + 29u) * (display.y + 80.0f);
+        const float y = std::fmod(y_seed + time * speed, display.y + 80.0f) - 40.0f;
+        const float radius = (2.2f + random01(i * 13u + 5u) * 3.6f) * GetScale();
+        const int particle_alpha = static_cast<int>((70.0f + random01(i * 19u) * 90.0f) * alpha);
+        const ImU32 color = accent.new_alpha(particle_alpha).as_imcolor();
+        const ImVec2 center(x, y);
+
+        if (g_cfg.backdrop_effect == 0)
+        {
+            background->AddCircle(center, radius, color, 10, 1.2f * GetScale());
+            background->AddLine(center - ImVec2(radius * 1.45f, 0.0f), center + ImVec2(radius * 1.45f, 0.0f), color, 1.0f * GetScale());
+            background->AddLine(center - ImVec2(0.0f, radius * 1.45f), center + ImVec2(0.0f, radius * 1.45f), color, 1.0f * GetScale());
+        }
+        else if (g_cfg.backdrop_effect == 1)
+        {
+            const ImVec2 top = center - ImVec2(0.0f, radius * 1.8f);
+            const ImVec2 right = center + ImVec2(radius, 0.0f);
+            const ImVec2 bottom = center + ImVec2(0.0f, radius * 1.8f);
+            const ImVec2 left = center - ImVec2(radius, 0.0f);
+            background->AddQuadFilled(top, right, bottom, left, accent.new_alpha(particle_alpha / 3).as_imcolor());
+            background->AddQuad(top, right, bottom, left, color, 1.1f * GetScale());
+            background->AddLine(top, bottom, accent.new_alpha(particle_alpha / 2).as_imcolor(), 0.8f * GetScale());
+        }
+        else
+        {
+            const ImVec2 p0 = center - ImVec2(radius * 0.25f, radius * 1.8f);
+            const ImVec2 p1 = center + ImVec2(radius * 0.50f, -radius * 0.35f);
+            const ImVec2 p2 = center - ImVec2(radius * 0.10f, -radius * 0.35f);
+            const ImVec2 p3 = center + ImVec2(radius * 0.20f, radius * 1.8f);
+            background->AddLine(p0, p1, color, 1.7f * GetScale());
+            background->AddLine(p1, p2, color, 1.7f * GetScale());
+            background->AddLine(p2, p3, color, 1.7f * GetScale());
+        }
+    }
 }
 
 void Menu::DrawFunctionDescription(const char* label, bool hovered)
@@ -594,8 +606,8 @@ void Menu::DrawBackground()
     const ImVec2 window_max = window_pos + ImVec2(800.0f * s, 520.0f * s);
     const ImVec2 header_size(800.0f * s, 52.0f * s);
     const float rail_width = 76.0f * s;
-    const c_color rose(234, 179, 200, 255);
-    const c_color panel(90, 65, 78, 255);
+    const c_color rose = g_cfg.accent.to_color();
+    const c_color panel = g_cfg.menu_color.to_color();
 
     // Adapted from the supplied Grape ImGui reference. Keep the native Win32 /
     // D3D9 backend, but reproduce its rounded rose shell and soft lighting.
@@ -625,7 +637,7 @@ void Menu::DrawBackground()
 
     list->AddRectFilled(window_pos + ImVec2(8.0f * s, 9.0f * s),
         window_pos + ImVec2(rail_width - 7.0f * s, 511.0f * s),
-        IM_COL32(67, 48, 59, (int)(118.0f * alpha)), 9.0f * s);
+        Shade(panel, 0.72f, (int)(118.0f * alpha)).as_imcolor(), 9.0f * s);
     list->AddLine(window_pos + ImVec2(86.0f * s, 52.0f * s),
         window_pos + ImVec2(780.0f * s, 52.0f * s), IM_COL32(228, 209, 218, (int)(45.0f * alpha)), 1.0f * s);
 
@@ -689,174 +701,6 @@ void Menu::DrawBackground()
             s_dragging = false;
         }
     }
-}
-
-void Menu::DrawCharacterPanel()
-{
-    const float s = GetScale();
-    const float panel_alpha = GetAlpha();
-    const ImVec2 panel_size(212.0f * s, 520.0f * s);
-    const ImVec2 panel_pos = GetWindowPos() - ImVec2(224.0f * s, 0.0f);
-    const c_color accent = g_cfg.accent.to_color();
-    static int preview_skin_id = 39;
-    static bool preview_initialized = false;
-    if (!preview_initialized)
-    {
-        preview_skin_id = g_cfg.player_skin_id;
-        preview_initialized = true;
-    }
-
-    ImGui::SetNextWindowPos(panel_pos, ImGuiCond_Always);
-    ImGui::SetNextWindowSize(panel_size, ImGuiCond_Always);
-    ImGui::SetNextWindowBgAlpha(0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 9.0f * s);
-    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-    ImGui::Begin("##osint_character_panel", nullptr,
-        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar |
-        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove);
-
-    ImDrawList* panel_draw = ImGui::GetWindowDrawList();
-    const ImVec2 panel_max = panel_pos + panel_size;
-    panel_draw->AddRectFilled(panel_pos + ImVec2(4.0f * s, 6.0f * s), panel_max + ImVec2(4.0f * s, 6.0f * s), IM_COL32(0, 0, 0, (int)(95.0f * panel_alpha)), 9.0f * s);
-    panel_draw->AddRectFilled(panel_pos, panel_max, IM_COL32(82, 59, 71, (int)(250.0f * panel_alpha)), 9.0f * s);
-    panel_draw->AddRectFilled(panel_pos, panel_pos + ImVec2(panel_size.x, 43.0f * s), IM_COL32(105, 77, 91, (int)(245.0f * panel_alpha)), 9.0f * s, ImDrawCornerFlags_Top);
-    panel_draw->AddRectFilledMultiColor(
-        panel_pos + ImVec2(0, 42.0f * s), panel_pos + ImVec2(panel_size.x, 44.0f * s),
-        accent.new_alpha(0).as_imcolor(), accent.new_alpha((int)(220.0f * panel_alpha)).as_imcolor(),
-        accent.new_alpha((int)(220.0f * panel_alpha)).as_imcolor(), accent.new_alpha(0).as_imcolor());
-    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 13.0f * s), IM_COL32(250, 243, 247, (int)(255.0f * panel_alpha)), tr("МОДЕЛЬ ПЕРСОНАЖА", "CHARACTER MODEL"));
-
-    char preview_model[64]{};
-    ImFormatString(preview_model, IM_ARRAYSIZE(preview_model), "%s: %d", tr("Скин в превью", "Preview skin"), preview_skin_id);
-    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 54.0f * s), IM_COL32(211, 187, 199, (int)(235.0f * panel_alpha)), preview_model);
-
-    CharacterPreview::SelectModel(preview_skin_id);
-    IDirect3DTexture9* preview_texture = CharacterPreview::GetTexture();
-    const ImVec2 preview_min = panel_pos + ImVec2(15.0f * s, 76.0f * s);
-    const ImVec2 preview_max = panel_pos + ImVec2(197.0f * s, 358.0f * s);
-    panel_draw->AddRectFilled(preview_min, preview_max, IM_COL32(55, 39, 47, (int)(245.0f * panel_alpha)), 6.0f * s);
-    if (preview_texture)
-    {
-        panel_draw->AddImage(
-            reinterpret_cast<ImTextureID>(preview_texture), preview_min, preview_max,
-            ImVec2(0, 0), ImVec2(1, 1), IM_COL32(255, 255, 255, (int)(255.0f * panel_alpha)));
-    }
-
-    static float preview_yaw = 0.0f;
-    static CharacterPreview::PosePart pose_part = CharacterPreview::PosePart::Head;
-    ImGui::SetCursorScreenPos(preview_min);
-    ImGui::InvisibleButton("##character_preview_view", preview_max - preview_min);
-    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
-    {
-        preview_yaw = 0.0f;
-        CharacterPreview::ResetPose();
-    }
-    else if (ImGui::IsItemActive() && ImGui::IsMouseDragging(0))
-    {
-        preview_yaw += ImGui::GetIO().MouseDelta.x * 0.8f;
-        CharacterPreview::SetRotation(preview_yaw);
-    }
-    if (ImGui::IsItemHovered() && ImGui::IsMouseDragging(1))
-    {
-        CharacterPreview::AdjustPose(pose_part, ImGui::GetIO().MouseDelta.x * 0.35f);
-    }
-
-    ImGui::SetCursorPos(ImVec2(15.0f * s, 365.0f * s));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f * s, 0.0f));
-    if (ImGui::SmallButton(tr("Голова##pose_head", "Head##pose_head")))
-    {
-        pose_part = CharacterPreview::PosePart::Head;
-    }
-    ImGui::SameLine();
-    if (ImGui::SmallButton(tr("Руки##pose_arms", "Arms##pose_arms")))
-    {
-        pose_part = CharacterPreview::PosePart::Arms;
-    }
-    ImGui::SameLine();
-    if (ImGui::SmallButton(tr("Ноги##pose_legs", "Legs##pose_legs")))
-    {
-        pose_part = CharacterPreview::PosePart::Legs;
-    }
-    ImGui::PopStyleVar();
-
-    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 395.0f * s),
-        IM_COL32(211, 187, 199, (int)(220.0f * panel_alpha)),
-        tr("ЛКМ: обзор, ПКМ: поза", "LMB: rotate, RMB: pose"));
-
-    ImGui::SetCursorPos(ImVec2(15.0f * s, 417.0f * s));
-    ImGui::PushItemWidth(182.0f * s);
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.42f, 0.32f, 0.37f, panel_alpha));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.52f, 0.40f, 0.46f, panel_alpha));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.94f, 0.96f, 1.0f, panel_alpha));
-    ImGui::InputInt("##next_rp_skin_id", &g_cfg.player_skin_id, 0, 0, ImGuiInputTextFlags_CharsDecimal);
-    ImGui::PopStyleColor(3);
-    ImGui::PopItemWidth();
-
-    ImGui::SetCursorPos(ImVec2(15.0f * s, 452.0f * s));
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.34f, 0.40f, panel_alpha));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(accent.r() / 255.0f, accent.g() / 255.0f, accent.b() / 255.0f, 0.28f * panel_alpha));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(accent.r() / 255.0f, accent.g() / 255.0f, accent.b() / 255.0f, 0.42f * panel_alpha));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.94f, 0.96f, 1.0f, panel_alpha));
-
-    if (ImGui::Button("<##skin_prev", ImVec2(42.0f * s, 27.0f * s)))
-    {
-        g_cfg.player_skin_id = StepNextRpSkinId(g_cfg.player_skin_id, -1);
-    }
-    ImGui::SameLine(0.0f, 5.0f * s);
-    if (ImGui::Button(tr("В превью##skin_preview", "Preview##skin_preview"), ImVec2(88.0f * s, 27.0f * s)))
-    {
-        const int id = g_cfg.player_skin_id;
-        preview_skin_id = id;
-        CharacterPreview::SelectModel(id);
-        if (id >= 0 && id <= 32767)
-        {
-            SaveGeneralConfig();
-        }
-    }
-    ImGui::SameLine(0.0f, 5.0f * s);
-    if (ImGui::Button(">##skin_next", ImVec2(42.0f * s, 27.0f * s)))
-    {
-        g_cfg.player_skin_id = StepNextRpSkinId(g_cfg.player_skin_id, 1);
-    }
-    ImGui::PopStyleColor(4);
-
-    const char* status_text = tr("Ожидание модели", "Waiting for model");
-    bool status_ok = false;
-    switch (CharacterPreview::GetState())
-    {
-    case CharacterPreview::State::Ready:
-        status_text = tr("Runtime-модель готова", "Runtime model is ready");
-        status_ok = true;
-        break;
-    case CharacterPreview::State::Loading:
-        status_text = tr("Загрузка runtime-модели...", "Loading runtime model...");
-        break;
-    case CharacterPreview::State::InvalidId:
-        status_text = tr("ID вне таблицы моделей", "ID is outside model table");
-        break;
-    case CharacterPreview::State::NotPed:
-        status_text = tr("ID не является моделью персонажа", "ID is not a ped model");
-        break;
-    case CharacterPreview::State::Unavailable:
-        status_text = tr("Runtime-модель не зарегистрирована", "Runtime model is not registered");
-        break;
-    case CharacterPreview::State::RenderError:
-        status_text = tr("Ошибка off-screen рендера", "Off-screen render error");
-        break;
-    default:
-        break;
-    }
-    const ImU32 status_color = status_ok
-        ? accent.new_alpha((int)(220.0f * panel_alpha)).u32()
-        : IM_COL32(225, 160, 112, (int)(220.0f * panel_alpha));
-    panel_draw->AddText(panel_pos + ImVec2(15.0f * s, 489.0f * s), status_color, status_text);
-    panel_draw->AddRect(panel_pos, panel_max, IM_COL32(224, 197, 210, (int)(92.0f * panel_alpha)), 9.0f * s);
-
-    ImGui::End(false);
-    ImGui::PopStyleColor();
-    ImGui::PopStyleVar(2);
 }
 
 void Menu::DrawAuthorPanel()
@@ -1000,7 +844,7 @@ void Menu::DrawTabs()
         if (tab_selector == i)
         {
             list->AddRectFilled(tmin + ImVec2(6.0f * s, 3.0f * s), tmax - ImVec2(6.0f * s, 3.0f * s),
-                IM_COL32(145, 112, 123, (int)(225.0f * info.alpha * GetAlpha())), 9.0f * s);
+                Shade(g_cfg.menu_color.to_color(), 1.42f, (int)(225.0f * info.alpha * GetAlpha())).as_imcolor(), 9.0f * s);
             list->AddRect(tmin + ImVec2(6.0f * s, 3.0f * s), tmax - ImVec2(6.0f * s, 3.0f * s),
                 accent.new_alpha((int)(105.0f * info.alpha * GetAlpha())).as_imcolor(), 9.0f * s);
         }
@@ -1066,7 +910,7 @@ void Menu::DrawTabs()
                 list->AddQuadFilled(p0, p1, p2, p3, icon_color);
             }
             list->AddCircleFilled(center, 5.5f * s, icon_color, 20);
-            list->AddCircleFilled(center, 2.2f * s, IM_COL32(90, 65, 78, (int)(255.0f * GetAlpha())), 14);
+            list->AddCircleFilled(center, 2.2f * s, g_cfg.menu_color.to_color((int)(255.0f * GetAlpha())).as_imcolor(), 14);
             break;
         }
 
@@ -1094,7 +938,7 @@ void Menu::DrawSubTabs(int& selector, const std::vector<std::string>& tabs)
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, a));
-    draw_list->AddRectFilled(child_pos, child_pos + ImVec2(692.0f * s, 58.0f * s), IM_COL32(104, 79, 92, (int)(150.0f * a)), 8.0f * s);
+    draw_list->AddRectFilled(child_pos, child_pos + ImVec2(692.0f * s, 58.0f * s), Shade(g_cfg.menu_color.to_color(), 1.18f, (int)(150.0f * a)).as_imcolor(), 8.0f * s);
     draw_list->AddRect(child_pos, child_pos + ImVec2(692.0f * s, 58.0f * s), IM_COL32(224, 199, 211, (int)(78.0f * a)), 8.0f * s);
 
     c_color accent = g_cfg.accent.to_color();
@@ -1250,8 +1094,8 @@ void Menu::Draw()
 {
     InitTextures();
     UpdateAlpha();
+    DrawBackdrop();
     DrawNotifications();
-    CharacterPreview::SetVisible(g_cfg.show_character_model && (g_cfg.menu_open || alpha > 0.01f));
 
     if (!g_cfg.menu_open && alpha <= 0.01f)
     {
@@ -1264,10 +1108,6 @@ void Menu::Draw()
     DrawBackground();
     DrawTabs();
     DrawContent();
-    if (g_cfg.show_character_model)
-    {
-        DrawCharacterPanel();
-    }
     draw_list->PopClipRect();
     ImGui::PopClipRect();
     WindowEnd();

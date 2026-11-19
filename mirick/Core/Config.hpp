@@ -16,10 +16,11 @@ struct config_t
 {
     bool menu_open = false;
     c_float_color accent = c_float_color(234, 179, 200);
+    c_float_color menu_color = c_float_color(90, 65, 78);
+    int backdrop_effect = 0; // 0 snowflakes, 1 crystals, 2 small lightning.
     int ui_scale = 100;
     int language = 0;
     bool showbinds = false;
-    bool show_character_model = true;
     bool ui_notifications = true;
     bool ui_sounds = true;
     unsigned int sound_flags = 15;
@@ -32,7 +33,6 @@ struct config_t
     bool antiobs = true;
     float binds_x = 10.0f;
     float binds_y = -1.0f;
-    int player_skin_id = 39;
     bool godmode = false;
     keybind_t godmode_bind{};
     bool godmode_random = false;

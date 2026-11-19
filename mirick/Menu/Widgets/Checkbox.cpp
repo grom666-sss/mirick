@@ -62,7 +62,12 @@ bool Menu::Checkbox(const char* label, bool* value)
 
     const ImVec2 back_size(256.0f * s, 32.0f * s);
     const int hover_lift = (int)(8.0f * mod.hovered_alpha);
-    const c_color back_clr(112 + hover_lift, 88 + hover_lift, 100 + hover_lift, (int)(112.0f * alpha));
+    const c_color menu_color = g_cfg.menu_color.to_color();
+    const c_color back_clr(
+        std::min(255, (int)(menu_color.r() * 1.25f) + hover_lift),
+        std::min(255, (int)(menu_color.g() * 1.25f) + hover_lift),
+        std::min(255, (int)(menu_color.b() * 1.25f) + hover_lift),
+        (int)(112.0f * alpha));
     c_color accent = g_cfg.accent.to_color();
     draw_list->AddRectFilled(pos, pos + back_size, back_clr.as_imcolor(), 7.0f * s);
     draw_list->AddRect(pos, pos + back_size, c_color(220, 197, 208, (int)(74.0f * alpha)).as_imcolor(), 7.0f * s);
@@ -115,8 +120,10 @@ bool Menu::BindableCheckbox(const char* id, const char* label, bool* v, keybind_
             ImDrawList* plist = GetWindowDrawList();
             ImVec2 card_min = ImGui::GetWindowPos();
             ImVec2 card_max = card_min + ImVec2(216.0f * s, 110.0f * s);
-            plist->AddRectFilled(card_min, card_max, c_color(82, 59, 71, (int)(250.0f * pop_alpha)).as_imcolor(), 8.0f * s);
-            Blur::Create(plist, card_min, card_max, ImColor(90, 65, 78, (int)(225.0f * pop_alpha)), 8.0f * s);
+            const c_color popup_color = g_cfg.menu_color.to_color();
+            plist->AddRectFilled(card_min, card_max, popup_color.new_alpha((int)(250.0f * pop_alpha)).as_imcolor(), 8.0f * s);
+            Blur::Create(plist, card_min, card_max,
+                ImColor(popup_color.r(), popup_color.g(), popup_color.b(), (int)(225.0f * pop_alpha)), 8.0f * s);
             ImGuiWindow* window = GetCurrentWindow();
 
             PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, pop_alpha));

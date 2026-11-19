@@ -13,7 +13,6 @@
 
 #include "Gfx/Blur.hpp"
 #include "Gfx/Fonts.hpp"
-#include "Gfx/CharacterPreview.hpp"
 #include "Menu/Menu.hpp"
 #include "Core/Config.hpp"
 #include "Game/Features.h"
@@ -242,8 +241,6 @@ void Present::RemoveHook()
     {
         return;
     }
-
-    CharacterPreview::Shutdown();
 
     if (imgui_initialized)
     {

@@ -1,5 +1,7 @@
 #include "Menu/Menu.hpp"
 
+#include <algorithm>
+
 void Menu::DrawSettings()
 {
     static int sub = 0;
@@ -19,18 +21,31 @@ void Menu::DrawSettings()
         {
             SaveGeneralConfig();
         }
-        if (Checkbox(tr("Модель персонажа", "Character model"), &g_cfg.show_character_model))
+        if (Checkbox(tr("Уведомления", "Notifications"), &g_cfg.ui_notifications))
         {
             SaveGeneralConfig();
         }
-        if (Checkbox(tr("Уведомления", "Notifications"), &g_cfg.ui_notifications))
+
+        static const char* effects_ru[] = { "Снежинки", "Кристаллы", "Маленькие молнии" };
+        static const char* effects_en[] = { "Snowflakes", "Crystals", "Small lightning" };
+        const char* const* effect_items = g_cfg.language == 1 ? effects_en : effects_ru;
+        if (Combo(tr("Эффект фона", "Background effect"), &g_cfg.backdrop_effect, effect_items, 3))
         {
             SaveGeneralConfig();
         }
         GroupEnd();
 
         ImGui::NextColumn();
-        GroupBegin(tr("Язык", "Language"));
+        GroupBegin(tr("Оформление", "Appearance"));
+        if (ColorPicker(tr("Цвет меню", "Menu color"), g_cfg.menu_color, no_alpha_picker))
+        {
+            SaveGeneralConfig();
+        }
+        if (ColorPicker(tr("Цвет акцента", "Accent color"), g_cfg.accent, no_alpha_picker))
+        {
+            SaveGeneralConfig();
+        }
+
         static const std::string languages[] = { "Русский", "English" };
         const char* language_items[] = { languages[0].c_str(), languages[1].c_str() };
         if (Combo(tr("Язык интерфейса", "Interface language"), &g_cfg.language, language_items, 2))
@@ -41,31 +56,33 @@ void Menu::DrawSettings()
     }
     else
     {
-        GroupBegin(tr("Звуки интерфейса", "Interface sounds"));
+        static int selected_event = 0;
+        selected_event = std::clamp(selected_event, 0, 3);
+
+        GroupBegin(tr("События со звуком", "Sound events"));
         if (Checkbox(tr("Звуки интерфейса", "Interface sounds"), &g_cfg.ui_sounds))
         {
             SaveGeneralConfig();
         }
 
-        if (g_cfg.ui_sounds)
-        {
-            std::vector<std::string> events = {
-                tr("Включение функций", "Functions enabled"),
-                tr("Выключение функций", "Functions disabled"),
-                tr("Открытие и закрытие меню", "Menu open and close"),
-                tr("Переключение модулей", "Module switching")
-            };
-            const unsigned int previous = g_cfg.sound_flags;
-            MultiCombo(tr("События со звуком", "Sound events"), g_cfg.sound_flags, events);
-            if (previous != g_cfg.sound_flags)
-            {
-                SaveGeneralConfig();
-            }
-        }
+        static const char* events_ru[] = {
+            "Включение функций",
+            "Выключение функций",
+            "Открытие меню",
+            "Смена модулей"
+        };
+        static const char* events_en[] = {
+            "Functions enabled",
+            "Functions disabled",
+            "Menu open and close",
+            "Module switching"
+        };
+        const char* const* event_items = g_cfg.language == 1 ? events_en : events_ru;
+        Combo("##sound_event", &selected_event, event_items, 4);
         GroupEnd();
 
         ImGui::NextColumn();
-        GroupBegin(tr("Звук для события", "Sound per event"));
+        GroupBegin(tr("Звук для события", "Sound for event"));
         static const std::string presets[] = {
             tr("Мягкий", "Soft"),
             tr("Контрастный", "Contrast"),
@@ -75,27 +92,22 @@ void Menu::DrawSettings()
         const char* preset_items[] = {
             presets[0].c_str(), presets[1].c_str(), presets[2].c_str(), presets[3].c_str()
         };
-        auto soundCombo = [&](unsigned int flag, const char* label, int& style, bool enabledSound)
-        {
-            if ((g_cfg.sound_flags & flag) == 0)
-            {
-                return;
-            }
-            if (Combo(label, &style, preset_items, 4))
-            {
-                SaveGeneralConfig();
-                PlaySoundPreset(style, enabledSound);
-            }
+        int* styles[] = {
+            &g_cfg.sound_enable_style,
+            &g_cfg.sound_disable_style,
+            &g_cfg.sound_menu_style,
+            &g_cfg.sound_tab_style
         };
-
-        soundCombo(1, tr("Включение функций", "Functions enabled"), g_cfg.sound_enable_style, true);
-        soundCombo(2, tr("Выключение функций", "Functions disabled"), g_cfg.sound_disable_style, false);
-        soundCombo(4, tr("Открытие меню", "Menu open"), g_cfg.sound_menu_style, true);
-        soundCombo(8, tr("Переключение модулей", "Module switching"), g_cfg.sound_tab_style, true);
+        const bool enabled_preview[] = { true, false, true, true };
+        if (Combo("##event_sound", styles[selected_event], preset_items, 4))
+        {
+            SaveGeneralConfig();
+            PlaySoundPreset(*styles[selected_event], enabled_preview[selected_event]);
+        }
 
         if (Button(tr("Проверить звук", "Test sound")))
         {
-            PlaySoundPreset(g_cfg.sound_enable_style, true);
+            PlaySoundPreset(*styles[selected_event], enabled_preview[selected_event]);
         }
         GroupEnd();
     }

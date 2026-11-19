@@ -208,7 +208,12 @@ bool Menu::BeginCombo(const char* label, const char* preview_value, ImGuiComboFl
     CreateAnimation(mod.hovered_alpha, hovered, 1.0f, AnimLerp);
 
     const int hover_lift = (int)(10.0f * mod.hovered_alpha);
-    c_color back_clr(112 + hover_lift, 88 + hover_lift, 100 + hover_lift, (int)(112.0f * alpha));
+    const c_color menu_color = g_cfg.menu_color.to_color();
+    c_color back_clr(
+        std::min(255, (int)(menu_color.r() * 1.25f) + hover_lift),
+        std::min(255, (int)(menu_color.g() * 1.25f) + hover_lift),
+        std::min(255, (int)(menu_color.b() * 1.25f) + hover_lift),
+        (int)(112.0f * alpha));
     draw_list->AddRectFilled(frame_bb.Min, frame_bb.Max, back_clr.u32(), 7.0f * s);
     draw_list->AddRect(frame_bb.Min, frame_bb.Max, c_color(220, 197, 208, (int)(70.0f * alpha)).u32(), 7.0f * s);
 
@@ -231,24 +236,36 @@ bool Menu::BeginCombo(const char* label, const char* preview_value, ImGuiComboFl
     mod.active = popup_open;
     CreateAnimation(mod.alpha, popup_open, 0.5f, AnimLerp);
 
-    ImVec2 bg_size = ImVec2(123.0f * s, 31.0f * s);
+    const bool full_width_preview = label_size.x <= 0.0f;
+    ImVec2 bg_size = ImVec2((full_width_preview ? 241.0f : 123.0f) * s, 31.0f * s);
+    ImVec2 combo_bg_min = frame_bb.Min + ImVec2((full_width_preview ? 7.0f : 126.0f) * s, 9.0f * s);
+    ImVec2 combo_bg_max = combo_bg_min + bg_size;
 
     if (preview_value != NULL)
     {
-        ImVec2 size = CalcTextSize(preview_value);
-        float cur_pos = size.x + 36.0f * s;
-        float out_pos = cur_pos + ((bg_size.x - cur_pos)) * mod.alpha;
         PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, alpha));
-        RenderTextClipped(frame_bb.Max - ImVec2(out_pos, 32.0f * s), frame_bb.Max, preview_value, NULL, NULL, ImVec2(0.0f, 0.0f));
+        if (full_width_preview)
+        {
+            RenderTextClipped(combo_bg_min + ImVec2(9.0f * s, 0.0f), combo_bg_max - ImVec2(27.0f * s, 0.0f),
+                preview_value, NULL, NULL, ImVec2(0.0f, 0.5f));
+        }
+        else
+        {
+            ImVec2 size = CalcTextSize(preview_value);
+            float cur_pos = size.x + 36.0f * s;
+            float out_pos = cur_pos + ((bg_size.x - cur_pos)) * mod.alpha;
+            RenderTextClipped(frame_bb.Max - ImVec2(out_pos, 32.0f * s), frame_bb.Max,
+                preview_value, NULL, NULL, ImVec2(0.0f, 0.0f));
+        }
         PopStyleColor();
     }
 
-    ImVec2 combo_bg_min = frame_bb.Min + ImVec2(126.0f * s, 9.0f * s);
-    ImVec2 combo_bg_max = combo_bg_min + bg_size;
-
     if (popup_open)
     {
-        draw_list->AddRectFilled(combo_bg_min, combo_bg_max, c_color(76, 55, 66, (int)(245.0f * alpha * mod.alpha)).as_imcolor(), 7.0f * s, ImDrawCornerFlags_Top);
+        draw_list->AddRectFilled(combo_bg_min, combo_bg_max,
+            c_color((int)(menu_color.r() * 0.84f), (int)(menu_color.g() * 0.84f), (int)(menu_color.b() * 0.84f),
+                (int)(245.0f * alpha * mod.alpha)).as_imcolor(),
+            7.0f * s, ImDrawCornerFlags_Top);
     }
 
     if (popup_open)
@@ -269,10 +286,10 @@ bool Menu::BeginCombo(const char* label, const char* preview_value, ImGuiComboFl
 
     char name[16];
     ImFormatString(name, IM_ARRAYSIZE(name), "##Combo_%02d", g.BeginPopupStack.Size);
-    SetNextWindowPos(frame_bb.Min + ImVec2(126.0f * s, 40.0f * s));
+    SetNextWindowPos(frame_bb.Min + ImVec2((full_width_preview ? 7.0f : 126.0f) * s, 40.0f * s));
 
     float max_size = std::clamp(Calc_Max_Popup_Height(item_cnt), 0.0f, 200.0f * s);
-    ImVec2 items_size = ImVec2(123.0f * s, max_size * mod.alpha);
+    ImVec2 items_size = ImVec2((full_width_preview ? 241.0f : 123.0f) * s, max_size * mod.alpha);
     SetNextWindowSize(items_size);
     SetNextWindowBgAlpha(alpha * mod.alpha);
 
