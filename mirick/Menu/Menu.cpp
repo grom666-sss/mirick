@@ -342,9 +342,19 @@ void Menu::DrawBackdrop()
 
     ImDrawList* background = ImGui::GetBackgroundDrawList();
     const ImVec2 display = ImGui::GetIO().DisplaySize;
-    const int backdrop_alpha = static_cast<int>(205.0f * alpha);
-    Blur::Create(background, ImVec2(0.0f, 0.0f), display,
-        ImColor(38, 28, 36, backdrop_alpha), 0.0f, 0);
+    const c_color menu_color = g_cfg.menu_color.to_color();
+    const int backdrop_alpha = static_cast<int>(148.0f * alpha);
+
+    // Do not run the render-target blur pipeline over the complete protected
+    // overlay. Some NextRP D3D9 wrappers crash when those callbacks replace the
+    // active render target during Present. A translucent four-corner haze keeps
+    // the frosted backdrop look without touching the game's render targets.
+    background->AddRectFilledMultiColor(
+        ImVec2(0.0f, 0.0f), display,
+        IM_COL32(22, 17, 22, backdrop_alpha),
+        IM_COL32(menu_color.r(), menu_color.g(), menu_color.b(), static_cast<int>(112.0f * alpha)),
+        IM_COL32(19, 15, 20, backdrop_alpha),
+        IM_COL32(menu_color.r(), menu_color.g(), menu_color.b(), static_cast<int>(96.0f * alpha)));
 
     // Decorative particles are generated procedurally, so the backdrop stays
     // lightweight and does not require external textures or network access.
