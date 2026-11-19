@@ -558,9 +558,14 @@ void Menu::DrawBackground()
 
     ImGui::PushFont(g_fonts.title);
     const ImVec2 title_size = ImGui::CalcTextSize("OSINT");
-    list->AddText(window_pos + ImVec2((720.0f * s - title_size.x) * 0.5f, (52.0f * s - title_size.y) * 0.5f),
+    list->AddText(window_pos + ImVec2((720.0f * s - title_size.x) * 0.5f, 4.0f * s),
         IM_COL32(255, 247, 251, (int)(255.0f * alpha)), "OSINT");
     ImGui::PopFont();
+
+    static const char* build_text = "build 1.0";
+    const ImVec2 build_size = ImGui::CalcTextSize(build_text);
+    list->AddText(window_pos + ImVec2((720.0f * s - build_size.x) * 0.5f, 34.0f * s),
+        IM_COL32(225, 198, 211, (int)(220.0f * alpha)), build_text);
 
     const ImVec2 close_center = window_pos + ImVec2(700.0f * s, 26.0f * s);
     const ImVec2 close_min = close_center - ImVec2(12.0f * s, 12.0f * s);
