@@ -23,6 +23,10 @@ void Menu::DrawSettings()
         {
             SaveGeneralConfig();
         }
+        if (Checkbox(tr("Уведомления", "Notifications"), &g_cfg.ui_notifications))
+        {
+            SaveGeneralConfig();
+        }
         GroupEnd();
 
         ImGui::NextColumn();

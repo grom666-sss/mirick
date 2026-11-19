@@ -20,6 +20,7 @@ struct config_t
     int language = 0;
     bool showbinds = false;
     bool show_character_model = true;
+    bool ui_notifications = true;
     bool ui_sounds = true;
     unsigned int sound_flags = 15;
     int sound_style = 0;

@@ -30,6 +30,13 @@ struct tab_animation_t
     bool selected = false;
 };
 
+struct ui_notification_t
+{
+    std::string label;
+    bool enabled = false;
+    float age = 0.0f;
+};
+
 struct item_animation_t
 {
     bool active = false;
@@ -68,6 +75,7 @@ class Menu
     std::map<std::string, std::array<tab_animation_t, 6>> subtab_info{};
     std::map<uint32_t, item_animation_t> item_animations{};
     std::map<std::string, std::string> combo_items{};
+    std::vector<ui_notification_t> notifications{};
     float tab_alpha = 0.0f;
     bool author_panel_open = false;
     float author_panel_anim = 0.0f;
@@ -89,6 +97,8 @@ public:
     bool GetState();
     bool ToggleState();
     void PlaySoundFeedback(unsigned int eventFlag, bool enabled = true);
+    void PushNotification(const char* label, bool enabled);
+    void DrawNotifications();
     void DrawFunctionDescription(const char* label, bool hovered);
     void SetDrawList(ImDrawList* list);
     void SetWindowPos(const ImVec2& pos);

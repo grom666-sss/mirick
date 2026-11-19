@@ -54,6 +54,7 @@ bool Menu::Checkbox(const char* label, bool* value)
         *value = !(*value);
         MarkItemEdited(id);
         PlaySoundFeedback(*value ? 1u : 2u, *value);
+        PushNotification(label, *value);
     }
 
     CreateAnimation(mod.hovered_alpha, hovered, 1.0f, AnimLerp);

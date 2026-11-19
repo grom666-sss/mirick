@@ -1,6 +1,7 @@
 #include "Menu/Menu.hpp"
 
 #include "Utils/xorstr.h"
+#include "Utils/Text.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -133,6 +134,88 @@ void Menu::PlaySoundFeedback(unsigned int eventFlag, bool enabled)
     MessageBeep(sound);
 }
 
+void Menu::PushNotification(const char* label, bool enabled)
+{
+    if (!g_cfg.ui_notifications || !label)
+    {
+        return;
+    }
+
+    std::string clean(label);
+    const std::size_t hidden = clean.find("##");
+    if (hidden != std::string::npos)
+    {
+        clean.resize(hidden);
+    }
+    if (!Text::IsStringText(clean))
+    {
+        return;
+    }
+
+    const std::string key = Text::ToLower(clean);
+    for (ui_notification_t& item : notifications)
+    {
+        if (Text::ToLower(item.label) == key)
+        {
+            item.enabled = enabled;
+            item.age = 0.0f;
+            return;
+        }
+    }
+
+    // Keep the overlay compact even if several binds are pressed together.
+    if (notifications.size() >= 6)
+    {
+        notifications.erase(notifications.begin());
+    }
+    notifications.push_back({ clean, enabled, 0.0f });
+}
+
+void Menu::DrawNotifications()
+{
+    if (notifications.empty())
+    {
+        return;
+    }
+
+    const float dt = std::min(ImGui::GetIO().DeltaTime, 0.1f);
+    const float s = GetScale();
+    const float lifetime = 3.2f;
+    ImDrawList* overlay = ImGui::GetForegroundDrawList();
+    int visibleIndex = 0;
+
+    for (ui_notification_t& item : notifications)
+    {
+        item.age += dt;
+        const float fadeIn = std::clamp(item.age / 0.18f, 0.0f, 1.0f);
+        const float fadeOut = std::clamp((lifetime - item.age) / 0.38f, 0.0f, 1.0f);
+        const float opacity = fadeIn * fadeOut;
+        if (opacity <= 0.0f)
+        {
+            continue;
+        }
+
+        const ImVec2 size(294.0f * s, 47.0f * s);
+        const float slide = (1.0f - fadeIn) * 34.0f * s;
+        const ImVec2 pos(
+            ImGui::GetIO().DisplaySize.x - size.x - 18.0f * s + slide,
+            18.0f * s + visibleIndex * 55.0f * s);
+        const c_color accent = item.enabled ? c_color(115, 225, 155) : c_color(241, 126, 159);
+        const int a = (int)(245.0f * opacity);
+
+        overlay->AddRectFilled(pos + ImVec2(4.0f * s, 5.0f * s), pos + size + ImVec2(4.0f * s, 5.0f * s), IM_COL32(0, 0, 0, (int)(80.0f * opacity)), 9.0f * s);
+        overlay->AddRectFilled(pos, pos + size, IM_COL32(71, 51, 62, a), 9.0f * s);
+        overlay->AddRectFilled(pos, pos + ImVec2(4.0f * s, size.y), accent.new_alpha((int)(235.0f * opacity)).as_imcolor(), 3.0f * s);
+        overlay->AddText(pos + ImVec2(14.0f * s, 7.0f * s), IM_COL32(253, 244, 249, (int)(255.0f * opacity)), item.label.c_str());
+        overlay->AddText(pos + ImVec2(14.0f * s, 26.0f * s), accent.new_alpha((int)(245.0f * opacity)).as_imcolor(),
+            item.enabled ? tr("ВКЛЮЧЕНО", "ENABLED") : tr("ВЫКЛЮЧЕНО", "DISABLED"));
+        ++visibleIndex;
+    }
+
+    notifications.erase(std::remove_if(notifications.begin(), notifications.end(),
+        [lifetime](const ui_notification_t& item) { return item.age >= lifetime; }), notifications.end());
+}
+
 void Menu::DrawFunctionDescription(const char* label, bool hovered)
 {
     if (!hovered || !label || !*label)
@@ -168,6 +251,7 @@ void Menu::DrawFunctionDescription(const char* label, bool hovered)
     else if (contains("Фов") || contains("Field of view") || contains("Fov")) description = english ? "Changes the camera field of view." : "Изменяет угол обзора камеры.";
     else if (contains("Кейбинды") || contains("Keybinds")) description = english ? "Shows the active keybind panel." : "Показывает панель активных клавиш.";
     else if (contains("Модель персонажа") || contains("Character model")) description = english ? "Shows the off-screen character model preview beside the menu." : "Показывает 3D-превью модели персонажа рядом с меню.";
+    else if (contains("Уведомления") || contains("Notifications")) description = english ? "Shows local animated notices when functions are enabled or disabled." : "Показывает локальные анимированные уведомления о переключении функций.";
     else if (contains("Звуки интерфейса") || contains("Interface sounds")) description = english ? "Enables sound feedback for selected interface events." : "Включает звуковые сигналы для выбранных событий интерфейса.";
     else if (contains("Стиль звука") || contains("Sound style")) description = english ? "Selects the Windows sound set used for feedback." : "Выбирает набор системных звуков для уведомлений.";
     else if (contains("Язык") || contains("Language")) description = english ? "Changes the menu language." : "Изменяет язык интерфейса меню.";
@@ -1078,6 +1162,7 @@ void Menu::Draw()
 {
     InitTextures();
     UpdateAlpha();
+    DrawNotifications();
     CharacterPreview::SetVisible(g_cfg.show_character_model && (g_cfg.menu_open || alpha > 0.01f));
 
     if (!g_cfg.menu_open && alpha <= 0.01f)
